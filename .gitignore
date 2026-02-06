@@ -1,0 +1,37 @@
+# --- OS / Editor ---
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
+
+# --- Node / build artefacts (por si usamos Astro/Next/Hugo con tooling) ---
+node_modules/
+dist/
+.build/
+.cache/
+out/
+.next/
+.vercel/
+
+# --- Logs / temp ---
+logs/
+*.log
+
+# --- Secrets / env ---
+.env
+.env.*
+!/.env.example
+
+# --- Ops exports (Cloudflare backups, dumps) ---
+ops/cloudflare/exports/
+ops/https/certs/
+
+# --- Coverage / test ---
+coverage/
+htmlcov/
+.pytest_cache/
+
+# --- Python ---
+__pycache__/
+*.pyc

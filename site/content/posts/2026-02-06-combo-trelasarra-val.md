@@ -15,6 +15,8 @@ cards:
 
 # Combo: Trelasarra + Val
 
+## Por qué este combo importa
+
 **Un motor de triggers cerrados que convierte vida y adivinar en daño inevitable.**
 
 > **TL;DR**
@@ -29,10 +31,6 @@ Esto es un combo de **triggers en bucle cerrado**: ganar vida te hace adivinar, 
 No es “lifegain genérico”. Es **inevitabilidad + conversión letal**: cada punto de vida termina siendo daño y crecimiento real en mesa.
 
 ## ¿Qué hace cada carta?
-
-![Trelasarra](/assets/images/cards/trelasarra-bailarina-lunar.png)
-
-![Val](/assets/images/cards/val-supervisora-naufragada.png)
 
 - **Trelasarra**: cada vez que ganas vida, pone un contador +1/+1 sobre sí misma y **adivinas 1**.
 - **Val**: cada vez que **adivinas** (entre otras acciones), hace **1 daño** a cada oponente y tú **ganas 1 vida**.

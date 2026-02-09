@@ -1,14 +1,15 @@
 param(
   [string]$BaseUrl = "https://mtgsynergy.com",
   [string]$PostPath = "/es/combo-trelasarra-val/",
-  [string]$MustContain = "Por qué este combo importa"
+  [string]$MustContain = "Por qué este combo importa",
+  [int]$TimeoutSec = 20
 )
 
 $ErrorActionPreference = "Stop"
 
-function Invoke-Get([string]$Url) {
+function Invoke-Get([string]$Url, [int]$TimeoutSec) {
   # UseBasicParsing keeps it Windows/PS-compatible
-  return Invoke-WebRequest -UseBasicParsing -Method GET -Uri $Url
+  return Invoke-WebRequest -UseBasicParsing -Method GET -Uri $Url -TimeoutSec $TimeoutSec
 }
 
 function Assert-Status200([object]$Resp, [string]$Label) {
@@ -36,17 +37,31 @@ function Get-HeaderValue([object]$Resp, [string]$Name) {
   }
 }
 
+function Assert-HeaderPresent([object]$Resp, [string]$HeaderName, [string]$Label) {
+  $v = Get-HeaderValue $Resp $HeaderName
+  if ([string]::IsNullOrWhiteSpace($v)) {
+    throw "[FAIL] $Label missing header: $HeaderName"
+  }
+  Write-Host "[OK] $Label header '$HeaderName': $v"
+}
+
+function Assert-HeaderAbsent([object]$Resp, [string]$HeaderName, [string]$Label) {
+  $v = Get-HeaderValue $Resp $HeaderName
+  if (-not [string]::IsNullOrWhiteSpace($v)) {
+    throw "[FAIL] $Label unexpected header present: $HeaderName='$v'"
+  }
+  Write-Host "[OK] $Label header '$HeaderName' absent"
+}
+
 function Assert-CloudflareHeaders([object]$Resp, [string]$Label) {
-  $cfRay = Get-HeaderValue $Resp "cf-ray"
+  $cfRay  = Get-HeaderValue $Resp "cf-ray"
   $server = Get-HeaderValue $Resp "server"
+  $cfCache = Get-HeaderValue $Resp "cf-cache-status"
 
   $hasCfRay = -not [string]::IsNullOrWhiteSpace($cfRay)
   $serverLooksCf = (-not [string]::IsNullOrWhiteSpace($server)) -and ($server -match "cloudflare")
 
-  # Regla pro: debe haber señal Cloudflare.
-  # Aceptamos cf-ray como prueba principal; server es refuerzo.
   if (-not $hasCfRay) {
-    # Si no hay cf-ray, intentamos salvar por server=cloudflare (caso raro)
     if (-not $serverLooksCf) {
       throw "[FAIL] $Label not behind Cloudflare (missing cf-ray and server!=cloudflare). server='$server'"
     }
@@ -61,35 +76,55 @@ function Assert-CloudflareHeaders([object]$Resp, [string]$Label) {
   if ($serverLooksCf) {
     Write-Host "[OK] $Label server: $server"
   } else {
-    # No fallamos si no está (depende de configuración), pero lo mostramos
     Write-Host "[WARN] $Label server header not 'cloudflare' (server='$server'). cf-ray is sufficient."
+  }
+
+  # Optional but useful signal (not all setups expose it consistently)
+  if (-not [string]::IsNullOrWhiteSpace($cfCache)) {
+    Write-Host "[OK] $Label CF header cf-cache-status: $cfCache"
+  } else {
+    Write-Host "[WARN] $Label missing cf-cache-status (not fatal)."
   }
 }
 
 # Normalize URL join
 $base = $BaseUrl.TrimEnd("/")
-$post = if ($PostPath.StartsWith("/")) { $PostPath } else { "/$PostPath" }
 
 $homeUrl = "$base/"
+$esUrl   = "$base/es/"
+$post = if ($PostPath.StartsWith("/")) { $PostPath } else { "/$PostPath" }
 $postUrl = "$base$post"
 
-Write-Host "=== MTGSynergy Healthcheck (Prod) ==="
+Write-Host "=== MTGSynergy Healthcheck (Prod, Hardened) ==="
+Write-Host "TimeoutSec: $TimeoutSec"
 Write-Host "Home: $homeUrl"
+Write-Host "ES:   $esUrl"
 Write-Host "Post: $postUrl"
 Write-Host "MustContain: $MustContain"
 Write-Host ""
 
-# 1) Home
-$homeResp = Invoke-Get $homeUrl
+# 1) HOME
+$homeResp = Invoke-Get $homeUrl $TimeoutSec
 Assert-Status200 $homeResp "HOME"
 Assert-CloudflareHeaders $homeResp "HOME"
+Assert-HeaderPresent $homeResp "cache-control" "HOME"
+Assert-HeaderAbsent  $homeResp "x-powered-by"  "HOME"
 
-# 2) Post
-$postResp = Invoke-Get $postUrl
+# 2) /es/
+$esResp = Invoke-Get $esUrl $TimeoutSec
+Assert-Status200 $esResp "ES"
+Assert-CloudflareHeaders $esResp "ES"
+Assert-HeaderPresent $esResp "cache-control" "ES"
+Assert-HeaderAbsent  $esResp "x-powered-by"  "ES"
+
+# 3) POST
+$postResp = Invoke-Get $postUrl $TimeoutSec
 Assert-Status200 $postResp "POST"
 Assert-CloudflareHeaders $postResp "POST"
+Assert-HeaderPresent $postResp "cache-control" "POST"
+Assert-HeaderAbsent  $postResp "x-powered-by"  "POST"
 
-# 3) Section present
+# 4) Content present (post)
 Assert-Contains $postResp.Content $MustContain "POST BODY"
 
 Write-Host ""

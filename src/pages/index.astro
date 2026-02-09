@@ -1,0 +1,25 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+const posts = await getCollection("posts");
+const sorted = posts
+  .filter((p) => p.data.lang === "es")
+  .sort((a, b) => new Date(b.data.date).valueOf() - new Date(a.data.date).valueOf());
+const latest = sorted[0];
+const slug = latest?.data.permalink ?? latest?.slug;
+---
+<BaseLayout title="MTGSynergy" description="Sinergias reales de Magic explicadas con claridad.">
+  <h1>MTGSynergy</h1>
+  <p>Sinergias reales de Magic explicadas con claridad. (ES — más adelante bilingüe)</p>
+
+  {latest && (
+    <div class="card">
+      <span class="tag">Último artículo</span>
+      <span class="tag">Historic / Arena</span>
+      <h2 style="margin:10px 0 6px;">{latest.data.title}</h2>
+      <p style="margin:0 0 10px;color:#b7bcc7;">{latest.data.description}</p>
+      <a href={`/es/${slug}/`}>Leer artículo →</a>
+    </div>
+  )}
+</BaseLayout>

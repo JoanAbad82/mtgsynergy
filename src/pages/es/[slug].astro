@@ -1,0 +1,48 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts");
+  return posts
+    .filter((p) => p.data.lang === "es")
+    .map((entry) => ({
+      params: { slug: entry.data.permalink ?? entry.slug },
+      props: { entry },
+    }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await entry.render();
+const tags = entry.data.tags || [];
+const format = tags.includes("Historic") && tags.includes("MTG Arena")
+  ? "Historic / Arena"
+  : tags.includes("Historic")
+  ? "Historic"
+  : tags.includes("MTG Arena")
+  ? "Arena"
+  : null;
+---
+<BaseLayout title={entry.data.title} description={entry.data.description} lang={entry.data.lang}>
+  <p class="muted"><a href="/">← MTGSynergy</a></p>
+  <h1>{entry.data.title}</h1>
+  <p class="muted">Publicado: {entry.data.date}{format ? ` · Formato: ${format}` : ""}</p>
+
+  {entry.data.cards?.length > 0 && (
+    <div class="cards">
+      {entry.data.cards.map((card) => (
+        <div class="card-item">
+          <h3 style="margin:0 0 10px;">{card.name}</h3>
+          <img src={card.image} alt={card.name} />
+          {card.caption && (
+            <p class="muted" style="margin:10px 0 0;">{card.caption}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  )}
+
+  <div class="post-content">
+    <Content />
+  </div>
+</BaseLayout>

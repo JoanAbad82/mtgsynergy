@@ -1,4 +1,9 @@
 # Ops Notes
 
-- Do not edit generated HTML under `site/` directly.
-- Edit Markdown in `site/content/posts/` and redeploy to publish changes.
+## Canonical source of truth
+- Posts: `src/content/posts/`
+- Assets: `public/assets/`
+- Output (publish): `dist/`
+
+## Legacy
+- `site/` is legacy/static leftovers. Do not edit or rely on it.

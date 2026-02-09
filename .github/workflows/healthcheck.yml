@@ -1,0 +1,30 @@
+name: Production Healthcheck
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"  # cada 30 min (UTC)
+
+permissions:
+  contents: read
+
+concurrency:
+  group: healthcheck-main
+  cancel-in-progress: true
+
+jobs:
+  healthcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run production healthcheck
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version Latest
+          $ErrorActionPreference = "Stop"
+          ./scripts/healthcheck.ps1

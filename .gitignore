@@ -35,3 +35,6 @@ htmlcov/
 # --- Python ---
 __pycache__/
 *.pyc
+
+# Astro local cache
+.astro/

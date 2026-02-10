@@ -2,10 +2,11 @@
 const { title, description, lang = "es" } = Astro.props;
 import "../styles/global.css";
 
+const site = Astro.site ?? new URL("https://mtgsynergy.com");
 const pathname = Astro.url.pathname.endsWith("/")
   ? Astro.url.pathname
   : `${Astro.url.pathname}/`;
-const canonical = `https://mtgsynergy.com${pathname}`;
+const canonical = new URL(pathname, site).toString();
 ---
 <!doctype html>
 <html lang={lang}>

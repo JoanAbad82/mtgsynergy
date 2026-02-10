@@ -62,5 +62,7 @@ El loop es obligatorio (no “puedes”), así que en mesa es un bucle determini
 
 ## Siguiente entrega
 
+
+[Leer Parte 2 →](/es/combo-trelasarra-val-parte-2)
 En la Parte 2: aceleradores, protección y una primera lista para Historic/Arena (próximamente).
 

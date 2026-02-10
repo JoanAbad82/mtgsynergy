@@ -3,8 +3,13 @@ const { title, description, lang = "es" } = Astro.props;
 import "../styles/global.css";
 
 const site = Astro.site ?? new URL("https://mtgsynergy.com");
-const req = new URL(Astro.request.url);
-let path = req.pathname;
+let path = Astro.url?.pathname;
+if (!path && Astro.request) {
+  path = new URL(Astro.request.url).pathname;
+}
+if (!path) {
+  path = "/";
+}
 if (!path.endsWith("/")) path += "/";
 const canonical = new URL(path, site).toString();
 ---

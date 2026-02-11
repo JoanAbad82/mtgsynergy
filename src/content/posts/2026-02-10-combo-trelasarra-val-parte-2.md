@@ -21,6 +21,12 @@ cards:
 
 En la Parte 1 definimos el motor: **Trelasarra** convierte vida en crecimiento + *scry*, y **Val** convierte *scry* en daño + vida. En competitivo, la pregunta no es “¿funciona?”, sino:
 
+## Amazon (afiliado)
+
+Si te interesa material relacionado con Magic, aquí tienes una recomendación breve. Es un enlace de afiliado, sin coste adicional para ti.
+
+- <a href="https://amzn.to/3035D2i" target="_blank" rel="nofollow sponsored noopener">Mazo de Commander de Magic: The Gathering | Marvel Super Heroes - Wakanda por Siempre (ES)</a>
+
 - ¿**con qué frecuencia** lo ensamblas a tiempo?
 - ¿cómo **evitas regalar una ventana** a removal/counters?
 - ¿qué lista base maximiza % de victoria en ladder **BO3**?

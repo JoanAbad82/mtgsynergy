@@ -1,6 +1,7 @@
 ---
 const { title, description, lang = "es" } = Astro.props;
 import "../styles/global.css";
+import { AMAZON_ASSOC_TAG } from "../config/affiliate";
 
 const site = Astro.site ?? new URL("https://mtgsynergy.com");
 let path = Astro.url?.pathname;
@@ -25,9 +26,11 @@ const canonical = new URL(path, site).toString();
   <body>
     <div class="wrap">
       <slot />
-      <p class="muted" style="font-size:12px;opacity:0.8;margin-top:28px;">
-        Aviso: algunos enlaces pueden ser de afiliado de Amazon. Si compras a través de ellos, podemos recibir una comisión sin coste adicional para ti.
-      </p>
+      {AMAZON_ASSOC_TAG && AMAZON_ASSOC_TAG.trim().length > 0 && (
+        <p class="muted" style="font-size:12px;opacity:0.8;margin-top:28px;">
+          Aviso: algunos enlaces pueden ser de afiliado de Amazon. Si compras a través de ellos, podemos recibir una comisión sin coste adicional para ti.
+        </p>
+      )}
     </div>
   </body>
 </html>

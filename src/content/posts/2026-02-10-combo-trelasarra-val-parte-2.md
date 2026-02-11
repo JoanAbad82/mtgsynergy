@@ -47,7 +47,7 @@ Turno 1 fuente verde → Turno 2 GSZ X=2 → Turno 3–4 segunda pieza + trigger
 ### B) Explosividad y plan B: *Collected Company* como acelerador real
 **Collected Company** no es “más value”: es **velocidad + resiliencia**.
 
-> 🔗 Enlace recomendado (Amazon): [Collected Company (MTG) — buscar en Amazon.es](https://www.amazon.es/s?k=Collected+Company+Magic+the+Gathering&tag=mtgsynergy-21)
+> 🔗 Enlace recomendado (Amazon): [Collected Company (MTG) — buscar en Amazon.es](https://www.amazon.es/s?k=Collected+Company+Magic+the+Gathering)
 
 - A velocidad instantánea, te permite **amenazar fin de turno** (EOT) y matar en tu turno.  
 - Castiga el intercambio 1x1: si te matan una pieza, CoCo recompone mesa y vuelves a estar a una carta del combo.  

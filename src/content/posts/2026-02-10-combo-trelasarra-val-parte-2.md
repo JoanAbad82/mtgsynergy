@@ -21,11 +21,13 @@ cards:
 
 En la Parte 1 definimos el motor: **Trelasarra** convierte vida en crecimiento + *scry*, y **Val** convierte *scry* en daño + vida. En competitivo, la pregunta no es “¿funciona?”, sino:
 
-## Amazon (afiliado)
-
-Si te interesa material relacionado con Magic, aquí tienes una recomendación breve. Es un enlace de afiliado, sin coste adicional para ti.
-
-- <a href="https://amzn.to/3035D2i" target="_blank" rel="nofollow sponsored noopener">Mazo de Commander de Magic: The Gathering | Marvel Super Heroes - Wakanda por Siempre (ES)</a>
+<div class="affiliate-box">
+  <h2>Amazon (afiliado)</h2>
+  <p>Si te interesa material relacionado con Magic, aquí tienes una recomendación breve. Es un enlace de afiliado, sin coste adicional para ti.</p>
+  <ul>
+    <li><a href="https://www.amazon.es/s?k=Magic+The+Gathering+Caja+de+Sobres+de+Juego+Cimientos+ES" target="_blank" rel="nofollow sponsored noopener">Magic The Gathering Caja de Sobres de Juego — Cimientos (ES)</a></li>
+  </ul>
+</div>
 
 - ¿**con qué frecuencia** lo ensamblas a tiempo?
 - ¿cómo **evitas regalar una ventana** a removal/counters?
@@ -53,7 +55,7 @@ Turno 1 fuente verde → Turno 2 GSZ X=2 → Turno 3–4 segunda pieza + trigger
 ### B) Explosividad y plan B: *Collected Company* como acelerador real
 **Collected Company** no es “más value”: es **velocidad + resiliencia**.
 
-> 🔗 Enlace recomendado (Amazon): [Collected Company (MTG) — buscar en Amazon.es](https://www.amazon.es/s?k=Collected+Company+Magic+the+Gathering)
+> 🔗 Enlace recomendado: [Collected Company — Scryfall](https://scryfall.com/card/dtk/177/collected-company)
 
 - A velocidad instantánea, te permite **amenazar fin de turno** (EOT) y matar en tu turno.  
 - Castiga el intercambio 1x1: si te matan una pieza, CoCo recompone mesa y vuelves a estar a una carta del combo.  

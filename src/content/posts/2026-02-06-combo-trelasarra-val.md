@@ -7,10 +7,10 @@ description: "Cómo funciona el bucle de triggers Trelasarra + Val y cuándo se 
 tags: ["MTG Arena", "Historic", "Combo", "Selesnya", "Lifegain"]
 cover_image: "/assets/images/posts/combo-trelasarra-val/cover.png"
 cards:
-  - name: "Trelasarra, bailarina lunar"
+  - name: "Trelasarra, Moon Dancer"
     scryfallName: "Trelasarra, Moon Dancer"
     image: "/assets/images/cards/trelasarra-bailarina-lunar.png"
-  - name: "Val, supervisora naufragada"
+  - name: "Val, Marooned Surveyor"
     scryfallName: "Val, Marooned Surveyor"
     image: "/assets/images/cards/val-supervisora-naufragada.png"
   - name: "Prosperous Innkeeper"
@@ -18,35 +18,35 @@ cards:
     image: "/assets/images/cards/art/prosperous-innkeeper.jpg"
 ---
 
-# Combo: Trelasarra + Val
+# Combo: Trelasarra, Moon Dancer + Val, Marooned Surveyor
 
 ## Por qué este combo importa
 
 **Un motor de triggers cerrados que convierte vida y adivinar en daño inevitable.**
 
 > **TL;DR**
-> - **Qué es:** un loop de disparos entre Trelasarra (vida → adivinar) y Val (adivinar → daño + vida).
+> - **Qué es:** un loop de disparos entre Trelasarra, Moon Dancer (vida → adivinar) y Val, Marooned Surveyor (adivinar → daño + vida).
 > - **Por qué gana:** escala sola y transforma cada chispa en presión letal.
 > - **Qué necesita:** dos piezas en mesa + una chispa inicial de vida o adivinar.
 
-Nota: Val es una carta digital de Arena, por eso el foco en Historic/Arena.
+Nota: Val, Marooned Surveyor es una carta digital de Arena, por eso el foco en Historic/Arena.
 
 Esto es un combo de **triggers en bucle cerrado**: ganar vida te hace adivinar, y adivinar te hace ganar vida y pegar. Esa retroalimentación convierte cualquier chispa en un motor que no se apaga.
 
-Prosperous Innkeeper es una de las mejores “chispas” para encender el motor: al entrar te da vida (dispara Trelasarra) y con cada criatura que entra te sigue dando +1 vida, manteniendo el loop. Además, el Tesoro acelera el turno donde ensamblas el combo.
+Prosperous Innkeeper es una de las mejores “chispas” para encender el motor: al entrar te da vida (dispara Trelasarra, Moon Dancer) y con cada criatura que entra te sigue dando +1 vida, manteniendo el loop. Además, el Tesoro acelera el turno donde ensamblas el combo.
 
 No es “lifegain genérico”. Es **inevitabilidad + conversión letal**: cada punto de vida termina siendo daño y crecimiento real en mesa.
 
 ## ¿Qué hace cada carta?
 
-- **Trelasarra**: cada vez que ganas vida, pone un contador +1/+1 sobre sí misma y **adivinas 1**.
-- **Val**: cada vez que **adivinas** (entre otras acciones), hace **1 daño** a cada oponente y tú **ganas 1 vida**.
+- **Trelasarra, Moon Dancer**: cada vez que ganas vida, pone un contador +1/+1 sobre sí misma y **adivinas 1**.
+- **Val, Marooned Surveyor**: cada vez que **adivinas** (entre otras acciones), hace **1 daño** a cada oponente y tú **ganas 1 vida**.
 
 ## El motor del combo (paso a paso)
 
-Cuando se dispara Val y ganas 1 vida:
-1) Eso dispara Trelasarra (ganas vida → contador +1/+1 y adivinas 1)
-2) Al adivinar 1, eso dispara Val (adivinar → 1 daño a oponente y ganas 1 vida)
+Cuando se dispara Val, Marooned Surveyor y ganas 1 vida:
+1) Eso dispara Trelasarra, Moon Dancer (ganas vida → contador +1/+1 y adivinas 1)
+2) Al adivinar 1, eso dispara Val, Marooned Surveyor (adivinar → 1 daño a oponente y ganas 1 vida)
 3) Volvemos al paso 1
 
 ## ¿Es infinito? ¿Cuándo es letal?
@@ -58,7 +58,7 @@ El loop es obligatorio (no “puedes”), así que en mesa es un bucle determini
 ## Debilidades y counterplay
 
 - **Removal instantáneo**: cortar una pieza en respuesta rompe el motor.
-- **Hate de ganar vida**: efectos que niegan vida o castigan el lifegain desactivan Trelasarra.
+- **Hate de ganar vida**: efectos que niegan vida o castigan el lifegain desactivan Trelasarra, Moon Dancer.
 - **Prevention / “can’t lose”**: efectos que previenen daño o que impiden perder pueden forzar un plan alterno.
 
 ## Qué necesita para ser un plan competitivo

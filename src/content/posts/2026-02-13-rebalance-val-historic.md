@@ -23,12 +23,20 @@ Val Combo era un outlier por velocidad y resiliencia; Wizards lo sube a 4 manás
 Esto no “mata” el motor: cambia el timing y la ventana de interacción.  
 Aquí verás qué cambia en el combo, qué se rompe en la construcción anterior y el plan recomendado desde hoy.
 
+**TL;DR**
+- Val ahora cuesta {2}{B}{G} (antes {B}{G}): el turno crítico se desplaza a T4+ o exige ramp real.
+- El trigger pasa a 2 daño / 2 vidas (antes 1/1): una vez arranca, cierra en menos iteraciones.
+- El motor vida ↔ scry sigue funcionando: cambia el timing y la ventana de interacción.
+- Si juegas el mazo: prioriza tutoría/ramp/protección; si lo enfrentas: interacción + hate de lifegain.
+
 ## 1) El cambio exacto (antes vs después)
 
 | Elemento | Antes | Después | Lectura competitiva |
 | --- | --- | --- | --- |
 | Coste | {B}{G} | {2}{B}{G} | Llegas un turno más tarde sin ramp real |
 | Trigger | 1 daño / 1 vida | 2 daño / 2 vida | Menos iteraciones, cierre más rápido |
+
+**En humano:** pasa de 2 manás a 4 manás, y el trigger dobla (de 1/1 a 2/2).
 
 El motor sigue existiendo; cambia el timing.
 
@@ -52,12 +60,14 @@ Ahora el eje es tutoría, ramp y proteger el turno de encendido, no solo densida
 ## 5) Plan recomendado: guía de acción
 
 ### A) Si quieres seguir jugando Val
-Prioriza tutoría, ramp temprano y protección del turno crítico.  
-La pregunta no es “¿puedo ensamblar?”, sino “¿puedo encenderlo y ganar ese turno?”.
+- No trates Val como “curva”: planifica T4+ o ramp real para llegar a {2}{B}{G} con consistencia.
+- Protege el turno crítico: no expongas el payoff si el rival representa interacción abierta.
+- Juega a “encender y cerrar”: si no puedes ganar ese turno, prioriza ensamblar/proteger antes de comprometerte.
 
 ### B) Si te lo encuentras enfrente
-Checklist rápido: removal en respuesta al trigger, counters al tutor o al payoff, y hate de lifegain.  
-Rampaging Ferocidon es el ejemplo pedagógico: corta la vida y castiga la mesa.
+- Interactúa en la ventana: removal en respuesta, o frena el tutor/payoff con counters si los tienes.
+- Busca hate que apague lifegain: si el motor no gana vida, el loop se cae (Rampaging Ferocidon es el ejemplo).
+- Obliga al rival a “ir all-in”: conserva interacción para el turno donde intenta encender el motor y cerrar.
 
 ### C) Lectores nuevos
 Si quieres entender el motor antes del patch: empieza por la base y luego la parte competitiva.

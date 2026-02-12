@@ -76,10 +76,9 @@ img { max-width: 100%; height: auto; border-radius: 10px; background: #0b0d12; }
 .card-item img {
   display: block;
   width: 100%;
-  aspect-ratio: 63 / 88;
-  object-fit: cover;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
   object-position: center;
-  transform: scale(1.02);
   border-radius: 12px;
   background: #0b0d12;
 }
@@ -277,4 +276,9 @@ img { max-width: 100%; height: auto; border-radius: 10px; background: #0b0d12; }
 
 @media (max-width: 560px) {
   .cards { grid-template-columns: 1fr; }
+}
+
+.scryfall-attrib {
+  margin: 0 0 26px;
+  font-size: 13px;
 }

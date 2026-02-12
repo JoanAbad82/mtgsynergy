@@ -13,6 +13,7 @@ const posts = defineCollection({
     cards: z.array(
       z.object({
         name: z.string(),
+        scryfallName: z.string().optional(),
         image: z.string(),
         caption: z.string().optional(),
       })

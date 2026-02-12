@@ -8,9 +8,14 @@ tags: ["MTG Arena", "Historic", "Combo", "Selesnya", "Lifegain"]
 cover_image: "/assets/images/posts/combo-trelasarra-val/cover.png"
 cards:
   - name: "Trelasarra, bailarina lunar"
+    scryfallName: "Trelasarra, Moon Dancer"
     image: "/assets/images/cards/trelasarra-bailarina-lunar.png"
   - name: "Val, supervisora naufragada"
+    scryfallName: "Val, Marooned Surveyor"
     image: "/assets/images/cards/val-supervisora-naufragada.png"
+  - name: "Prosperous Innkeeper"
+    scryfallName: "Prosperous Innkeeper"
+    image: "/assets/images/cards/art/prosperous-innkeeper.jpg"
 ---
 
 # Combo: Trelasarra + Val
@@ -27,6 +32,8 @@ cards:
 Nota: Val es una carta digital de Arena, por eso el foco en Historic/Arena.
 
 Esto es un combo de **triggers en bucle cerrado**: ganar vida te hace adivinar, y adivinar te hace ganar vida y pegar. Esa retroalimentación convierte cualquier chispa en un motor que no se apaga.
+
+Prosperous Innkeeper es una de las mejores “chispas” para encender el motor: al entrar te da vida (dispara Trelasarra) y con cada criatura que entra te sigue dando +1 vida, manteniendo el loop. Además, el Tesoro acelera el turno donde ensamblas el combo.
 
 No es “lifegain genérico”. Es **inevitabilidad + conversión letal**: cada punto de vida termina siendo daño y crecimiento real en mesa.
 

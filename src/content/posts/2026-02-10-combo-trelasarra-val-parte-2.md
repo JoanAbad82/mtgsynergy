@@ -55,8 +55,6 @@ Turno 1 fuente verde → Turno 2 GSZ X=2 → Turno 3–4 segunda pieza + trigger
 ### B) Explosividad y plan B: *Collected Company* como acelerador real
 **Collected Company** no es “más value”: es **velocidad + resiliencia**.
 
-> 🔗 Enlace recomendado: [Collected Company — Scryfall](https://scryfall.com/card/dtk/177/collected-company)
-
 - A velocidad instantánea, te permite **amenazar fin de turno** (EOT) y matar en tu turno.  
 - Castiga el intercambio 1x1: si te matan una pieza, CoCo recompone mesa y vuelves a estar a una carta del combo.  
 - Mantiene plan de victoria por mesa cuando el rival tiene hate “parcial” (corta el loop pero no la presión).

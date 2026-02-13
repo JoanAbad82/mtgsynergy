@@ -1,0 +1,18 @@
+---
+const { title = "Amazon (afiliado)", text, href, label } = Astro.props;
+---
+
+<div class="affiliate-box">
+  <h2>{title}</h2>
+  {text && <p>{text}</p>}
+  <ul>
+    <li>
+      <a href={href} target="_blank" rel="sponsored nofollow noopener">
+        {label}
+      </a>
+    </li>
+  </ul>
+  <p>
+    Nota: enlace de afiliado. Si compras desde aquí, MTGSynergy puede recibir una pequeña comisión sin coste extra para ti.
+  </p>
+</div>

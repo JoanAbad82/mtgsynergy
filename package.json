@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "node scripts/fetch_scryfall_art_crops.mjs",
     "build": "astro build",
     "preview": "astro preview"
   },
   "dependencies": {
+    "@astrojs/mdx": "^3.1.5",
     "astro": "^4.16.0"
   }
 }

@@ -8,6 +8,12 @@ const cardNames = [
   "Trelasarra, Moon Dancer",
   "Val, Marooned Surveyor",
   "Prosperous Innkeeper",
+  "Kithkin Token",
+  "Scarecrow Token",
+  "Treasure Token",
+  "Elk Token",
+  "Snake Token",
+  "Rhino Warrior Token",
 ];
 
 const OUTPUT_DIR = path.join(
@@ -42,7 +48,9 @@ function resolveArtCrop(cardJson) {
 async function fetchJson(url) {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`Request failed (${response.status}) for ${url}`);
+    const error = new Error(`Request failed (${response.status}) for ${url}`);
+    error.status = response.status;
+    throw error;
   }
   return response.json();
 }
@@ -62,9 +70,29 @@ async function main() {
   for (const name of cardNames) {
     const slug = slugify(name);
     const apiUrl = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(name)}`;
+    const tokenQueryName = name.replace(/\s*token$/i, "").trim();
+    const tokenSearchUrl = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(
+      `type:token name:"${tokenQueryName}"`,
+    )}`;
 
     try {
-      const cardJson = await fetchJson(apiUrl);
+      let cardJson;
+      try {
+        cardJson = await fetchJson(apiUrl);
+      } catch (error) {
+        if (error.status === 404) {
+          const searchJson = await fetchJson(tokenSearchUrl);
+          cardJson = Array.isArray(searchJson?.data) ? searchJson.data[0] : null;
+        } else {
+          throw error;
+        }
+      }
+
+      if (!cardJson) {
+        console.warn(`No card data found for "${name}". Skipping.`);
+        continue;
+      }
+
       const artCropUrl = resolveArtCrop(cardJson);
 
       if (!artCropUrl) {

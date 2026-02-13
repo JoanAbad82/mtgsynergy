@@ -39,3 +39,9 @@ __pycache__/
 # Astro local cache
 .astro/
 _latest_deployment.json
+_cf_*
+_prod_*
+.wt/
+_builddiff/
+_id_hits_from_failure.txt
+_latest_prod_failure.json

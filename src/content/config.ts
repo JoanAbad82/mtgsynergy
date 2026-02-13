@@ -18,6 +18,7 @@ const posts = defineCollection({
         caption: z.string().optional(),
       })
     ),
+    related_cards: z.array(z.string()).optional(),
   }),
 });
 

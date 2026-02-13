@@ -1,0 +1,29 @@
+---
+const { cards = [], heading = "Cartas relacionadas" } = Astro.props;
+const slugify = (name) =>
+  name
+    .normalize("NFKD")
+    .replace(/[^\x00-\x7F]/g, "")
+    .toLowerCase()
+    .replace(/['’`]/g, "")
+    .replace(/,/g, "")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+---
+
+{cards.length > 0 && (
+  <section class="card-tiles">
+    <h2>{heading}</h2>
+    <div class="card-tiles-grid">
+      {cards.map((name) => (
+        <div class="card-tile">
+          <h3 style="margin:0 0 10px;">{name}</h3>
+          <img src={`/assets/images/cards/art/${slugify(name)}.jpg`} alt={name} />
+        </div>
+      ))}
+    </div>
+    <p class="muted scryfall-attrib">
+      Card images/data via Scryfall. ©Wizards of the Coast.
+    </p>
+  </section>
+)}

@@ -321,3 +321,41 @@ img { max-width: 100%; height: auto; border-radius: 10px; background: #0b0d12; }
   margin: 0 0 26px;
   font-size: 13px;
 }
+
+.card-tiles {
+  margin: 22px 0 8px;
+}
+
+.card-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin: 12px 0 18px;
+}
+
+.card-tile {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--bg-card);
+  padding: 14px;
+  width: 100%;
+  overflow: hidden;
+}
+
+.card-tile img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 12px;
+  background: #0b0d12;
+}
+
+@media (max-width: 780px) {
+  .card-tiles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 560px) {
+  .card-tiles-grid { grid-template-columns: 1fr; }
+}

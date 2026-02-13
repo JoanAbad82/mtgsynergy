@@ -100,8 +100,8 @@ img { max-width: 100%; height: auto; border-radius: 10px; background: #0b0d12; }
   max-width: 78ch;
   margin: 18px auto 0;
   padding: 18px 18px 6px;
-  line-height: 1.72;
-  font-size: 16px;
+  line-height: 1.8;
+  font-size: 17px;
 
   /* Visual */
   border-radius: 16px;
@@ -135,7 +135,7 @@ img { max-width: 100%; height: auto; border-radius: 10px; background: #0b0d12; }
 
 /* Typography */
 .post-content p {
-  margin: 0 0 14px;
+  margin: 0 0 18px;
   color: var(--text);
 }
 
@@ -167,12 +167,12 @@ img { max-width: 100%; height: auto; border-radius: 10px; background: #0b0d12; }
 /* Lists */
 .post-content ul,
 .post-content ol {
-  margin: 0 0 14px;
+  margin: 0 0 18px;
   padding-left: 20px;
 }
 
 .post-content li {
-  margin: 6px 0;
+  margin: 8px 0;
 }
 
 /* Blockquote (más “pro”, no tan macarra) */
@@ -224,6 +224,31 @@ img { max-width: 100%; height: auto; border-radius: 10px; background: #0b0d12; }
   background: rgba(255, 255, 255, 0.08);
 }
 
+.post-content table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.post-content th,
+.post-content td {
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.post-content .callout {
+  margin: 14px 0 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.post-content .callout-tldr strong {
+  color: #e9ecf6;
+  letter-spacing: 0.01em;
+}
+
 .post-content .affiliate-box {
   margin: 18px 0 22px;
   padding: 16px 16px 12px;
@@ -263,10 +288,15 @@ img { max-width: 100%; height: auto; border-radius: 10px; background: #0b0d12; }
   .post-content {
     padding: 16px 14px 4px;
     border-radius: 14px;
+    font-size: 16px;
+    line-height: 1.85;
   }
   .post-content::after {
     left: 14px;
     right: 14px;
+  }
+  .post-content .callout {
+    padding: 12px 14px;
   }
 }
 
@@ -276,6 +306,15 @@ img { max-width: 100%; height: auto; border-radius: 10px; background: #0b0d12; }
 
 @media (max-width: 560px) {
   .cards { grid-template-columns: 1fr; }
+  .post-content table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .post-content th,
+  .post-content td {
+    white-space: nowrap;
+  }
 }
 
 .scryfall-attrib {

@@ -23,11 +23,15 @@ Val Combo era un outlier por velocidad y resiliencia; Wizards lo sube a 4 manás
 Esto no “mata” el motor: cambia el timing y la ventana de interacción.  
 Aquí verás qué cambia en el combo, qué se rompe en la construcción anterior y el plan recomendado desde hoy.
 
+<div class="callout callout-tldr">
+
 **TL;DR**
 - Val ahora cuesta {2}{B}{G} (antes {B}{G}): el turno crítico se desplaza a T4+ o exige ramp real.
 - El trigger pasa a 2 daño / 2 vidas (antes 1/1): una vez arranca, cierra en menos iteraciones.
 - El motor vida ↔ scry sigue funcionando: cambia el timing y la ventana de interacción.
 - Si juegas el mazo: prioriza tutoría/ramp/protección; si lo enfrentas: interacción + hate de lifegain.
+
+</div>
 
 ## 1) El cambio exacto (antes vs después)
 

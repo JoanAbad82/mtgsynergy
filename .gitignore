@@ -38,3 +38,4 @@ __pycache__/
 
 # Astro local cache
 .astro/
+_latest_deployment.json

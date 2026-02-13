@@ -18,6 +18,10 @@ cards:
     image: "/assets/images/cards/art/prosperous-innkeeper.jpg"
 ---
 
+> **Actualización (9 feb 2026):** Val, Marooned Surveyor ha sido rebalanceada en Arena (ahora cuesta {2}{B}{G} y su trigger es 2 daño / 2 vidas).
+> Lee el análisis y plan recomendado aquí: **/es/rebalance-val-historic/**.
+
+
 # Combo: Trelasarra, Moon Dancer + Val, Marooned Surveyor
 
 ## Por qué este combo importa

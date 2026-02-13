@@ -15,6 +15,10 @@ cards:
     image: "/assets/images/cards/rampaging-ferocidon.jpg"
 ---
 
+> **Actualización (9 feb 2026):** con Val a {2}{B}{G}, el plan de ensamblaje cambia (menos “curva”, más tutoría/ramp y protección del turno crítico).
+> Detalle completo: **/es/rebalance-val-historic/**.
+
+
 # Parte 2 — Aceleradores, protección y primera lista (Historic / Arena)
 
 [← Leer Parte 1](/es/combo-trelasarra-val)

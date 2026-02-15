@@ -22,7 +22,7 @@ export type CardEntry = {
   name: string;
   name_norm: string;
   count: number;
-  roles: Role[];
+  role_primary: Role;
 };
 
 export type Deck = {
@@ -42,8 +42,10 @@ export type Pipeline = {
 
 export type SimSettings = {
   mulligan_model: "none";
-  turn_t?: number;
-  iterations?: number;
+  turn_T: number;
+  iterations: number;
+  seed?: number;
+  assume_on_play?: boolean;
 };
 
 export type DeckState = {

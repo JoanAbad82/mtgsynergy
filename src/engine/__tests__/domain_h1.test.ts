@@ -10,18 +10,20 @@ const baseDeck: DeckState = {
         name: "Card A",
         name_norm: "card a",
         count: 30,
-        roles: ["ENGINE"],
+        role_primary: "ENGINE",
       },
       {
         name: "Card B",
         name_norm: "card b",
         count: 30,
-        roles: ["PAYOFF"],
+        role_primary: "PAYOFF",
       },
     ],
   },
   sim: {
     mulligan_model: "none",
+    turn_T: 4,
+    iterations: 1000,
   },
 };
 
@@ -47,13 +49,13 @@ test("deck size 59 yields DECK_TOO_SMALL", () => {
           name: "Card A",
           name_norm: "card a",
           count: 29,
-          roles: ["ENGINE"],
+          role_primary: "ENGINE",
         },
         {
           name: "Card B",
           name_norm: "card b",
           count: 30,
-          roles: ["PAYOFF"],
+          role_primary: "PAYOFF",
         },
       ],
     },
@@ -71,13 +73,13 @@ test("duplicate entry by name_norm yields DUPLICATE_ENTRY", () => {
           name: "Card A",
           name_norm: "Card A",
           count: 30,
-          roles: ["ENGINE"],
+          role_primary: "ENGINE",
         },
         {
           name: "Card A",
           name_norm: "card a",
           count: 30,
-          roles: ["PAYOFF"],
+          role_primary: "PAYOFF",
         },
       ],
     },
@@ -107,8 +109,26 @@ test("self-edge yields SELF_EDGE", () => {
 test("invalid mulligan model yields INVALID_MULLIGAN", () => {
   const ds: DeckState = {
     ...baseDeck,
-    sim: { mulligan_model: "other" as "none" },
+    sim: { mulligan_model: "other" as "none", turn_T: 4, iterations: 1000 },
   };
   const issues = validateDeckState(ds);
   expect(issues).toContain("INVALID_MULLIGAN");
+});
+
+test("sim without turn_T yields INVALID_TURN_T", () => {
+  const ds: DeckState = {
+    ...baseDeck,
+    sim: { mulligan_model: "none", iterations: 1000 } as DeckState["sim"],
+  };
+  const issues = validateDeckState(ds);
+  expect(issues).toContain("INVALID_TURN_T");
+});
+
+test("sim without iterations yields INVALID_ITERATIONS", () => {
+  const ds: DeckState = {
+    ...baseDeck,
+    sim: { mulligan_model: "none", turn_T: 4 } as DeckState["sim"],
+  };
+  const issues = validateDeckState(ds);
+  expect(issues).toContain("INVALID_ITERATIONS");
 });

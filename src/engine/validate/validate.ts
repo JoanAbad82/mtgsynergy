@@ -33,11 +33,9 @@ export function validateDeckState(ds: DeckState): IssueCode[] {
   }
 
   for (const entry of ds.deck.entries) {
-    for (const role of entry.roles) {
-      if (!VALID_ROLES.includes(role)) {
-        issues.push("INVALID_ROLE");
-        break;
-      }
+    if (!VALID_ROLES.includes(entry.role_primary)) {
+      issues.push("INVALID_ROLE");
+      break;
     }
   }
 
@@ -70,15 +68,11 @@ export function validateDeckState(ds: DeckState): IssueCode[] {
   }
 
   if (ds.sim) {
-    if (ds.sim.turn_t !== undefined) {
-      if (!Number.isInteger(ds.sim.turn_t) || ds.sim.turn_t < 1) {
-        issues.push("INVALID_TURN_T");
-      }
+    if (!Number.isInteger(ds.sim.turn_T) || ds.sim.turn_T < 1) {
+      issues.push("INVALID_TURN_T");
     }
-    if (ds.sim.iterations !== undefined) {
-      if (!Number.isInteger(ds.sim.iterations) || ds.sim.iterations < 1) {
-        issues.push("INVALID_ITERATIONS");
-      }
+    if (!Number.isInteger(ds.sim.iterations) || ds.sim.iterations < 1) {
+      issues.push("INVALID_ITERATIONS");
     }
     if (ds.sim.mulligan_model !== "none") {
       issues.push("INVALID_MULLIGAN");

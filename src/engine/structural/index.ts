@@ -1,4 +1,5 @@
-import type { DeckState, Role, StructuralSummary } from "../domain/types";
+import type { DeckState, Role } from "../domain/types";
+import type { StructuralSummary } from "../domain/types";
 import { computeRoleCounts, computeRoleShare, ROLE_ORDER } from "./counts";
 import {
   buildRoleGraph,

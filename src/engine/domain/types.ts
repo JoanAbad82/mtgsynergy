@@ -48,6 +48,36 @@ export type SimSettings = {
   assume_on_play?: boolean;
 };
 
+export type StructuralSummary = {
+  nodes_total: number;
+  nodes_active: number;
+  role_counts: Record<Role, number>;
+  role_share: Record<Role, number>;
+  edges_total: number;
+  density: number;
+  in_degree: Record<Role, number>;
+  out_degree: Record<Role, number>;
+  centrality_score: Record<Role, number>;
+  sources: Role[];
+  sinks: Role[];
+  cycles_present: boolean;
+  components_weak: { count: number; components: Role[][] };
+  missing_roles_for_pipelines: Array<{
+    pipeline_id: string;
+    missing: Array<{ role: Role; needed: number; have: number }>;
+  }>;
+  diagnostics: {
+    bottlenecks: { roles: Role[]; max_centrality: number };
+    low_redundancy: {
+      roles: Role[];
+      threshold: number;
+      only_one_active_role: boolean;
+    };
+    sparse_graph: { flag: boolean; density: number; threshold: number };
+    isolated_roles: { roles: Role[] };
+  };
+};
+
 export type DeckState = {
   deck: Deck;
   edges?: RoleEdge[];

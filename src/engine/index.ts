@@ -4,3 +4,4 @@ export * from "./normalize/normalize";
 export * from "./validate/validate";
 export * from "./structural";
 export * from "./parser";
+export * from "./share";

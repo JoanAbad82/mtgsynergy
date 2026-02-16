@@ -1,0 +1,85 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import AnalyzerApp from "../../components/analyzer/AnalyzerApp";
+---
+<BaseLayout
+  title="Analizador de mazos MTG — Structural"
+  description="Analiza tu export de MTG Arena: estructura del mazo, roles y share URL. 100% client-side."
+  lang="es"
+>
+  <h1>Analizador de mazos MTG</h1>
+  <p class="muted">
+    Herramienta structural para MTG Arena. Sin servidor, sin cuentas, 100% local.
+  </p>
+
+  <AnalyzerApp client:load />
+</BaseLayout>
+
+<style>
+  .analyzer {
+    margin-top: 18px;
+  }
+  .analyzer textarea {
+    width: 100%;
+    min-height: 180px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: #0b0d12;
+    color: var(--text);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  }
+  .analyzer button {
+    margin-top: 10px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+    cursor: pointer;
+  }
+  .analyzer .panel {
+    margin: 18px 0;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+  .analyzer .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #1d2333;
+    border: 1px solid #2b3350;
+    color: #b7c3ff;
+    font-size: 12px;
+  }
+  .analyzer table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .analyzer th,
+  .analyzer td {
+    text-align: left;
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .analyzer .issues {
+    margin: 10px 0 0;
+    padding-left: 18px;
+  }
+  .analyzer .share-url {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: #0b0d12;
+    color: var(--text);
+  }
+  @media (max-width: 560px) {
+    .analyzer textarea {
+      min-height: 160px;
+    }
+  }
+</style>

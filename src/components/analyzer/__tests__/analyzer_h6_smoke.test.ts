@@ -1,7 +1,12 @@
 import { expect, test } from "vitest";
 import { decodeShareState, encodeShareState } from "../../../engine";
 import { exportJson, importJson } from "../state/jsonFallback";
-import { getShareTokenFromUrl, setShareTokenInUrl } from "../state/shareUrl";
+import {
+  buildShareUrl,
+  getShareTokenFromUrl,
+  setShareTokenInUrl,
+} from "../state/shareUrl";
+import { copyToClipboard } from "../state/copyToClipboard";
 import type { DeckState } from "../../../engine";
 
 const deckState: DeckState = {
@@ -42,4 +47,45 @@ test("Fallback JSON roundtrip", () => {
   const json = exportJson(deckState);
   const ds2 = importJson(json);
   expect(ds2.schema_version).toBe(1);
+});
+
+test("buildShareUrl preserves path and adds token", () => {
+  const token = encodeShareState(deckState);
+  const url = buildShareUrl(
+    new URL("https://x.test/es/analizador-de-mazos-mtg/"),
+    token,
+  );
+  expect(url).toContain("/es/analizador-de-mazos-mtg/");
+  expect(url).toContain(`s=${token}`);
+});
+
+test("copy helper does not throw without clipboard", async () => {
+  const nav = (globalThis as { navigator?: Navigator }).navigator;
+  const hadClipboard =
+    nav && Object.prototype.hasOwnProperty.call(nav, "clipboard");
+  const clipboardDesc = nav
+    ? Object.getOwnPropertyDescriptor(nav, "clipboard")
+    : undefined;
+  if (nav) {
+    try {
+      Object.defineProperty(nav, "clipboard", {
+        value: undefined,
+        configurable: true,
+      });
+    } catch {
+      // ignore if readonly
+    }
+  }
+  try {
+    const ok = await copyToClipboard("x");
+    expect(typeof ok).toBe("boolean");
+  } finally {
+    if (nav && hadClipboard && clipboardDesc) {
+      try {
+        Object.defineProperty(nav, "clipboard", clipboardDesc);
+      } catch {
+        // ignore restore failure
+      }
+    }
+  }
 });

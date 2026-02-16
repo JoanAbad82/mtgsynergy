@@ -9,7 +9,7 @@ import {
   isShareWarn,
 } from "../../engine";
 import { parseMtgaExport } from "../../engine";
-import { getShareTokenFromUrl, setShareTokenInUrl } from "./state/shareUrl";
+import { buildShareUrl, getShareTokenFromUrl } from "./state/shareUrl";
 import { exportJson, importJson } from "./state/jsonFallback";
 import StructuralPanel from "./panels/StructuralPanel";
 import RoleGraphPanel from "./panels/RoleGraphPanel";
@@ -67,10 +67,10 @@ export default function AnalyzerApp() {
 
     try {
       const token = encodeShareState(ds);
-      const nextUrl = setShareTokenInUrl(new URL(window.location.href), token);
-      window.history.replaceState({}, "", nextUrl.toString());
+      const nextUrl = buildShareUrl(new URL(window.location.href), token);
+      window.history.replaceState({}, "", nextUrl);
       setShareToken(token);
-      setShareUrl(nextUrl.toString());
+      setShareUrl(nextUrl);
       setDeckState(ds as ShareDeckState);
       setSummary(s);
     } catch (err) {

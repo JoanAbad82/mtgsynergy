@@ -7,3 +7,7 @@ export function setShareTokenInUrl(url: URL, token: string): URL {
   next.searchParams.set("s", token);
   return next;
 }
+
+export function buildShareUrl(currentUrl: URL, token: string): string {
+  return setShareTokenInUrl(currentUrl, token).toString();
+}

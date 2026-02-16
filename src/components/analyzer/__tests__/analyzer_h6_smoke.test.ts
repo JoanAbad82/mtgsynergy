@@ -61,31 +61,23 @@ test("buildShareUrl preserves path and adds token", () => {
 
 test("copy helper does not throw without clipboard", async () => {
   const nav = (globalThis as { navigator?: Navigator }).navigator;
-  const hadClipboard =
-    nav && Object.prototype.hasOwnProperty.call(nav, "clipboard");
   const clipboardDesc = nav
     ? Object.getOwnPropertyDescriptor(nav, "clipboard")
     : undefined;
-  if (nav) {
-    try {
-      Object.defineProperty(nav, "clipboard", {
-        value: undefined,
-        configurable: true,
-      });
-    } catch {
-      // ignore if readonly
-    }
+  const canRedefine = !!clipboardDesc?.configurable || !!clipboardDesc?.writable;
+  if (nav && canRedefine) {
+    Object.defineProperty(nav, "clipboard", {
+      value: undefined,
+      configurable: true,
+      writable: true,
+    });
   }
   try {
     const ok = await copyToClipboard("x");
     expect(typeof ok).toBe("boolean");
   } finally {
-    if (nav && hadClipboard && clipboardDesc) {
-      try {
-        Object.defineProperty(nav, "clipboard", clipboardDesc);
-      } catch {
-        // ignore restore failure
-      }
+    if (nav && clipboardDesc && canRedefine) {
+      Object.defineProperty(nav, "clipboard", clipboardDesc);
     }
   }
 });

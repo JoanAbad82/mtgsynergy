@@ -1,4 +1,9 @@
-import { compressToUint8Array, decompressFromUint8Array } from "lz-string";
+import * as LZStringNS from "lz-string";
+
+const LZString =
+  (LZStringNS as unknown as { default?: typeof LZStringNS }).default ?? LZStringNS;
+
+const { compressToUint8Array, decompressFromUint8Array } = LZString;
 
 const BASE64_ALPHABET =
   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

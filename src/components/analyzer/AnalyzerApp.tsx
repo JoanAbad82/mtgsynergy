@@ -34,6 +34,17 @@ export default function AnalyzerApp() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const edges = (deckState as any)?.edges ?? [];
   const edgesByKind = useMemo(() => groupEdgesForPanel(edges), [edges]);
+  const nameMap = useMemo(() => buildNameMapFromDeckState(deckState), [deckState]);
+  const countsMap = useMemo(
+    () =>
+      new Map(
+        (deckState as any)?.deck?.entries?.map((en: any) => [
+          en.name_norm,
+          en.count,
+        ]) ?? [],
+      ),
+    [deckState],
+  );
 
   const warn = useMemo(
     () => (shareToken ? isShareWarn(shareToken) : false),
@@ -163,10 +174,16 @@ export default function AnalyzerApp() {
                   <h3>
                     {kind} ({list.length})
                   </h3>
+                  <p className="muted">{explainEdgeKind(kind)}</p>
                   <ul>
                     {list.map((e) => (
                       <li key={`${e.kind}|${e.from}|${e.to}`}>
-                        {e.from} → {e.to} (x{e.weight ?? 0} | score {e.score ?? 0})
+                        {formatEdgeLine(e, nameMap)}
+                        {countsMap.has(e.from) && countsMap.has(e.to) && (
+                          <div className="muted">
+                            counts: {countsMap.get(e.from)}×{countsMap.get(e.to)}
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -192,18 +209,54 @@ export default function AnalyzerApp() {
   );
 }
 
+export type EdgeUi = {
+  kind?: string;
+  from: string;
+  to: string;
+  weight?: number;
+  score?: number;
+};
+
+export function explainEdgeKind(kind?: string): string {
+  if (kind === "burn_supports_threat") {
+    return "Burn elimina bloqueadores y abre ataques para amenazas baratas.";
+  }
+  if (kind === "spells_support_prowess") {
+    return "Instant/Sorcery disparan prowess y convierten hechizos en daño extra.";
+  }
+  if (kind === "anthem_supports_tokens") {
+    return "Anthem multiplica el valor de tokens y anchos de mesa.";
+  }
+  return "Relación detectada por heurísticas (beta).";
+}
+
+export function buildNameMapFromDeckState(deckState: any): Map<string, string> {
+  const m = new Map<string, string>();
+  const entries = deckState?.deck?.entries ?? [];
+  for (const entry of entries) {
+    if (!entry?.name_norm) continue;
+    m.set(entry.name_norm, entry.name ?? entry.name_norm);
+  }
+  return m;
+}
+
+export function formatEdgeLine(
+  e: EdgeUi,
+  nameMap: Map<string, string>,
+): string {
+  const from = nameMap.get(e.from) ?? e.from;
+  const to = nameMap.get(e.to) ?? e.to;
+  const weight = e.weight ?? 0;
+  const score = e.score ?? 0;
+  return `${from} → ${to} (x${weight} | score ${score})`;
+}
+
 export function groupEdgesForPanel(
-  edges: Array<{
-    from: string;
-    to: string;
-    kind?: string;
-    weight?: number;
-    score?: number;
-  }>,
+  edges: Array<EdgeUi>,
 ) {
   const m = new Map<
     string,
-    Array<{ from: string; to: string; kind?: string; weight?: number; score?: number }>
+    Array<EdgeUi>
   >();
   for (const e of edges) {
     const k = e.kind ?? "unknown";

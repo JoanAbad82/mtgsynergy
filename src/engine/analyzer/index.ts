@@ -21,10 +21,15 @@ export async function analyzeMtgaExportAsync(
     baseUrl: opts?.baseUrl,
   });
 
+  const taggingActive = enriched.taggingActive;
+  const baseIssues = taggingActive
+    ? parsed.issues.filter((i) => i.code !== "ROLES_DEFAULTED_TO_UTILITY")
+    : parsed.issues;
+
   const deck = { entries: enriched.entries };
   const deckState: DeckState = { deck };
   const summary = computeStructuralSummary(deckState);
-  const issues = [...parsed.issues, ...enriched.issues_added];
+  const issues = [...baseIssues, ...enriched.issues_added];
 
   return { deckState, summary, issues };
 }

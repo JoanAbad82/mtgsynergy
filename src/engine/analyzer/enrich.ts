@@ -9,7 +9,11 @@ export type Issue = {
   message: string;
 };
 
-export type EnrichResult = { entries: CardEntry[]; issues_added: Issue[] };
+export type EnrichResult = {
+  entries: CardEntry[];
+  issues_added: Issue[];
+  taggingActive: boolean;
+};
 
 type EnrichOptions = { enable?: boolean; baseUrl?: string };
 
@@ -36,7 +40,8 @@ export async function enrichEntriesWithCardIndex(
   entries: CardEntry[],
   opts?: EnrichOptions,
 ): Promise<EnrichResult> {
-  if (opts?.enable === false) return { entries, issues_added: [] };
+  if (opts?.enable === false)
+    return { entries, issues_added: [], taggingActive: false };
 
   const issues_added: Issue[] = [];
   const enriched: CardEntry[] = [];
@@ -66,6 +71,7 @@ export async function enrichEntriesWithCardIndex(
           message: "Cards index unavailable; roles default to UTILITY.",
         },
       ],
+      taggingActive: false,
     };
   }
 
@@ -83,5 +89,5 @@ export async function enrichEntriesWithCardIndex(
     });
   }
 
-  return { entries: enriched, issues_added };
+  return { entries: enriched, issues_added, taggingActive: matches > 0 };
 }

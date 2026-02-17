@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "preact/hooks";
-import type { DeckState, ShareDeckState, StructuralSummary } from "../../engine";
+import type { ShareDeckState, StructuralSummary } from "../../engine";
 import {
+  analyzeMtgaExportAsync,
   computeStructuralSummary,
   decodeShareState,
   encodeShareState,
@@ -8,7 +9,6 @@ import {
   importShareJson,
   isShareWarn,
 } from "../../engine";
-import { parseMtgaExport } from "../../engine";
 import { buildShareUrl, getShareTokenFromUrl } from "./state/shareUrl";
 import { exportJson, importJson } from "./state/jsonFallback";
 import StructuralPanel from "./panels/StructuralPanel";
@@ -23,12 +23,15 @@ export default function AnalyzerApp() {
   const [inputText, setInputText] = useState("");
   const [deckState, setDeckState] = useState<ShareDeckState | null>(null);
   const [summary, setSummary] = useState<StructuralSummary | null>(null);
-  const [issues, setIssues] = useState<string[]>([]);
+  const [issues, setIssues] = useState<
+    Array<{ code: string; severity: string; message: string }>
+  >([]);
   const [error, setError] = useState<string | null>(null);
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [tooLong, setTooLong] = useState(false);
   const [jsonFallback, setJsonFallback] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const warn = useMemo(
     () => (shareToken ? isShareWarn(shareToken) : false),
@@ -50,49 +53,55 @@ export default function AnalyzerApp() {
     }
   }, []);
 
-  function analyze(text: string) {
+  async function analyze(text: string) {
     setError(null);
     setTooLong(false);
-    const parsed = parseMtgaExport(text);
-    setIssues(parsed.issues.map((i) => `${i.severity}: ${i.code} (${i.message})`));
-
-    const ds: DeckState = {
-      deck: parsed.deck,
-      edges: [],
-      pipelines_active: [],
-    };
-    const s = computeStructuralSummary(ds);
-    const shareJson = exportShareJson(ds);
-    setJsonFallback(shareJson);
+    setIsAnalyzing(true);
 
     try {
-      const token = encodeShareState(ds);
-      const nextUrl = buildShareUrl(new URL(window.location.href), token);
-      window.history.replaceState({}, "", nextUrl);
-      setShareToken(token);
-      setShareUrl(nextUrl);
-      setDeckState(ds as ShareDeckState);
-      setSummary(s);
-    } catch (err) {
-      if (err instanceof Error && err.message === "SHARE_URL_TOO_LONG") {
-        setTooLong(true);
-        setShareToken(null);
-        setShareUrl(null);
-        setDeckState(ds as ShareDeckState);
-        setSummary(s);
-      } else {
-        setError("Error inesperado al generar share link.");
+      const res = await analyzeMtgaExportAsync(text, { enableCardIndex: true });
+      setIssues(res.issues);
+      setDeckState(res.deckState as ShareDeckState);
+      setSummary(res.summary);
+
+      const shareJson = exportShareJson(res.deckState);
+      setJsonFallback(shareJson);
+
+      try {
+        const token = encodeShareState(res.deckState);
+        const nextUrl = buildShareUrl(new URL(window.location.href), token);
+        window.history.replaceState({}, "", nextUrl);
+        setShareToken(token);
+        setShareUrl(nextUrl);
+      } catch (err) {
+        if (err instanceof Error && err.message === "SHARE_URL_TOO_LONG") {
+          setTooLong(true);
+          setShareToken(null);
+          setShareUrl(null);
+        } else {
+          setError("Error inesperado al generar share link.");
+        }
       }
+    } catch (e) {
+      setIssues([
+        {
+          code: "ANALYZE_FAILED",
+          severity: "warning",
+          message: String(e),
+        },
+      ]);
+    } finally {
+      setIsAnalyzing(false);
     }
   }
 
-  function handleAnalyze() {
-    analyze(inputText);
+  async function handleAnalyze() {
+    await analyze(inputText);
   }
 
-  function handleLoadExample(text: string) {
+  async function handleLoadExample(text: string) {
     setInputText(text);
-    analyze(text);
+    await analyze(text);
   }
 
   function handleImportJson(json: string) {
@@ -119,11 +128,15 @@ export default function AnalyzerApp() {
           value={inputText}
           onChange={(e) => setInputText(e.currentTarget.value)}
         />
-        <button onClick={handleAnalyze}>Analizar</button>
+        <button onClick={handleAnalyze} disabled={isAnalyzing}>
+          {isAnalyzing ? "Analizando..." : "Analizar"}
+        </button>
         {issues.length > 0 && (
           <ul className="issues">
             {issues.map((issue) => (
-              <li key={issue}>{issue}</li>
+              <li key={`${issue.code}-${issue.message}`}>
+                {issue.severity}: {issue.code} ({issue.message})
+              </li>
             ))}
           </ul>
         )}

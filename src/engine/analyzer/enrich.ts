@@ -25,10 +25,24 @@ function inferRole(features: CardFeatures): Role {
   if (features.draws_cards) return "DRAW";
   if (features.removes) return "REMOVAL";
   if (features.protects) return "PROTECTION";
-  if (features.tutors) return "ENGINE";
+  if (
+    features.is_anthem ||
+    features.cares_about_spells ||
+    features.recurs_from_graveyard ||
+    features.tutors
+  )
+    return "ENGINE";
+  if (
+    features.is_creature &&
+    features.is_low_cmc_creature &&
+    (features.has_haste || features.has_prowess || features.creates_tokens)
+  )
+    return "PAYOFF";
   if (features.is_creature && features.cmc_bucket >= 3) return "PAYOFF";
   return "UTILITY";
 }
+
+export const __testing = { inferRole };
 
 function applyFeatures(entry: CardEntry, features: CardFeatures): EnrichedEntry {
   const enriched: EnrichedEntry = { ...entry, role_primary: inferRole(features) };

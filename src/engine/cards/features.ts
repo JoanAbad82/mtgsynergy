@@ -6,6 +6,11 @@ const REMOVE_RE =
 const PROTECT_RE = /\bhexproof\b|\bindestructible\b|\bprotection from\b|\bprevent all damage\b/i;
 const TUTOR_RE = /\bsearch your library\b/i;
 const TOKEN_RE = /\bcreate\b.*\btoken\b/i;
+const HASTE_RE = /\bhaste\b/i;
+const PROWESS_RE = /\bprowess\b/i;
+const ANTHEM_RE = /\bcreatures you control get\b/i;
+const CAST_RE = /\bwhenever you cast\b/i;
+const RECUR_RE = /\breturn\b.*\bfrom your graveyard\b/i;
 const PRODUCE_RE = /\badd \{/i;
 const PRODUCE_ALT_RE = /\badds one mana\b/i;
 
@@ -33,15 +38,25 @@ export function extractFeatures(card: CardRecordMin): CardFeatures {
   const produced = Array.isArray(card.produced_mana) && card.produced_mana.length > 0;
   const produces_mana = produced || PRODUCE_RE.test(text) || PRODUCE_ALT_RE.test(text);
 
+  const is_creature = types.includes("Creature");
+  const is_low_cmc_creature = is_creature && (card.cmc ?? 0) <= 2;
+
   return {
     types,
-    is_creature: types.includes("Creature"),
+    is_creature,
     produces_mana,
     draws_cards: DRAW_RE.test(text),
     removes: REMOVE_RE.test(text),
     protects: PROTECT_RE.test(text),
     tutors: TUTOR_RE.test(text),
     token_maker: TOKEN_RE.test(text),
+    has_haste: HASTE_RE.test(text),
+    has_prowess: PROWESS_RE.test(text),
+    creates_tokens: TOKEN_RE.test(text),
+    is_anthem: ANTHEM_RE.test(text),
+    cares_about_spells: CAST_RE.test(text),
+    recurs_from_graveyard: RECUR_RE.test(text),
+    is_low_cmc_creature,
     cmc_bucket: cmcBucket(card.cmc ?? 0),
   };
 }

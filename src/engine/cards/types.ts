@@ -26,5 +26,12 @@ export interface CardFeatures {
   protects: boolean;
   tutors: boolean;
   token_maker: boolean;
+  has_haste: boolean;
+  has_prowess: boolean;
+  creates_tokens: boolean;
+  is_anthem: boolean;
+  cares_about_spells: boolean;
+  recurs_from_graveyard: boolean;
+  is_low_cmc_creature: boolean;
   cmc_bucket: 0 | 1 | 2 | 3 | 4 | 5;
 }

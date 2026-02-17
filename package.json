@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "node scripts/fetch_scryfall_art_crops.mjs",
+    "prebuild": "node scripts/build_cards_index.mjs",
     "build": "astro build",
     "test": "vitest",
     "preview": "astro preview"

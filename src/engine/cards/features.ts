@@ -1,7 +1,8 @@
 import type { CardRecordMin, CardFeatures } from "./types";
 
 const DRAW_RE = /\bdraw (a|two|three|four|five|six|seven|eight|nine|ten) cards?\b/i;
-const REMOVE_RE = /\bdestroy target\b|\bexile target\b|\bdeals? .* damage to target creature\b/i;
+const REMOVE_RE =
+  /\bdestroy target\b|\bexile target\b|\bdeals?\s+\d+\s+damage\b|\bdeals?\s+.*\s+damage\s+to\b|\bdeals? .* damage to target creature\b/i;
 const PROTECT_RE = /\bhexproof\b|\bindestructible\b|\bprotection from\b|\bprevent all damage\b/i;
 const TUTOR_RE = /\bsearch your library\b/i;
 const TOKEN_RE = /\bcreate\b.*\btoken\b/i;

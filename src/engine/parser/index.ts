@@ -23,7 +23,11 @@ export function parseMtgaExport(input: string): ParseResult {
 
   for (let i = 0; i < lines.length; i += 1) {
     const lineNo = i + 1;
-    const raw = lines[i].trim();
+    let raw = lines[i].trim();
+    raw = raw.replace(/\s+/g, " ");
+    raw = raw.replace(/^[\-\*\u2022]+\s*/, "");
+    raw = raw.replace(/\([^)]*\)/g, "").trim();
+    raw = raw.replace(/\s*\d+\s*$/, "").trim();
 
     if (raw.length === 0) continue;
     if (raw.toLowerCase() === "deck") continue;

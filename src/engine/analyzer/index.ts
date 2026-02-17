@@ -4,6 +4,7 @@ import type { Issue } from "./enrich";
 import { parseMtgaExport } from "../parser";
 import { computeStructuralSummary } from "../structural";
 import { enrichEntriesWithCardIndex } from "./enrich";
+import { generateEdges } from "../edges";
 
 export type AnalyzeResult = {
   deckState: DeckState;
@@ -27,7 +28,8 @@ export async function analyzeMtgaExportAsync(
     : parsed.issues;
 
   const deck = { entries: enriched.entries };
-  const deckState: DeckState = { deck };
+  const edges = generateEdges(enriched.entries as any);
+  const deckState: DeckState = { deck, edges };
   const summary = computeStructuralSummary(deckState);
   const issues = [...baseIssues, ...enriched.issues_added];
 

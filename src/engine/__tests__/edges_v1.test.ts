@@ -5,11 +5,13 @@ import { generateEdges } from "../edges/generate";
 function entry(
   name_norm: string,
   role_primary: "REMOVAL" | "PAYOFF" | "ENGINE" | "UTILITY",
+  count: number,
   features: Partial<CardFeatures>,
 ) {
   return {
     name_norm,
     role_primary,
+    count,
     features: features as CardFeatures,
   };
 }
@@ -17,8 +19,8 @@ function entry(
 describe("edges v1", () => {
   test("burn supports threat + spells support prowess", () => {
     const edges = generateEdges([
-      entry("lightning strike", "REMOVAL", { types: ["Instant"] }),
-      entry("monastery swiftspear", "PAYOFF", {
+      entry("lightning strike", "REMOVAL", 4, { types: ["Instant"] }),
+      entry("monastery swiftspear", "PAYOFF", 4, {
         is_creature: true,
         is_low_cmc_creature: true,
         has_prowess: true,
@@ -28,15 +30,19 @@ describe("edges v1", () => {
     const kinds = edges.map((e) => e.kind);
     expect(kinds).toContain("burn_supports_threat");
     expect(kinds).toContain("spells_support_prowess");
+    const burnEdge = edges.find((e) => e.kind === "burn_supports_threat");
+    expect(burnEdge?.weight).toBe(16);
   });
 
   test("anthem supports tokens", () => {
     const edges = generateEdges([
-      entry("glorious anthem", "ENGINE", { is_anthem: true }),
-      entry("krenko's command", "UTILITY", { creates_tokens: true }),
+      entry("glorious anthem", "ENGINE", 2, { is_anthem: true }),
+      entry("krenko's command", "UTILITY", 3, { creates_tokens: true }),
     ]);
 
     const kinds = edges.map((e) => e.kind);
     expect(kinds).toContain("anthem_supports_tokens");
+    const anthemEdge = edges.find((e) => e.kind === "anthem_supports_tokens");
+    expect(anthemEdge?.weight).toBe(6);
   });
 });

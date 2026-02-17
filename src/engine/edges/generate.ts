@@ -5,6 +5,7 @@ import type { Edge } from "./types";
 export type EdgeEntry = {
   name_norm: string;
   role_primary: Role;
+  count: number;
   features?: CardFeatures;
 };
 
@@ -21,6 +22,12 @@ function dedupeAdd(edges: Edge[], seen: Set<string>, edge: Edge) {
 export function generateEdges(entries: EdgeEntry[]): Edge[] {
   const edges: Edge[] = [];
   const seen = new Set<string>();
+  const counts = new Map<string, number>();
+  for (const e of entries) counts.set(e.name_norm, e.count ?? 0);
+
+  function weight(from: string, to: string) {
+    return (counts.get(from) ?? 0) * (counts.get(to) ?? 0);
+  }
 
   const removals = entries.filter((e) => e.role_primary === "REMOVAL");
   const payoffsLow = entries.filter(
@@ -36,6 +43,7 @@ export function generateEdges(entries: EdgeEntry[]): Edge[] {
         kind: "burn_supports_threat",
         from: from.name_norm,
         to: to.name_norm,
+        weight: weight(from.name_norm, to.name_norm),
       });
     }
   }
@@ -51,6 +59,7 @@ export function generateEdges(entries: EdgeEntry[]): Edge[] {
         kind: "anthem_supports_tokens",
         from: from.name_norm,
         to: to.name_norm,
+        weight: weight(from.name_norm, to.name_norm),
       });
     }
   }
@@ -67,6 +76,7 @@ export function generateEdges(entries: EdgeEntry[]): Edge[] {
         kind: "spells_support_prowess",
         from: from.name_norm,
         to: to.name_norm,
+        weight: weight(from.name_norm, to.name_norm),
       });
     }
   }

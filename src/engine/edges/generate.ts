@@ -10,6 +10,16 @@ export type EdgeEntry = {
 };
 
 const EDGE_CAP = 200;
+const KIND_FACTOR: Record<Edge["kind"], number> = {
+  burn_supports_threat: 1.2,
+  spells_support_prowess: 1.1,
+  anthem_supports_tokens: 1.15,
+};
+const ROLE_FACTOR: Record<string, number> = {
+  "REMOVAL->PAYOFF": 1.5,
+  "ENGINE->PAYOFF": 1.4,
+  "ENGINE->ENGINE": 1.2,
+};
 
 function dedupeAdd(edges: Edge[], seen: Set<string>, edge: Edge) {
   const key = `${edge.kind}|${edge.from}|${edge.to}`;
@@ -28,6 +38,23 @@ export function generateEdges(entries: EdgeEntry[]): Edge[] {
   function weight(from: string, to: string) {
     return (counts.get(from) ?? 0) * (counts.get(to) ?? 0);
   }
+  function kindFactor(kind: Edge["kind"]) {
+    return KIND_FACTOR[kind] ?? 1.0;
+  }
+  function roleFactor(fromRole: Role, toRole: Role) {
+    return ROLE_FACTOR[`${fromRole}->${toRole}`] ?? 1.0;
+  }
+  function score(
+    kind: Edge["kind"],
+    from: EdgeEntry,
+    to: EdgeEntry,
+  ): number {
+    return (
+      weight(from.name_norm, to.name_norm) *
+      kindFactor(kind) *
+      roleFactor(from.role_primary, to.role_primary)
+    );
+  }
 
   const removals = entries.filter((e) => e.role_primary === "REMOVAL");
   const payoffsLow = entries.filter(
@@ -44,6 +71,7 @@ export function generateEdges(entries: EdgeEntry[]): Edge[] {
         from: from.name_norm,
         to: to.name_norm,
         weight: weight(from.name_norm, to.name_norm),
+        score: score("burn_supports_threat", from, to),
       });
     }
   }
@@ -60,6 +88,7 @@ export function generateEdges(entries: EdgeEntry[]): Edge[] {
         from: from.name_norm,
         to: to.name_norm,
         weight: weight(from.name_norm, to.name_norm),
+        score: score("anthem_supports_tokens", from, to),
       });
     }
   }
@@ -77,6 +106,7 @@ export function generateEdges(entries: EdgeEntry[]): Edge[] {
         from: from.name_norm,
         to: to.name_norm,
         weight: weight(from.name_norm, to.name_norm),
+        score: score("spells_support_prowess", from, to),
       });
     }
   }

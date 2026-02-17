@@ -166,7 +166,7 @@ export default function AnalyzerApp() {
                   <ul>
                     {list.map((e) => (
                       <li key={`${e.kind}|${e.from}|${e.to}`}>
-                        {e.from} → {e.to} (x{e.weight ?? 0})
+                        {e.from} → {e.to} (x{e.weight ?? 0} | score {e.score ?? 0})
                       </li>
                     ))}
                   </ul>
@@ -193,11 +193,17 @@ export default function AnalyzerApp() {
 }
 
 export function groupEdgesForPanel(
-  edges: Array<{ from: string; to: string; kind?: string; weight?: number }>,
+  edges: Array<{
+    from: string;
+    to: string;
+    kind?: string;
+    weight?: number;
+    score?: number;
+  }>,
 ) {
   const m = new Map<
     string,
-    Array<{ from: string; to: string; kind?: string; weight?: number }>
+    Array<{ from: string; to: string; kind?: string; weight?: number; score?: number }>
   >();
   for (const e of edges) {
     const k = e.kind ?? "unknown";
@@ -206,9 +212,9 @@ export function groupEdgesForPanel(
   }
   const entries = Array.from(m.entries()).map(([kind, list]) => {
     const sorted = [...list].sort(
-      (a, b) => (b.weight ?? 0) - (a.weight ?? 0),
+      (a, b) => (b.score ?? 0) - (a.score ?? 0),
     );
-    const total = sorted.reduce((s, e) => s + (e.weight ?? 0), 0);
+    const total = sorted.reduce((s, e) => s + (e.score ?? 0), 0);
     return [kind, sorted, total] as const;
   });
   entries.sort((a, b) => b[2] - a[2]);

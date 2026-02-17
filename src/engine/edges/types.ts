@@ -3,4 +3,10 @@ export type EdgeKind =
   | "anthem_supports_tokens"
   | "spells_support_prowess";
 
-export type Edge = { from: string; to: string; kind: EdgeKind; weight: number };
+export type Edge = {
+  from: string;
+  to: string;
+  kind: EdgeKind;
+  weight: number;
+  score: number;
+};

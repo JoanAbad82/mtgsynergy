@@ -48,3 +48,4 @@ _latest_prod_failure.json
 
 .cache/
 public/data/cards_index/
+OPS_DEPLOY_DIAG_*.txt

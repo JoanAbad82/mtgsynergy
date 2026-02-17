@@ -5,3 +5,4 @@ export * from "./validate/validate";
 export * from "./structural";
 export * from "./parser";
 export * from "./share";
+export * from "./analyzer";

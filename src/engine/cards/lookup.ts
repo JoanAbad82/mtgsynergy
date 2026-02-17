@@ -13,26 +13,35 @@ function shardKeyFromNameNorm(nameNorm: string): string {
 
 export async function loadShardForNameNorm(
   nameNorm: string,
+  baseUrl?: string,
 ): Promise<Record<string, CardRecordMin>> {
   const key = shardKeyFromNameNorm(nameNorm);
-  const cached = shardCache.get(key);
+  const base = baseUrl ? baseUrl.replace(/\/+$/, "") : "";
+  const cacheKey = `${base}|${key}`;
+  const cached = shardCache.get(cacheKey);
   if (cached) return cached;
 
-  const res = await fetch(`/data/cards_index/${key}`);
+  const url = base ? `${base}/data/cards_index/${key}` : `/data/cards_index/${key}`;
+  const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`Failed to load shard ${key}: ${res.status}`);
   }
   const data = (await res.json()) as Record<string, CardRecordMin>;
-  shardCache.set(key, data);
+  shardCache.set(cacheKey, data);
   return data;
 }
 
 export async function lookupCard(
   nameOrNorm: string,
+  baseUrl?: string,
 ): Promise<CardRecordMin | null> {
   const nameNorm = normalizeCardName(nameOrNorm);
-  const shard = await loadShardForNameNorm(nameNorm);
+  const shard = await loadShardForNameNorm(nameNorm, baseUrl);
   return shard[nameNorm] ?? null;
 }
 
-export const __testing = { shardKeyFromNameNorm };
+function clearCache() {
+  shardCache.clear();
+}
+
+export const __testing = { shardKeyFromNameNorm, clearCache };

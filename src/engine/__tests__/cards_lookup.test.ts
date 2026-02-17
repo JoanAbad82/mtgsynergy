@@ -40,6 +40,7 @@ describe("cards helpers", () => {
     globalThis.fetch = fetchMock;
 
     try {
+      __testing.clearCache();
       const card = await lookupCard("Llanowar Elves");
       expect(card?.name_norm).toBe("llanowar elves");
       expect(fetchMock).toHaveBeenCalledWith("/data/cards_index/l.json");

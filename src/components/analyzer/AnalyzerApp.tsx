@@ -32,6 +32,8 @@ export default function AnalyzerApp() {
   const [tooLong, setTooLong] = useState(false);
   const [jsonFallback, setJsonFallback] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const edges = (deckState as any)?.edges ?? [];
+  const edgesByKind = useMemo(() => groupEdgesForPanel(edges), [edges]);
 
   const warn = useMemo(
     () => (shareToken ? isShareWarn(shareToken) : false),
@@ -150,6 +152,28 @@ export default function AnalyzerApp() {
         <>
           <StructuralPanel summary={summary} />
           <RoleGraphPanel summary={summary} />
+          <div className="panel">
+            <h2>Edges</h2>
+            <p className="muted">Edges detectados: {edges.length}</p>
+            {edges.length === 0 ? (
+              <p className="muted">No se detectaron relaciones.</p>
+            ) : (
+              edgesByKind.map(([kind, list]) => (
+                <div key={kind}>
+                  <h3>
+                    {kind} ({list.length})
+                  </h3>
+                  <ul>
+                    {list.map((e) => (
+                      <li key={`${e.kind}|${e.from}|${e.to}`}>
+                        {e.from} → {e.to}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))
+            )}
+          </div>
           <SharePanel
             token={shareToken}
             shareUrl={shareUrl}
@@ -166,4 +190,16 @@ export default function AnalyzerApp() {
       <LabCTASection />
     </div>
   );
+}
+
+export function groupEdgesForPanel(
+  edges: Array<{ from: string; to: string; kind?: string }>,
+) {
+  const m = new Map<string, Array<{ from: string; to: string; kind?: string }>>();
+  for (const e of edges) {
+    const k = e.kind ?? "unknown";
+    if (!m.has(k)) m.set(k, []);
+    m.get(k)!.push(e);
+  }
+  return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 }

@@ -232,7 +232,7 @@ export type EdgeUi = {
   score?: number;
 };
 
-export const BUILD_SHA = "c43eac4";
+export const BUILD_SHA = "53944e7";
 
 export function explainEdgeKind(kind?: string): string {
   if (kind === "burn_supports_threat") {

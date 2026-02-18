@@ -105,6 +105,6 @@ describe("formatNumberCompact", () => {
 
 describe("build marker", () => {
   test("exports BUILD_SHA constant", () => {
-    expect(BUILD_SHA).toBe("c43eac4");
+    expect(BUILD_SHA).toBe("53944e7");
   });
 });

@@ -171,7 +171,7 @@ describe("SPS v1.1", () => {
     );
   });
 
-  test("F_util is clamped at 0 for extreme utility ratio", () => {
+  test("F_util remains non-negative under extreme utility ratio (defensive clamp)", () => {
     const edges = [{ score: 0 }];
     const summary: StructuralSummary = {
       nodes_total: 8,

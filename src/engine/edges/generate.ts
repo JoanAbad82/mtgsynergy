@@ -1,6 +1,7 @@
 import type { Role } from "../domain/types";
 import type { CardFeatures } from "../cards/types";
 import type { Edge } from "./types";
+import { KIND_FACTOR_V1, ROLE_FACTOR_V1 } from "./factors";
 
 export type EdgeEntry = {
   name_norm: string;
@@ -10,16 +11,8 @@ export type EdgeEntry = {
 };
 
 const EDGE_CAP = 200;
-const KIND_FACTOR: Record<Edge["kind"], number> = {
-  burn_supports_threat: 1.2,
-  spells_support_prowess: 1.1,
-  anthem_supports_tokens: 1.15,
-};
-const ROLE_FACTOR: Record<string, number> = {
-  "REMOVAL->PAYOFF": 1.5,
-  "ENGINE->PAYOFF": 1.4,
-  "ENGINE->ENGINE": 1.2,
-};
+const KIND_FACTOR = KIND_FACTOR_V1;
+const ROLE_FACTOR = ROLE_FACTOR_V1;
 
 function dedupeAdd(edges: Edge[], seen: Set<string>, edge: Edge) {
   const key = `${edge.kind}|${edge.from}|${edge.to}`;

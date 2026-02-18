@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildNameMapFromDeckState, explainEdgeKind, formatEdgeLine, groupEdgesForPanel } from "../AnalyzerApp";
+import { buildNameMapFromDeckState, explainEdgeKind, formatEdgeLine, formatNumberCompact, groupEdgesForPanel } from "../AnalyzerApp";
 
 describe("AnalyzerApp edges panel grouping", () => {
   test("groups edges by kind", () => {
@@ -69,5 +69,36 @@ describe("AnalyzerApp edges helpers", () => {
     expect(line).toContain("a → b");
     expect(line).toContain("x0");
     expect(line).toContain("score 0");
+  });
+
+  test("formatEdgeLine rounds noisy float score", () => {
+    const edge = {
+      from: "a",
+      to: "b",
+      weight: 16,
+      score: 28.799999999999997,
+    };
+    const map = new Map<string, string>();
+    const line = formatEdgeLine(edge, map);
+    expect(line).toContain("score 28.8");
+  });
+});
+
+describe("formatNumberCompact", () => {
+  test("rounds floats and trims zeros", () => {
+    expect(formatNumberCompact(28.799999999999997, 1)).toBe("28.8");
+    expect(formatNumberCompact(28.0, 1)).toBe("28");
+    expect(formatNumberCompact(28, 1)).toBe("28");
+  });
+
+  test("handles decimals=0 correctly", () => {
+    expect(formatNumberCompact(16, 0)).toBe("16");
+    expect(formatNumberCompact(16.9, 0)).toBe("17");
+  });
+
+  test("handles invalid values safely", () => {
+    expect(formatNumberCompact(NaN, 1)).toBe("0");
+    expect(formatNumberCompact("x" as any, 1)).toBe("0");
+    expect(formatNumberCompact(undefined as any, 1)).toBe("0");
   });
 });

@@ -246,9 +246,23 @@ export function formatEdgeLine(
 ): string {
   const from = nameMap.get(e.from) ?? e.from;
   const to = nameMap.get(e.to) ?? e.to;
-  const weight = e.weight ?? 0;
-  const score = e.score ?? 0;
-  return `${from} → ${to} (x${weight} | score ${score})`;
+  const weightStr = formatNumberCompact(e.weight ?? 0, 0);
+  const scoreStr = formatNumberCompact(e.score ?? 0, 1);
+  return `${from} → ${to} (x${weightStr} | score ${scoreStr})`;
+}
+
+export function formatNumberCompact(n: unknown, decimals = 1): string {
+  if (typeof n !== "number" || !Number.isFinite(n)) {
+    return "0";
+  }
+  decimals = Math.max(0, Math.min(6, Math.trunc(decimals)));
+  const p = 10 ** decimals;
+  const rounded = Math.round(n * p) / p;
+  if (decimals === 0) {
+    return String(Math.round(rounded));
+  }
+  const s = rounded.toFixed(decimals);
+  return s.replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
 }
 
 export function groupEdgesForPanel(

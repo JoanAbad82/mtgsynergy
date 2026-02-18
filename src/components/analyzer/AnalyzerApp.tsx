@@ -136,6 +136,7 @@ export default function AnalyzerApp() {
         <p className="muted" style={{ marginTop: "10px" }}>
           Pega un export de MTG Arena para analizar la estructura.
         </p>
+        <p className="muted">build: {BUILD_SHA}</p>
         <textarea
           placeholder="Pega aquí tu export de MTG Arena..."
           value={inputText}
@@ -216,6 +217,8 @@ export type EdgeUi = {
   weight?: number;
   score?: number;
 };
+
+export const BUILD_SHA = "c43eac4";
 
 export function explainEdgeKind(kind?: string): string {
   if (kind === "burn_supports_threat") {

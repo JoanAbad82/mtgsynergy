@@ -1,10 +1,5 @@
 import { describe, expect, test } from "vitest";
-import {
-  buildNameMapFromDeckState,
-  explainEdgeKind,
-  formatEdgeLine,
-  groupEdgesForPanel,
-} from "../AnalyzerApp";
+import { buildNameMapFromDeckState, explainEdgeKind, formatEdgeLine, groupEdgesForPanel } from "../AnalyzerApp";
 
 describe("AnalyzerApp edges panel grouping", () => {
   test("groups edges by kind", () => {

@@ -43,7 +43,8 @@ export function computeStructuralPowerScore(
 
   const utilityCount = (roleCounts as any)["UTILITY"] ?? 0;
   const u = totalNonLand > 0 ? utilityCount / totalNonLand : 0;
-  const F_util = u <= 0.3 ? 1 : 1 - 0.25 * (u - 0.3) / 0.7;
+  const F_util_raw = u <= 0.3 ? 1 : 1 - 0.25 * (u - 0.3) / 0.7;
+  const F_util = Math.max(0, F_util_raw);
 
   const sps = B * F_dens * F_roles * F_util;
 

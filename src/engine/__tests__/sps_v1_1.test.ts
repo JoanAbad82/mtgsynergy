@@ -170,4 +170,80 @@ describe("SPS v1.1", () => {
       2,
     );
   });
+
+  test("F_util is clamped at 0 for extreme utility ratio", () => {
+    const edges = [{ score: 0 }];
+    const summary: StructuralSummary = {
+      nodes_total: 8,
+      nodes_active: 1,
+      role_counts: {
+        ENGINE: 0,
+        PAYOFF: 1,
+        RAMP: 0,
+        DRAW: 0,
+        REMOVAL: 0,
+        PROTECTION: 0,
+        LAND: 0,
+        UTILITY: 999999,
+      },
+      role_share: {
+        ENGINE: 0,
+        PAYOFF: 0,
+        RAMP: 0,
+        DRAW: 0,
+        REMOVAL: 0,
+        PROTECTION: 0,
+        LAND: 0,
+        UTILITY: 0,
+      },
+      edges_total: 0,
+      density: 0,
+      in_degree: {
+        ENGINE: 0,
+        PAYOFF: 0,
+        RAMP: 0,
+        DRAW: 0,
+        REMOVAL: 0,
+        PROTECTION: 0,
+        LAND: 0,
+        UTILITY: 0,
+      },
+      out_degree: {
+        ENGINE: 0,
+        PAYOFF: 0,
+        RAMP: 0,
+        DRAW: 0,
+        REMOVAL: 0,
+        PROTECTION: 0,
+        LAND: 0,
+        UTILITY: 0,
+      },
+      centrality_score: {
+        ENGINE: 0,
+        PAYOFF: 0,
+        RAMP: 0,
+        DRAW: 0,
+        REMOVAL: 0,
+        PROTECTION: 0,
+        LAND: 0,
+        UTILITY: 0,
+      },
+      sources: [],
+      sinks: [],
+      cycles_present: false,
+      components_weak: { count: 1, components: [] },
+      missing_roles_for_pipelines: [],
+      diagnostics: {
+        bottlenecks: { roles: [], max_centrality: 0 },
+        low_redundancy: { roles: [], threshold: 4, only_one_active_role: false },
+        sparse_graph: { flag: false, density: 0, threshold: 0 },
+        isolated_roles: { roles: [] },
+      },
+    };
+
+    const result = computeStructuralPowerScore(summary, edges);
+    expect(result.breakdown.u).toBeCloseTo(999999 / 1000000, 6);
+    expect(result.breakdown.F_util).toBeGreaterThanOrEqual(0);
+    expect(result.breakdown.F_util).toBeCloseTo(0.75, 2);
+  });
 });

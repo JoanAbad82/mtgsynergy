@@ -76,6 +76,17 @@ export type StructuralSummary = {
     sparse_graph: { flag: boolean; density: number; threshold: number };
     isolated_roles: { roles: Role[] };
   };
+  structuralPowerScore?: number;
+  structuralPowerBreakdown?: {
+    sumScore: number;
+    B: number;
+    density: number;
+    F_dens: number;
+    H_hat: number;
+    F_roles: number;
+    u: number;
+    F_util: number;
+  };
 };
 
 export type DeckState = {

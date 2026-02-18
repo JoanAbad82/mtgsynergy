@@ -5,6 +5,7 @@ import { parseMtgaExport } from "../parser";
 import { computeStructuralSummary } from "../structural";
 import { enrichEntriesWithCardIndex } from "./enrich";
 import { generateEdges } from "../edges";
+import { computeStructuralPowerScore } from "../structural/sps";
 
 export type AnalyzeResult = {
   deckState: DeckState;
@@ -31,6 +32,9 @@ export async function analyzeMtgaExportAsync(
   const edges = generateEdges(enriched.entries as any);
   const deckState: DeckState = { deck, edges };
   const summary = computeStructuralSummary(deckState);
+  const spsResult = computeStructuralPowerScore(summary, deckState.edges ?? []);
+  summary.structuralPowerScore = spsResult.sps;
+  summary.structuralPowerBreakdown = spsResult.breakdown;
   const issues = [...baseIssues, ...enriched.issues_added];
 
   return { deckState, summary, issues };

@@ -162,6 +162,20 @@ export default function AnalyzerApp() {
 
       {summary && (
         <>
+          <div className="panel">
+            <p>
+              Structural Power Score:{" "}
+              {formatNumberCompact(summary.structuralPowerScore, 1)}
+            </p>
+            {summary.structuralPowerBreakdown && (
+              <p className="muted">
+                B={summary.structuralPowerBreakdown.B.toFixed(2)} ×
+                dens={summary.structuralPowerBreakdown.F_dens.toFixed(2)} ×
+                roles={summary.structuralPowerBreakdown.F_roles.toFixed(2)} ×
+                util={summary.structuralPowerBreakdown.F_util.toFixed(2)}
+              </p>
+            )}
+          </div>
           <StructuralPanel summary={summary} />
           <RoleGraphPanel summary={summary} />
           <div className="panel">

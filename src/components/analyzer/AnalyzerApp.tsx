@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import type { ShareDeckState, StructuralSummary } from "../../engine";
+import type { DeckState, ShareDeckState, StructuralSummary } from "../../engine";
 import {
   analyzeMtgaExportAsync,
   computeStructuralSummary,
@@ -107,16 +107,34 @@ export default function AnalyzerApp() {
       count: e.count,
       role_primary: e.role_primary,
     }));
-    const baseSps = summary.structuralPowerScore;
+    const baseSps = getSpsNumber(summary.structuralPowerScore);
+    if (baseSps <= 0) {
+      setMcStatus("idle");
+      setMcResult(null);
+      return;
+    }
 
     const analyzeSps = async (
       nextEntries: Array<{ name: string; count: number; role_primary?: string }>,
     ) => {
+      const isSame = deckState.deck.entries.every((e) => {
+        const match = nextEntries.find((n) => n.name === e.name);
+        return match && match.count === e.count;
+      });
+      if (isSame) return baseSps;
+
       const edges = generateEdges(nextEntries as any);
-      const ds = { deck: { entries: nextEntries as any }, edges } as any;
-      const s = computeStructuralSummary(ds);
+      const nextState: DeckState = {
+        ...(deckState as DeckState),
+        deck: {
+          ...(deckState as DeckState).deck,
+          entries: nextEntries as any,
+        },
+        edges,
+      };
+      const s = computeStructuralSummary(nextState);
       const sps = computeStructuralPowerScore(s, edges);
-      return sps.sps;
+      return getSpsNumber(sps);
     };
 
     runMonteCarloV1({
@@ -401,6 +419,14 @@ export function formatNumberCompact(n: unknown, decimals = 1): string {
   }
   const s = rounded.toFixed(decimals);
   return s.replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
+}
+
+export function getSpsNumber(x: unknown): number {
+  if (typeof x === "number") return x;
+  if (x && typeof x === "object" && typeof (x as any).sps === "number") {
+    return (x as any).sps;
+  }
+  return 0;
 }
 
 export function groupEdgesForPanel(

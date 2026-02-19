@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildNameMapFromDeckState, BUILD_SHA, explainEdgeKind, formatEdgeLine, formatNumberCompact, groupEdgesForPanel, parseMcParams } from "../AnalyzerApp";
+import { buildNameMapFromDeckState, BUILD_SHA, explainEdgeKind, formatEdgeLine, formatNumberCompact, getSpsNumber, groupEdgesForPanel, parseMcParams } from "../AnalyzerApp";
 
 describe("AnalyzerApp edges panel grouping", () => {
   test("groups edges by kind", () => {
@@ -127,5 +127,19 @@ describe("parseMcParams", () => {
   test("disabled when mc=0", () => {
     const res = parseMcParams("https://x.test/es/analizador?mc=0");
     expect(res.enabled).toBe(false);
+  });
+});
+
+describe("getSpsNumber", () => {
+  test("returns number directly", () => {
+    expect(getSpsNumber(12.3)).toBe(12.3);
+  });
+
+  test("reads {sps} objects", () => {
+    expect(getSpsNumber({ sps: 12.3 })).toBe(12.3);
+  });
+
+  test("returns 0 for unknown shapes", () => {
+    expect(getSpsNumber({})).toBe(0);
   });
 });

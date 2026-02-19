@@ -293,6 +293,48 @@ export default function AnalyzerApp() {
                     seed: {mcResult.settings.seed} · iterations:{" "}
                     {mcResult.settings.iterations}
                   </p>
+                  {mcResult.dist_ext && (
+                    <>
+                      <p>
+                        Percentiles: p05{" "}
+                        {formatNumberCompact(mcResult.dist_ext.percentiles.p05, 1)}
+                        {" · "}p10{" "}
+                        {formatNumberCompact(mcResult.dist_ext.percentiles.p10, 1)}
+                        {" · "}p25{" "}
+                        {formatNumberCompact(mcResult.dist_ext.percentiles.p25, 1)}
+                        {" · "}p50{" "}
+                        {formatNumberCompact(mcResult.dist_ext.percentiles.p50, 1)}
+                        {" · "}p75{" "}
+                        {formatNumberCompact(mcResult.dist_ext.percentiles.p75, 1)}
+                        {" · "}p90{" "}
+                        {formatNumberCompact(mcResult.dist_ext.percentiles.p90, 1)}
+                        {" · "}p95{" "}
+                        {formatNumberCompact(mcResult.dist_ext.percentiles.p95, 1)}
+                      </p>
+                      <p>
+                        mean ± stdev:{" "}
+                        {formatNumberCompact(mcResult.dist_ext.mean, 1)} ±{" "}
+                        {formatNumberCompact(mcResult.dist_ext.stdev, 1)}
+                      </p>
+                      <p>
+                        IQR: {formatNumberCompact(mcResult.dist_ext.iqr, 1)}
+                      </p>
+                      <p>
+                        min–max:{" "}
+                        {formatNumberCompact(mcResult.dist_ext.min, 1)} –{" "}
+                        {formatNumberCompact(mcResult.dist_ext.max, 1)}
+                      </p>
+                      <p>
+                        Δ(p50):{" "}
+                        {formatSigned(mcResult.dist_ext.deltas_abs_vs_base.p50, 1)}{" "}
+                        SPS points · Δ(p10):{" "}
+                        {formatSigned(mcResult.dist_ext.deltas_abs_vs_base.p10, 1)}{" "}
+                        SPS points · Δ(p90):{" "}
+                        {formatSigned(mcResult.dist_ext.deltas_abs_vs_base.p90, 1)}{" "}
+                        SPS points
+                      </p>
+                    </>
+                  )}
                   {mcResult.warnings?.length > 0 && (
                     <ul className="issues">
                       {mcResult.warnings.map((w: any) => (
@@ -419,6 +461,14 @@ export function formatNumberCompact(n: unknown, decimals = 1): string {
   }
   const s = rounded.toFixed(decimals);
   return s.replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
+}
+
+export function formatSigned(n: unknown, decimals = 1): string {
+  if (typeof n !== "number" || !Number.isFinite(n)) {
+    return "0";
+  }
+  const sign = n > 0 ? "+" : n < 0 ? "-" : "";
+  return sign + formatNumberCompact(Math.abs(n), decimals);
 }
 
 export function getSpsNumber(x: unknown): number {

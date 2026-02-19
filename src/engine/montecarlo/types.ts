@@ -59,6 +59,30 @@ export type McResultV1 = {
     delta_p10: number;
     delta_q_robust: number;
   };
+  dist_ext: {
+    percentiles: {
+      p05: number;
+      p10: number;
+      p25: number;
+      p50: number;
+      p75: number;
+      p90: number;
+      p95: number;
+    };
+    mean: number;
+    stdev: number;
+    iqr: number;
+    min: number;
+    max: number;
+    deltas_abs_vs_base: {
+      p50: number;
+      p10: number;
+      p90: number;
+      p05?: number;
+      p95?: number;
+    };
+    cv?: number;
+  };
   metrics: {
     robust_sps: number;
     fragility: number;

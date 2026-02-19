@@ -8,6 +8,7 @@ import {
   quantileNearestRank,
   roundTo,
   stdev,
+  stdevPopulation,
 } from "./calculator";
 import type {
   McDebug,
@@ -95,6 +96,30 @@ export async function runMonteCarloV1(args: RunArgs): Promise<McResultV1> {
         delta_stdev: 0,
         delta_p10: 0,
         delta_q_robust: 0,
+      },
+      dist_ext: {
+        percentiles: {
+          p05: baseRounded,
+          p10: baseRounded,
+          p25: baseRounded,
+          p50: baseRounded,
+          p75: baseRounded,
+          p90: baseRounded,
+          p95: baseRounded,
+        },
+        mean: baseRounded,
+        stdev: 0,
+        iqr: 0,
+        min: baseRounded,
+        max: baseRounded,
+        deltas_abs_vs_base: {
+          p50: 0,
+          p10: 0,
+          p90: 0,
+          p05: 0,
+          p95: 0,
+        },
+        cv: baseRounded > 0 ? 0 : undefined,
       },
       metrics: {
         robust_sps: baseRounded,
@@ -186,6 +211,30 @@ export async function runMonteCarloV1(args: RunArgs): Promise<McResultV1> {
         delta_p10: 0,
         delta_q_robust: 0,
       },
+      dist_ext: {
+        percentiles: {
+          p05: baseRounded,
+          p10: baseRounded,
+          p25: baseRounded,
+          p50: baseRounded,
+          p75: baseRounded,
+          p90: baseRounded,
+          p95: baseRounded,
+        },
+        mean: baseRounded,
+        stdev: 0,
+        iqr: 0,
+        min: baseRounded,
+        max: baseRounded,
+        deltas_abs_vs_base: {
+          p50: 0,
+          p10: 0,
+          p90: 0,
+          p05: 0,
+          p95: 0,
+        },
+        cv: baseRounded > 0 ? 0 : undefined,
+      },
       metrics: {
         robust_sps: baseRounded,
         fragility: 0,
@@ -201,15 +250,18 @@ export async function runMonteCarloV1(args: RunArgs): Promise<McResultV1> {
 
   const m = mean(spsValues);
   const sd = stdev(spsValues, m);
+  const sdPop = stdevPopulation(spsValues, m);
 
   const dm = mean(deltaValues);
   const dsd = stdev(deltaValues, dm);
 
+  const p05 = quantileNearestRank(spsSorted, 0.05);
   const p10 = quantileNearestRank(spsSorted, 0.1);
   const p25 = quantileNearestRank(spsSorted, 0.25);
   const p50 = quantileNearestRank(spsSorted, 0.5);
   const p75 = quantileNearestRank(spsSorted, 0.75);
   const p90 = quantileNearestRank(spsSorted, 0.9);
+  const p95 = quantileNearestRank(spsSorted, 0.95);
   const qRobust = quantileNearestRank(spsSorted, settings.robust_p);
 
   const deltaP10 = quantileNearestRank(deltaSorted, 0.1);
@@ -233,11 +285,13 @@ export async function runMonteCarloV1(args: RunArgs): Promise<McResultV1> {
   };
 
   const qRounded = {
+    p05: roundTo(p05, settings.rounding.quantile_decimals),
     p10: roundTo(p10, settings.rounding.quantile_decimals),
     p25: roundTo(p25, settings.rounding.quantile_decimals),
     p50: roundTo(p50, settings.rounding.quantile_decimals),
     p75: roundTo(p75, settings.rounding.quantile_decimals),
     p90: roundTo(p90, settings.rounding.quantile_decimals),
+    p95: roundTo(p95, settings.rounding.quantile_decimals),
     q_robust: roundTo(qRobust, settings.rounding.quantile_decimals),
   };
 
@@ -270,6 +324,30 @@ export async function runMonteCarloV1(args: RunArgs): Promise<McResultV1> {
       delta_stdev: deltaRounded.stdev,
       delta_p10: deltaRounded.p10,
       delta_q_robust: deltaRounded.q_robust,
+    },
+    dist_ext: {
+      percentiles: {
+        p05: qRounded.p05,
+        p10: qRounded.p10,
+        p25: qRounded.p25,
+        p50: qRounded.p50,
+        p75: qRounded.p75,
+        p90: qRounded.p90,
+        p95: qRounded.p95,
+      },
+      mean: spsRounded.mean,
+      stdev: roundTo(sdPop, settings.rounding.sps_decimals),
+      iqr: roundTo(p75 - p25, settings.rounding.quantile_decimals),
+      min: spsRounded.min,
+      max: spsRounded.max,
+      deltas_abs_vs_base: {
+        p50: roundTo(p50 - args.baseSps, settings.rounding.sps_decimals),
+        p10: roundTo(p10 - args.baseSps, settings.rounding.sps_decimals),
+        p90: roundTo(p90 - args.baseSps, settings.rounding.sps_decimals),
+        p05: roundTo(p05 - args.baseSps, settings.rounding.sps_decimals),
+        p95: roundTo(p95 - args.baseSps, settings.rounding.sps_decimals),
+      },
+      cv: m > 0 ? sdPop / m : undefined,
     },
     metrics: {
       robust_sps: qRounded.q_robust,

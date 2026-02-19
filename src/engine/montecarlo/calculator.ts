@@ -18,11 +18,19 @@ export function stdev(values: number[], m: number): number {
   return Math.sqrt(variance);
 }
 
+// Population stdev (divide by n).
+export function stdevPopulation(values: number[], m: number): number {
+  if (values.length === 0) return 0;
+  const variance = values.reduce((s, v) => s + (v - m) ** 2, 0) / values.length;
+  return Math.sqrt(variance);
+}
+
 export function quantileNearestRank(
   sorted: number[],
   p: number,
 ): number {
   if (sorted.length === 0) return 0;
+  // Nearest-rank by index: idx = floor(p * (n - 1)).
   const idx = Math.floor(p * (sorted.length - 1));
   return sorted[Math.max(0, Math.min(idx, sorted.length - 1))];
 }

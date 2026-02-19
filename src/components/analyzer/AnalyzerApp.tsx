@@ -274,26 +274,42 @@ export default function AnalyzerApp() {
           {mcParams.enabled && (
             <div className="panel">
               <h2>Monte Carlo (experimental)</h2>
-              {mcStatus === "running" && (
-                <p className="muted">Running...</p>
-              )}
-              {mcStatus === "error" && (
-                <p className="muted">Error: {mcError ?? "Unknown error"}</p>
-              )}
+              <p className="muted">
+                MC Status / Reason:{" "}
+                {mcStatus === "running"
+                  ? "Running Monte Carlo… (puede tardar)"
+                  : mcStatus === "error"
+                    ? `Error: ${mcError ?? "Unknown error"}`
+                    : mcStatus === "done" && !mcResult
+                      ? "MC no disponible (sin resultados)."
+                      : mcStatus === "done" && mcResult?.base?.sps <= 0
+                        ? "MC omitido: SPS base ≤ 0 (no hay edges/relaciones suficientes). Prueba con un mazo con sinergias."
+                        : mcStatus === "done" && mcResult?.dist?.effective_n === 0
+                          ? `MC omitido: conjunto elegible degenerado (effective_n=0). Revisa el deck (exceso de LAND o roles insuficientes).${
+                              mcResult?.warnings?.some(
+                                (w: any) => w.code === "DEGENERATE_ELIGIBLE_SET",
+                              )
+                                ? " (warning: DEGENERATE_ELIGIBLE_SET)"
+                                : ""
+                            }`
+                          : mcStatus === "idle"
+                            ? "MC pendiente: analiza un mazo para ejecutar."
+                            : "MC listo."}
+              </p>
               {mcStatus === "done" && mcResult && (
                 <>
                   <p>Base SPS: {mcResult.base.sps}</p>
-                  <p>Robust SPS: {mcResult.metrics.robust_sps}</p>
-                  <p>Fragility: {mcResult.metrics.fragility}</p>
-                  <p>
-                    effective_n / requested_n: {mcResult.dist.effective_n} /{" "}
-                    {mcResult.dist.requested_n} (no_op: {mcResult.dist.no_op})
-                  </p>
                   <p>
                     seed: {mcResult.settings.seed} · iterations:{" "}
                     {mcResult.settings.iterations}
                   </p>
-                  {mcResult.dist_ext && (
+                  <p>
+                    effective_n / requested_n: {mcResult.dist.effective_n} /{" "}
+                    {mcResult.dist.requested_n} (no_op: {mcResult.dist.no_op})
+                  </p>
+                  <p>Robust SPS: {mcResult.metrics.robust_sps}</p>
+                  <p>Fragility: {mcResult.metrics.fragility}</p>
+                  {mcResult.dist_ext ? (
                     <>
                       <p>
                         Percentiles: p05{" "}
@@ -334,6 +350,8 @@ export default function AnalyzerApp() {
                         SPS points
                       </p>
                     </>
+                  ) : (
+                    <p className="muted">Extended stats not available</p>
                   )}
                   {mcResult.warnings?.length > 0 && (
                     <ul className="issues">

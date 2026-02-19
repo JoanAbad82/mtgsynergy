@@ -1,11 +1,12 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
 
-const BULK_URL = "https://api.scryfall.com/bulk-data/oracle_cards";
-const CACHE_DIR = ".cache";
-const CACHE_META = path.join(CACHE_DIR, "scryfall_oracle_meta.json");
-const CACHE_BULK = path.join(CACHE_DIR, "scryfall_oracle_cards.json");
-const OUT_DIR = path.join("public", "data", "cards_index");
+const BULK_LIST_URL = "https://api.scryfall.com/bulk-data";
+const OUT_DIR = path.join("public", "data");
+const OUT_GZ = path.join(OUT_DIR, "cards_index.json.gz");
+const OUT_MANIFEST = path.join(OUT_DIR, "cards_index.manifest.json");
 
 const HEADERS = {
   Accept: "application/json",
@@ -15,22 +16,9 @@ const HEADERS = {
 function normalizeName(name) {
   return name
     .normalize("NFKC")
-    .trim()
     .replace(/\s+/g, " ")
+    .trim()
     .toLowerCase();
-}
-
-function shardKey(nameNorm) {
-  const first = nameNorm.trim().charAt(0);
-  if (!first) return "_";
-  if (first >= "a" && first <= "z") return first;
-  if (first >= "0" && first <= "9") return "0";
-  return "_";
-}
-
-async function readJson(filePath) {
-  const raw = await readFile(filePath, "utf8");
-  return JSON.parse(raw);
 }
 
 async function fetchJson(url) {
@@ -41,98 +29,105 @@ async function fetchJson(url) {
   return res.json();
 }
 
-async function loadBulkOracleCards() {
-  await mkdir(CACHE_DIR, { recursive: true });
-
-  const bulkMeta = await fetchJson(BULK_URL);
-  if (!bulkMeta?.download_uri || !bulkMeta?.updated_at) {
-    throw new Error("Invalid bulk metadata response.");
-  }
-
-  let cachedMeta = null;
-  try {
-    cachedMeta = await readJson(CACHE_META);
-  } catch {
-    cachedMeta = null;
-  }
-
-  if (cachedMeta?.updated_at === bulkMeta.updated_at) {
-    try {
-      const cachedBulk = await readJson(CACHE_BULK);
-      return { bulkMeta, bulk: cachedBulk, cacheHit: true };
-    } catch {
-      // fallthrough to download
-    }
-  }
-
-  const bulk = await fetchJson(bulkMeta.download_uri);
-  await writeFile(CACHE_META, JSON.stringify({ updated_at: bulkMeta.updated_at }, null, 2));
-  await writeFile(CACHE_BULK, JSON.stringify(bulk));
-  return { bulkMeta, bulk, cacheHit: false };
+function pickBulkItem(bulkList) {
+  const items = Array.isArray(bulkList?.data) ? bulkList.data : [];
+  const oracle = items.find((item) => item.type === "oracle_cards");
+  if (oracle) return oracle;
+  const fallback = items.find((item) => item.type === "default_cards");
+  if (fallback) return fallback;
+  throw new Error("No oracle_cards or default_cards bulk found.");
 }
 
-function toRecordMin(card) {
-  return {
-    oracle_id: card.oracle_id,
-    name: card.name,
-    name_norm: normalizeName(card.name),
-    lang: card.lang,
-    set: card.set,
-    collector_number: card.collector_number,
-    type_line: card.type_line ?? null,
-    oracle_text: card.oracle_text ?? null,
-    mana_cost: card.mana_cost ?? null,
-    cmc: typeof card.cmc === "number" ? card.cmc : null,
-    colors: Array.isArray(card.colors) ? card.colors : null,
-    color_identity: Array.isArray(card.color_identity) ? card.color_identity : null,
-    produced_mana: Array.isArray(card.produced_mana) ? card.produced_mana : null,
-    keywords: Array.isArray(card.keywords) ? card.keywords : null,
-    games: Array.isArray(card.games) ? card.games : null,
-    legalities: card.legalities ?? null,
-  };
+function isExcludedCard(card) {
+  const layout = String(card?.layout ?? "");
+  if (layout.includes("token")) return true;
+  if (layout.includes("emblem")) return true;
+  if (card?.set_type === "token") return true;
+  const typeLine = String(card?.type_line ?? "");
+  if (typeLine.includes("Token")) return true;
+  return false;
+}
+
+function buildOracleText(card) {
+  if (Array.isArray(card?.card_faces) && card.card_faces.length > 0) {
+    const parts = card.card_faces
+      .map((face) => face.oracle_text)
+      .filter((text) => typeof text === "string" && text.trim().length > 0);
+    return parts.length > 0 ? parts.join("\n//\n") : null;
+  }
+  return typeof card?.oracle_text === "string" ? card.oracle_text : null;
+}
+
+function buildTypeLine(card) {
+  if (Array.isArray(card?.card_faces) && card.card_faces.length > 0) {
+    const parts = card.card_faces
+      .map((face) => face.type_line)
+      .filter((text) => typeof text === "string" && text.trim().length > 0);
+    return parts.length > 0 ? parts.join("\n//\n") : null;
+  }
+  return typeof card?.type_line === "string" ? card.type_line : null;
 }
 
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
 
-  const { bulkMeta, bulk } = await loadBulkOracleCards();
-  if (!Array.isArray(bulk)) {
-    throw new Error("Bulk oracle_cards is not an array.");
+  const bulkList = await fetchJson(BULK_LIST_URL);
+  const bulkItem = pickBulkItem(bulkList);
+
+  if (!bulkItem?.download_uri) {
+    throw new Error("Bulk item missing download_uri.");
   }
 
-  const shards = new Map();
-  const shardCounts = new Map();
+  const bulk = await fetchJson(bulkItem.download_uri);
+  if (!Array.isArray(bulk)) {
+    throw new Error("Bulk cards payload is not an array.");
+  }
+
+  const byName = {};
+  const byNameNorm = {};
 
   for (const card of bulk) {
-    if (!card?.oracle_id || !card?.name) continue;
-    const record = toRecordMin(card);
-    const key = shardKey(record.name_norm);
-    if (!shards.has(key)) {
-      shards.set(key, {});
-      shardCounts.set(key, 0);
-    }
-    const shard = shards.get(key);
-    shard[record.name_norm] = record;
-    shardCounts.set(key, shardCounts.get(key) + 1);
+    if (!card?.name) continue;
+    if (isExcludedCard(card)) continue;
+
+    const name = card.name;
+    const nameNorm = normalizeName(name);
+
+    byName[name] = {
+      type_line: buildTypeLine(card),
+      oracle_text: buildOracleText(card),
+      cmc: typeof card.cmc === "number" ? card.cmc : null,
+    };
+    byNameNorm[nameNorm] = name;
   }
 
-  for (const [key, shard] of shards.entries()) {
-    const outPath = path.join(OUT_DIR, `${key}.json`);
-    await writeFile(outPath, JSON.stringify(shard));
-  }
-
-  const meta = {
-    source: "scryfall-oracle_cards",
-    bulk_updated_at: bulkMeta.updated_at,
-    generated_at: new Date().toISOString(),
-    total_cards: bulk.length,
-    shard_counts: Object.fromEntries(shardCounts.entries()),
+  const payload = {
+    schema_version: "cardrecordmin-v1",
+    by_name: byName,
+    by_name_norm: byNameNorm,
   };
 
-  await writeFile(path.join(OUT_DIR, "_meta.json"), JSON.stringify(meta, null, 2));
+  const json = JSON.stringify(payload);
+  const gz = gzipSync(Buffer.from(json, "utf8"));
+  const sha256 = createHash("sha256").update(gz).digest("hex");
+
+  await writeFile(OUT_GZ, gz);
+
+  const manifest = {
+    source: "scryfall",
+    bulk_type: bulkItem.type,
+    bulk_download_uri: bulkItem.download_uri,
+    bulk_updated_at: bulkItem.updated_at ?? null,
+    generated_at: new Date().toISOString(),
+    record_count: Object.keys(byName).length,
+    sha256_gz: sha256,
+    schema_version: "cardrecordmin-v1",
+  };
+
+  await writeFile(OUT_MANIFEST, JSON.stringify(manifest, null, 2));
 
   console.log(
-    `Cards index generated. shards=${shards.size} total_cards=${bulk.length}`,
+    `Cards index generated. records=${manifest.record_count} sha256=${sha256}`,
   );
 }
 

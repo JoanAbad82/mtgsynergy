@@ -1,36 +1,40 @@
+import pako from "pako";
 import { describe, expect, test, vi } from "vitest";
 import { analyzeMtgaExportAsync } from "../analyzer";
 import { __testing } from "../cards/lookup";
 
-const lShard = {
-  "llanowar elves": {
-    oracle_id: "l",
-    name: "Llanowar Elves",
-    name_norm: "llanowar elves",
-    type_line: "Creature \u2014 Elf Druid",
-    oracle_text: "{T}: Add {G}.",
-    cmc: 1,
-    produced_mana: ["G"],
+const payload = {
+  schema_version: "cardrecordmin-v1",
+  by_name: {
+    "Llanowar Elves": {
+      type_line: "Creature \u2014 Elf Druid",
+      oracle_text: "{T}: Add {G}.",
+      cmc: 1,
+    },
+    Forest: {
+      type_line: "Basic Land \u2014 Forest",
+      oracle_text: "({T}: Add {G}.)",
+      cmc: 0,
+    },
   },
-};
-
-const fShard = {
-  forest: {
-    oracle_id: "f",
-    name: "Forest",
-    name_norm: "forest",
-    type_line: "Basic Land \u2014 Forest",
-    oracle_text: "({T}: Add {G}.)",
-    cmc: 0,
+  by_name_norm: {
+    "llanowar elves": "Llanowar Elves",
+    forest: "Forest",
   },
 };
 
 describe("analyzeMtgaExportAsync tagging", () => {
   test("filters ROLES_DEFAULTED_TO_UTILITY when tagging active", async () => {
     const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(payload));
     const fetchMock = vi.fn(async (url: string) => {
-      if (url.endsWith("/l.json")) return { ok: true, json: async () => lShard };
-      if (url.endsWith("/f.json")) return { ok: true, json: async () => fShard };
+      if (url.endsWith("/cards_index.json.gz")) {
+        return {
+          ok: true,
+          arrayBuffer: async () =>
+            gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+        };
+      }
       return { ok: false, status: 404 } as any;
     });
     // @ts-expect-error test mock

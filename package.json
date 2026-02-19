@@ -8,13 +8,16 @@
     "prebuild": "node scripts/build_cards_index.mjs && node scripts/fetch_scryfall_art_crops.mjs",
     "build": "astro build",
     "test": "vitest",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "cards:index:build": "node scripts/build_cards_index.mjs",
+    "cards:index:verify": "node scripts/verify_cards_index.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^3.1.5",
     "@astrojs/preact": "^4.1.3",
     "astro": "^4.16.0",
     "lz-string": "^1.5.0",
+    "pako": "^2.1.0",
     "preact": "^10.28.3"
   },
   "devDependencies": {

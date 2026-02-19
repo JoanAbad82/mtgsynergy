@@ -1,23 +1,26 @@
+import pako from "pako";
 import { describe, expect, test, vi } from "vitest";
 import { normalizeCardName } from "../cards/normalize";
-import { lookupCard, __testing } from "../cards/lookup";
+import { getCardsIndexCount, lookupCard, __testing } from "../cards/lookup";
 import { extractFeatures } from "../cards/features";
 
-const shardData = {
-  "llanowar elves": {
-    oracle_id: "x",
-    name: "Llanowar Elves",
-    name_norm: "llanowar elves",
-    type_line: "Creature \u2014 Elf Druid",
-    oracle_text: "{T}: Add {G}.",
-    mana_cost: "{G}",
-    cmc: 1,
-    colors: ["G"],
-    color_identity: ["G"],
-    produced_mana: ["G"],
-    keywords: [],
-    games: ["arena"],
-    legalities: { historic: "legal" },
+const payload = {
+  schema_version: "cardrecordmin-v1",
+  by_name: {
+    "Llanowar Elves": {
+      type_line: "Creature \u2014 Elf Druid",
+      oracle_text: "{T}: Add {G}.",
+      cmc: 1,
+    },
+    Forest: {
+      type_line: "Basic Land \u2014 Forest",
+      oracle_text: "",
+      cmc: 0,
+    },
+  },
+  by_name_norm: {
+    "llanowar elves": "Llanowar Elves",
+    forest: "Forest",
   },
 };
 
@@ -26,15 +29,12 @@ describe("cards helpers", () => {
     expect(normalizeCardName("  Llanowar   Elves ")).toBe("llanowar elves");
   });
 
-  test("shardKey for name_norm", () => {
-    expect(__testing.shardKeyFromNameNorm("llanowar elves")).toBe("l.json");
-  });
-
-  test("lookupCard fetches shard and returns record", async () => {
+  test("lookupCard fetches gzip index and returns record", async () => {
     const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(payload));
     const fetchMock = vi.fn(async () => ({
       ok: true,
-      json: async () => shardData,
+      arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
     }));
     // @ts-expect-error test mock
     globalThis.fetch = fetchMock;
@@ -43,7 +43,9 @@ describe("cards helpers", () => {
       __testing.clearCache();
       const card = await lookupCard("Llanowar Elves");
       expect(card?.name_norm).toBe("llanowar elves");
-      expect(fetchMock).toHaveBeenCalledWith("/data/cards_index/l.json");
+      expect(fetchMock).toHaveBeenCalledWith("/data/cards_index.json.gz");
+      const count = await getCardsIndexCount();
+      expect(count).toBe(2);
     } finally {
       // @ts-expect-error restore
       globalThis.fetch = originalFetch;
@@ -51,7 +53,11 @@ describe("cards helpers", () => {
   });
 
   test("extractFeatures detects flags", () => {
-    const features = extractFeatures(shardData["llanowar elves"]);
+    const features = extractFeatures({
+      name: "Llanowar Elves",
+      name_norm: "llanowar elves",
+      ...payload.by_name["Llanowar Elves"],
+    });
     expect(features.is_creature).toBe(true);
     expect(features.produces_mana).toBe(true);
     expect(features.draws_cards).toBe(false);

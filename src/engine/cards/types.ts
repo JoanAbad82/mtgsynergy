@@ -1,5 +1,5 @@
 export interface CardRecordMin {
-  oracle_id: string;
+  oracle_id?: string;
   name: string;
   name_norm: string;
   lang?: string;

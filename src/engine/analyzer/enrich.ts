@@ -1,6 +1,6 @@
 import type { CardEntry, Role } from "../domain/types";
 import type { CardFeatures, CardRecordMin } from "../cards/types";
-import { lookupCard } from "../cards/lookup";
+import { getCardsIndexCount, lookupCard } from "../cards/lookup";
 import { extractFeatures } from "../cards/features";
 
 export type Issue = {
@@ -60,6 +60,7 @@ export async function enrichEntriesWithCardIndex(
   const issues_added: Issue[] = [];
   const enriched: CardEntry[] = [];
   let matches = 0;
+  let indexedCount: number | null = null;
 
   try {
     for (const entry of entries) {
@@ -75,6 +76,11 @@ export async function enrichEntriesWithCardIndex(
         enriched.push({ ...entry });
       }
     }
+    try {
+      indexedCount = await getCardsIndexCount(opts?.baseUrl);
+    } catch {
+      indexedCount = null;
+    }
   } catch {
     return {
       entries,
@@ -89,17 +95,22 @@ export async function enrichEntriesWithCardIndex(
     };
   }
 
+  const countSuffix =
+    typeof indexedCount === "number"
+      ? ` cards indexed count: ${indexedCount}`
+      : "";
+
   if (matches > 0) {
     issues_added.push({
       code: "TAGGING_ACTIVE",
       severity: "info",
-      message: "Cards index loaded; roles inferred.",
+      message: `Cards index loaded; roles inferred.${countSuffix}`,
     });
   } else {
     issues_added.push({
       code: "TAGGING_NO_MATCHES",
       severity: "warning",
-      message: "Cards index available but no cards matched.",
+      message: `Cards index available but no cards matched.${countSuffix}`,
     });
   }
 

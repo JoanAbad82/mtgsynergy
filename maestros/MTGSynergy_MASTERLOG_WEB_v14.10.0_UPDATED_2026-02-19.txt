@@ -1,0 +1,216 @@
+MTGSynergy_MASTERLOG_WEB_v13 Fecha actualización: 2026-02-18
+
+=====================================================================
+HISTÓRICO RESUMIDO
+=====================================================================
+
+-   Migración Astro estable.
+-   Motor estructural H1–H4 integrado.
+-   H6 Analizador público publicado.
+-   H6.2 Share UX completado.
+-   H7 Tagging / Roles / Edges / Sanitizer completado.
+
+===================================================================== H7
+DETALLE
+=====================================================================
+
+-   Índice local de cartas generado en prebuild.
+-   Enrich asíncrono con roles reales.
+-   Sanitizador reduce LINE_UNPARSEABLE.
+-   Edges v1 generados automáticamente.
+-   Tests añadidos y build validado.
+
+=====================================================================
+Estado ramas: main estable y sincronizado.
+=====================================================================
+=====================================================================
+NUEVA ENTRADA — H7.1 EDGES PANEL + WEIGHTS + OPS DEPLOY DIAG
+=====================================================================
+
+Commits principales en main:
+- 96ff700  feat(analyzer): add minimal edges panel
+- a4d2eca  feat(engine): add weighted edges
+- e048c63  chore(ops): add deploy diagnostics script + docs
+
+Resumen:
+- Se añade panel "Edges" en /es/analizador-de-mazos-mtg/ que muestra:
+  - Total de edges.
+  - Grupos por tipo de relación (kind).
+  - Pares from → to con peso (xN).
+- El motor calcula weights como producto de cantidades:
+  weight = count(from) * count(to)
+  y ordena edges y grupos por peso.
+- Se añade herramienta de diagnóstico de despliegue:
+  - scripts/ops/deploy_diag.ps1 + docs/ops/DEPLOYMENT.md
+  - Permite confirmar si cards_index está disponible en producción.
+
+Validación:
+- Tras push a origin/main, producción devuelve:
+  - /data/cards_index/_meta.json -> 200
+  - /data/cards_index/l.json -> 200
+- La UI muestra TAGGING_ACTIVE y roles/edges correctos en producción.
+
+=====================================================================
+FIN ACTUALIZACIÓN v11
+=====================================================================
+
+=====================================================================
+NUEVA ENTRADA — H7.2 EDGES SCORE + EXPLAINABILITY (UI) + HYGIENE OPS
+=====================================================================
+
+Commits principales en main:
+- 83cf77e  feat(engine): add edge scores (kind+role factors)
+- 748831d  feat(analyzer): edges explainability v1 (pretty names + explanations)
+- a702775  fix(analyzer): clean up edges panel duplicate render + test imports
+
+Resumen:
+- Engine: Edge.score (kind factor + role factor) para priorización.
+- UI: Edges explainability v1 (nombres humanos, explicación por tipo, score, counts, orden por score).
+- Repo hygiene: .gitignore ignora OPS_DEPLOY_DIAG_*.txt.
+
+Validación:
+- npm test -- --run OK.
+- npm run build OK.
+- git status --porcelain vacío tras commits.
+
+=====================================================================
+ACTUALIZACIÓN (2026-02-18) — Edges Explainability v1 + Rounding + SPS v1.1 + Verificación Producción
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Objetivo: aumentar interpretabilidad y calidad percibida del Analizador sin depender de servidor; asegurar que producción sirve el commit correcto (anti-cache).
+- Resultado: UI muestra nombres “bonitos”, explicación por tipo de edge, scores redondeados de forma estable, y marcador explícito de build (BUILD_SHA).
+- Se añadió SPS v1.1 (Structural Power Score) calculado en motor y renderizado en UI con desglose multiplicativo.
+- Se endureció robustez defensiva en SPS (clamp F_util ≥ 0) y se añadió test extremo.
+- Repo mantenido limpio: `.gitignore` ampliado para artefactos de probes/diagnóstico (OPS_*).
+
+COMMITS (main)
+- a702775  fix(analyzer): clean up edges panel duplicate render + test imports
+- c43eac4  fix(analyzer): round edge score for stable UI output
+- 89a65bc  chore(analyzer): add build sha marker for production verification
+- 0963f52  feat(engine): add SPS v1.1 structural power score (raw)
+- 62416d8  fix(engine): clamp SPS F_util at 0 for robustness
+- 53944e7  test(engine): clarify SPS F_util defensive clamp test name
+- 4032163  chore(analyzer): align BUILD_SHA with HEAD (53944e7)
+
+NOTAS DE `.gitignore` (root)
+- OPS_DEPLOY_DIAG_*.txt  (diagnósticos de deploy)
+- OPS_PROD_HTML*.html    (HTML descargado para probe de producción)
+- OPS_PROD_BUNDLE*.js    (bundle descargado para probe de producción)
+
+RUTINA “PRODUCCIÓN SIRVE EL COMMIT” (anti-cache)
+Contexto: Cloudflare Pages + Cloudflare cache. La verificación se hace en 2 niveles:
+1) UI/HTML: comprobar que el HTML servido incluye el marcador “build: 53944e7”.
+2) Bundle: extraer desde el HTML la ruta del bundle `/\_astro/AnalyzerApp.*.js`, descargarlo con no-cache y buscar dentro el string `53944e7` y/o `BUILD_SHA`.
+
+Comandos (PowerShell, Windows)
+- Variables:
+  $Base = "https://mtgsynergy.com"
+  $Page = "/es/analizador-de-mazos-mtg/"
+  $cb   = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+  $Url  = "$Base$Page?cb=$cb"
+
+- Descargar HTML (no-cache) a fichero:
+  Invoke-WebRequest -Uri $Url -UseBasicParsing -Headers @{"Cache-Control"="no-cache"; "Pragma"="no-cache"} -TimeoutSec 30 |
+    Select-Object -ExpandProperty Content |
+    Set-Content -Encoding utf8 "OPS_PROD_HTML_probe.html"
+
+- Confirmar build marker en HTML:
+  Select-String -Path "OPS_PROD_HTML_probe.html" -SimpleMatch -Pattern "build:" 
+  Select-String -Path "OPS_PROD_HTML_probe.html" -SimpleMatch -Pattern "53944e7"
+
+- Extraer bundle desde HTML:
+  $Html = Get-Content "OPS_PROD_HTML_probe.html" -Raw
+  $Bundle = ([regex]::Matches($Html, '/_astro/AnalyzerApp\.[^"]+\.js') | ForEach-Object { $_.Value } | Select-Object -First 1)
+
+- Descargar bundle (IMPORTANTE: concatenación correcta del querystring)
+  $JsUrl = "$Base$Bundle?cb=$cb"
+  Invoke-WebRequest -Uri $JsUrl -UseBasicParsing -Headers @{"Cache-Control"="no-cache"; "Pragma"="no-cache"} -TimeoutSec 30 |
+    Select-Object -ExpandProperty Content |
+    Set-Content -Encoding utf8 "OPS_PROD_BUNDLE_probe.js"
+
+- Buscar strings en bundle:
+  Select-String -Path "OPS_PROD_BUNDLE_probe.js" -SimpleMatch -Pattern "53944e7"
+  Select-String -Path "OPS_PROD_BUNDLE_probe.js" -SimpleMatch -Pattern "BUILD_SHA"
+
+INCIDENTE OBSERVADO (PowerShell) — “Invalid URI: hostname could not be parsed”
+- Causa: concatenación incorrecta del URL (string interpolation) que generó `https://mtgsynergy.com=...` en vez de `https://mtgsynergy.com/...?...`.
+- Fix: construir URL como `$Url = "$Base$Page?cb=$cb"` (o `"$($Base)$($Page)?cb=$cb"`). Evitar concatenaciones tipo `"$Base$page?cb=$cb"` si `$page` ya contiene `=` o se forman tokens inesperados.
+
+VALIDACIÓN MANUAL (UI)
+- Capturas muestran:
+  - Cloudflare Pages despliega commit 89a65bc (y posteriores), y en UI se ve `build: c43eac4` previamente.
+  - Tras alinear BUILD_SHA con HEAD, el objetivo es que `build: 53944e7` aparezca en la página del analizador (arriba, en “muted”).
+
+PENDIENTE OPERATIVO
+- Repetir el probe HTML+bundle con el URL corregido, hasta ver `build: 53944e7` tanto en HTML como en bundle descargado.
+- Una vez confirmado, borrar artefactos locales OPS_PROD_* (quedan ignorados) si molestan, pero no bloquean estado del repo.
+
+
+
+================================================================================
+ADDENDUM — v14.10.0 RELEASE SNAPSHOT (WEB/OPS)
+Generated: 2026-02-19 12:49 UTC
+Tag: v14.10.0
+Commit (main): 7c01b1b
+Release title: Full cards index (Scryfall bulk) as static gzip + manifest
+
+PRODUCTION VALIDATION (CLOSED)
+- BUILD_SHA visible in Analyzer UI: 53944e7
+- Assets served from production:
+  - /data/cards_index.json.gz
+  - /data/cards_index.manifest.json
+- Manifest fields validated in production:
+  - bulk_type: oracle_cards
+  - record_count: 35633
+  - sha256_gz: (validated match vs downloaded .gz)
+- Runtime banner confirmed:
+  - TAGGING_ACTIVE ... cards indexed count: 35633
+- DevTools Network validation:
+  - 0 external fetches to Scryfall domains at runtime (only site-local assets)
+
+NOTES
+- This milestone establishes a deterministic, fully static deployment model for full-card coverage.
+================================================================================
+END ADDENDUM v14.10.0
+================================================================================
+
+===================================================================== H8
+MC‑SSL v1 (Monte Carlo Structural Stability) + UI wiring
+Fecha actualización: 2026-02-19
+=====================================================================
+
+-   Añadido módulo determinista MC‑SSL v1 (Monte Carlo) en motor.
+-   Integración UI en Analyzer (panel experimental) activable por URL flag.
+-   Integración UI ajustada para recomputar SPS por iteración con el pipeline real (DeckState), no estimaciones.
+
+Decisiones congeladas (feature flag)
+-   Flag: mc=1 activa el panel experimental.
+-   Overrides: mcN (iterations), mcSeed (seed).
+-   Defaults: iterations=1000, seed=1, robust_p=0.1 (motor).
+
+Commits / PRs
+-   PR #18 (merge a main): feat(engine): add MC‑SSL v1 montecarlo stability module (deterministic)
+    -   commit main: c8a9b4c
+    -   nuevos ficheros: src/engine/montecarlo/{index.ts,types.ts,sampler.ts,calculator.ts}
+    -   tests: src/engine/__tests__/montecarlo_mcssl_v1.test.ts
+-   Commit main: feat(ui): MC‑SSL v1 experimental panel with URL flag, race‑safe execution and SSR‑safe wiring
+    -   commit: b74719d
+-   PR #19 (merge a main): feat(ui): MC‑SSL uses real SPS pipeline per MC iteration (DeckState) + sps coercion helper
+    -   merge commit: 229d68d
+
+Validación
+-   Local: vitest --run ✅ (85 tests) y astro build ✅.
+-   CI (Actions): workflow CI + Production Healthcheck ✅ para el commit de main.
+
+Cómo activar (producción / pruebas controladas)
+-   Abrir el analizador con: ?mc=1
+-   Opcional: &mcN=2000&mcSeed=42
+-   Si mc=1, el panel muestra estado (Running/Done/Error) y métricas: base SPS, robust SPS, fragility, effective_n/requested_n/no_op y warnings.
+
+OPS — Verificación producción (probe anti-cache)
+- Ruta canónica: /es/analizador-de-mazos-mtg/
+- BUILD_SHA visto en HTML: build: 53944e7
+- Bundle hashed referenciado en HTML: /_astro/AnalyzerApp.DtCXr8-n.js
+- Evidencias locales (NO commitear): OPS_PROD_HTML_probe.html, OPS_PROD_JS_probe.js
+- Nota: el bundle JS puede no contener literal BUILD_SHA por minificación; verificador oficial = marker en HTML + referencia a bundle hashed (HTTP 200).

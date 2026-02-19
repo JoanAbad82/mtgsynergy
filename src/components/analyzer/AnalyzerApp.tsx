@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { ShareDeckState, StructuralSummary } from "../../engine";
 import {
   analyzeMtgaExportAsync,
@@ -9,6 +9,9 @@ import {
   importShareJson,
   isShareWarn,
 } from "../../engine";
+import { generateEdges } from "../../engine/edges";
+import { runMonteCarloV1 } from "../../engine/montecarlo";
+import { computeStructuralPowerScore } from "../../engine/structural/sps";
 import { buildShareUrl, getShareTokenFromUrl } from "./state/shareUrl";
 import { exportJson, importJson } from "./state/jsonFallback";
 import StructuralPanel from "./panels/StructuralPanel";
@@ -32,6 +35,17 @@ export default function AnalyzerApp() {
   const [tooLong, setTooLong] = useState(false);
   const [jsonFallback, setJsonFallback] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [mcResult, setMcResult] = useState<any | null>(null);
+  const [mcStatus, setMcStatus] = useState<
+    "idle" | "running" | "done" | "error"
+  >("idle");
+  const [mcError, setMcError] = useState<string | null>(null);
+  const [mcParams, setMcParams] = useState(() => ({
+    enabled: false,
+    iterations: 1000,
+    seed: 1,
+  }));
+  const mcRunId = useRef(0);
   const edges = (deckState as any)?.edges ?? [];
   const edgesByKind = useMemo(() => groupEdgesForPanel(edges), [edges]);
   const nameMap = useMemo(() => buildNameMapFromDeckState(deckState), [deckState]);
@@ -65,6 +79,67 @@ export default function AnalyzerApp() {
       setError("No se pudo cargar el share link.");
     }
   }, []);
+
+  useEffect(() => {
+    const update = () => setMcParams(parseMcParams(window.location.href));
+    update();
+    window.addEventListener("popstate", update);
+    return () => window.removeEventListener("popstate", update);
+  }, []);
+
+  useEffect(() => {
+    if (!mcParams.enabled) {
+      setMcResult(null);
+      setMcStatus("idle");
+      setMcError(null);
+      return;
+    }
+    if (!deckState || summary?.structuralPowerScore == null) return;
+
+    mcRunId.current += 1;
+    const rid = mcRunId.current;
+    setMcStatus("running");
+    setMcError(null);
+    setMcResult(null);
+
+    const entries = deckState.deck.entries.map((e) => ({
+      name: e.name,
+      count: e.count,
+      role_primary: e.role_primary,
+    }));
+    const baseSps = summary.structuralPowerScore;
+
+    const analyzeSps = async (
+      nextEntries: Array<{ name: string; count: number; role_primary?: string }>,
+    ) => {
+      const edges = generateEdges(nextEntries as any);
+      const ds = { deck: { entries: nextEntries as any }, edges } as any;
+      const s = computeStructuralSummary(ds);
+      const sps = computeStructuralPowerScore(s, edges);
+      return sps.sps;
+    };
+
+    runMonteCarloV1({
+      entries,
+      baseSps,
+      analyzeSps,
+      settings: {
+        iterations: mcParams.iterations,
+        seed: mcParams.seed,
+      },
+    })
+      .then((res) => {
+        if (rid !== mcRunId.current) return;
+        setMcResult(res);
+        setMcStatus("done");
+      })
+      .catch((err) => {
+        if (rid !== mcRunId.current) return;
+        setMcResult(null);
+        setMcStatus("error");
+        setMcError(err instanceof Error ? err.message : String(err));
+      });
+  }, [mcParams, deckState, summary]);
 
   async function analyze(text: string) {
     setError(null);
@@ -178,6 +253,41 @@ export default function AnalyzerApp() {
           </div>
           <StructuralPanel summary={summary} />
           <RoleGraphPanel summary={summary} />
+          {mcParams.enabled && (
+            <div className="panel">
+              <h2>Monte Carlo (experimental)</h2>
+              {mcStatus === "running" && (
+                <p className="muted">Running...</p>
+              )}
+              {mcStatus === "error" && (
+                <p className="muted">Error: {mcError ?? "Unknown error"}</p>
+              )}
+              {mcStatus === "done" && mcResult && (
+                <>
+                  <p>Base SPS: {mcResult.base.sps}</p>
+                  <p>Robust SPS: {mcResult.metrics.robust_sps}</p>
+                  <p>Fragility: {mcResult.metrics.fragility}</p>
+                  <p>
+                    effective_n / requested_n: {mcResult.dist.effective_n} /{" "}
+                    {mcResult.dist.requested_n} (no_op: {mcResult.dist.no_op})
+                  </p>
+                  <p>
+                    seed: {mcResult.settings.seed} · iterations:{" "}
+                    {mcResult.settings.iterations}
+                  </p>
+                  {mcResult.warnings?.length > 0 && (
+                    <ul className="issues">
+                      {mcResult.warnings.map((w: any) => (
+                        <li key={`${w.code}-${w.detail}`}>
+                          warning: {w.code} ({w.detail})
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )}
+            </div>
+          )}
           <div className="panel">
             <h2>Edges</h2>
             <p className="muted">Edges detectados: {edges.length}</p>
@@ -233,6 +343,17 @@ export type EdgeUi = {
 };
 
 export const BUILD_SHA = "53944e7";
+
+export function parseMcParams(
+  input: string | URL,
+): { enabled: boolean; iterations: number; seed: number } {
+  const url = typeof input === "string" ? new URL(input) : input;
+  const params = new URLSearchParams(url.search);
+  const enabled = params.get("mc") === "1";
+  const iterations = Number(params.get("mcN") ?? "1000");
+  const seed = Number(params.get("mcSeed") ?? "1");
+  return { enabled, iterations, seed };
+}
 
 export function explainEdgeKind(kind?: string): string {
   if (kind === "burn_supports_threat") {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildNameMapFromDeckState, BUILD_SHA, explainEdgeKind, formatEdgeLine, formatNumberCompact, groupEdgesForPanel } from "../AnalyzerApp";
+import { buildNameMapFromDeckState, BUILD_SHA, explainEdgeKind, formatEdgeLine, formatNumberCompact, groupEdgesForPanel, parseMcParams } from "../AnalyzerApp";
 
 describe("AnalyzerApp edges panel grouping", () => {
   test("groups edges by kind", () => {
@@ -106,5 +106,26 @@ describe("formatNumberCompact", () => {
 describe("build marker", () => {
   test("exports BUILD_SHA constant", () => {
     expect(BUILD_SHA).toBe("53944e7");
+  });
+});
+
+describe("parseMcParams", () => {
+  test("defaults when enabled with no overrides", () => {
+    const res = parseMcParams("https://x.test/es/analizador?mc=1");
+    expect(res.enabled).toBe(true);
+    expect(res.iterations).toBe(1000);
+    expect(res.seed).toBe(1);
+  });
+
+  test("reads overrides", () => {
+    const res = parseMcParams("https://x.test/es/analizador?mc=1&mcN=2000&mcSeed=42");
+    expect(res.enabled).toBe(true);
+    expect(res.iterations).toBe(2000);
+    expect(res.seed).toBe(42);
+  });
+
+  test("disabled when mc=0", () => {
+    const res = parseMcParams("https://x.test/es/analizador?mc=0");
+    expect(res.enabled).toBe(false);
   });
 });

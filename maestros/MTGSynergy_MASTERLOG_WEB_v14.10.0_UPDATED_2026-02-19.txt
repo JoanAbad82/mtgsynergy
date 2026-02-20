@@ -214,3 +214,10 @@ OPS — Verificación producción (probe anti-cache)
 - Bundle hashed referenciado en HTML: /_astro/AnalyzerApp.DtCXr8-n.js
 - Evidencias locales (NO commitear): OPS_PROD_HTML_probe.html, OPS_PROD_JS_probe.js
 - Nota: el bundle JS puede no contener literal BUILD_SHA por minificación; verificador oficial = marker en HTML + referencia a bundle hashed (HTTP 200).
+
+OPS — Verificación producción (UX MC Status/Reason)
+- Ruta canónica: /es/analizador-de-mazos-mtg/
+- BUILD_SHA (HTML): build: 53944e7
+- Bundle AnalyzerApp hashed (desde HTML): /_astro/AnalyzerApp.BnakZ8TH.js
+- Verificación: "MC Status / Reason" presente en bundle AnalyzerApp (client hydration). SSR puede no contener el literal.
+- Evidencias locales (NO commitear): OPS_PROD_HTML_probe_mc_ux.html, OPS_PROD_JS_probe_mc_ux.js

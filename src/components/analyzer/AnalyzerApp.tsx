@@ -222,6 +222,19 @@ export default function AnalyzerApp() {
     }
   }
 
+  function handleToggleMonteCarlo(enabled: boolean) {
+    const url = new URL(window.location.href);
+    const params = new URLSearchParams(url.search);
+    if (enabled) {
+      params.set("mc", "1");
+    } else {
+      params.delete("mc");
+    }
+    url.search = params.toString();
+    window.history.replaceState({}, "", url.toString());
+    setMcParams(parseMcParams(url));
+  }
+
   return (
     <div className="analyzer">
       <div className="panel">
@@ -252,6 +265,20 @@ export default function AnalyzerApp() {
 
       <HowItWorksSection />
       <ExamplesSection onLoadExample={handleLoadExample} />
+
+      <div className="panel">
+        <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <input
+            type="checkbox"
+            checked={mcParams.enabled}
+            onChange={(e) => handleToggleMonteCarlo(e.currentTarget.checked)}
+          />
+          <span>Activar Monte Carlo (experimental)</span>
+        </label>
+        <p className="muted" style={{ marginTop: "6px" }}>
+          Calcula estabilidad/robustez. Puede tardar y no siempre aplica.
+        </p>
+      </div>
 
       {summary && (
         <>

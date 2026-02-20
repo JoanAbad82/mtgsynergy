@@ -447,7 +447,7 @@ export type EdgeUi = {
   score?: number;
 };
 
-export const BUILD_SHA = "53944e7";
+export const BUILD_SHA = "1674eec";
 
 export function parseMcParams(
   input: string | URL,

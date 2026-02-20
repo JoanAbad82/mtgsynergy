@@ -283,18 +283,26 @@ export default function AnalyzerApp() {
       {summary && (
         <>
           <div className="panel">
+            <h2>Resultado rápido</h2>
+            <p className="muted">Resumen orientativo para lectura rápida.</p>
             <p>
-              Structural Power Score:{" "}
-              {formatNumberCompact(summary.structuralPowerScore, 1)}
+              <span title="Structural Power Score (SPS)">
+                Puntuación estructural (SPS)
+              </span>
+              : {formatNumberCompact(summary.structuralPowerScore, 1)}
             </p>
-            {summary.structuralPowerBreakdown && (
-              <p className="muted">
-                B={summary.structuralPowerBreakdown.B.toFixed(2)} ×
-                dens={summary.structuralPowerBreakdown.F_dens.toFixed(2)} ×
-                roles={summary.structuralPowerBreakdown.F_roles.toFixed(2)} ×
-                util={summary.structuralPowerBreakdown.F_util.toFixed(2)}
-              </p>
-            )}
+            <p>
+              Sinergias detectadas: {summary.edges_total} ·{" "}
+              <span title="Densidad del grafo de roles">Densidad</span>:{" "}
+              {formatNumberCompact(summary.density, 3)}
+            </p>
+            <p>
+              <span title="Roles con mayor presencia en el mazo">
+                Roles dominantes
+              </span>
+              : {getDominantRoles(summary.role_counts).join(", ") || "—"}
+            </p>
+            <p>{getQuickDiagnosis(summary.edges_total, summary.density)}</p>
           </div>
           <StructuralPanel summary={summary} />
           <RoleGraphPanel summary={summary} />
@@ -394,8 +402,11 @@ export default function AnalyzerApp() {
             </div>
           )}
           <div className="panel">
-            <h2>Edges</h2>
-            <p className="muted">Edges detectados: {edges.length}</p>
+            <h2>Relaciones (sinergias)</h2>
+            <p className="muted">
+              Relaciones detectadas entre roles del mazo.
+            </p>
+            <p className="muted">Relaciones detectadas: {edges.length}</p>
             {edges.length === 0 ? (
               <p className="muted">No se detectaron relaciones.</p>
             ) : (
@@ -545,4 +556,33 @@ export function groupEdgesForPanel(
   });
   entries.sort((a, b) => b[2] - a[2]);
   return entries.map(([kind, list]) => [kind, list] as const);
+}
+
+const QUICK_DENSITY_LOW = 0.05;
+const QUICK_EDGES_HIGH = 8;
+
+function getDominantRoles(
+  roleCounts: Record<string, number>,
+): string[] {
+  const entries = Object.entries(roleCounts).filter(([, count]) => count > 0);
+  if (entries.length === 0) return [];
+  const nonLand = entries.filter(([role]) => role !== "LAND");
+  const pool = nonLand.length > 0 ? nonLand : entries;
+  return pool
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([role]) => role);
+}
+
+function getQuickDiagnosis(edgesCount: number, density: number): string {
+  if (edgesCount === 0) {
+    return "Mazo muy lineal: no se detectan relaciones.";
+  }
+  if (density < QUICK_DENSITY_LOW) {
+    return "Sinergias puntuales: hay relaciones pero poca densidad.";
+  }
+  if (edgesCount >= QUICK_EDGES_HIGH) {
+    return "Mazo con sinergias: varias relaciones activas.";
+  }
+  return "Mazo con algunas sinergias: hay relaciones activas moderadas.";
 }

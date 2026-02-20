@@ -7,10 +7,13 @@ type Props = {
 export default function StructuralPanel({ summary }: Props) {
   return (
     <div className="panel">
-      <h2>Structural Summary</h2>
+      <h2>Resumen estructural</h2>
       <p className="muted">
-        Nodos activos: {summary.nodes_active} / {summary.nodes_total} · Edges:{" "}
-        {summary.edges_total} · Density: {summary.density.toFixed(3)}
+        Vista del grafo de roles y su densidad.
+      </p>
+      <p className="muted">
+        Nodos activos: {summary.nodes_active} / {summary.nodes_total} · Relaciones:{" "}
+        {summary.edges_total} · Densidad: {summary.density.toFixed(3)}
       </p>
       <p className="muted">
         Cycles: {summary.cycles_present ? "sí" : "no"} · Components (weak):{" "}

@@ -343,3 +343,40 @@ OPS — Probes postdeploy (anti-cache)
 
 Cierre
 - Estado: F1.0 cerrado (UI-only + probes OK)
+
+===================================================================== H13
+F1.1 — Polish de microcopy friendly (UI-only)
+Fecha actualización: 2026-02-21
+=====================================================================
+
+Resumen
+- Ajuste de microcopy para maximizar claridad y coherencia:
+  - “Entrada / parsing” → “Entrada del mazo”
+  - subtitle → “Resumen rápido para saber qué falta.”
+  - prefijo “Acción:” → “Siguiente paso:”
+  - corrección semántica del índice: “Cartas reconocidas (35757)” → “Índice cargado (35757 cartas)”
+- Armonización de MC:
+  - badge “Próximamente…” → “Monte Carlo (experimental)”
+- Corrección lingüística:
+  - “Herramienta structural” → “Herramienta estructural”
+
+Commit
+- aea837d  ui: polish friendly copy (F1.1)
+
+OPS — Cloudflare Pages
+- Production: main @ aea837d — Success
+
+OPS — Probes postdeploy (anti-cache)
+- Ruta canónica: /es/analizador-de-mazos-mtg/
+- HTML probe OK:
+  - “Entrada del mazo”
+  - “Siguiente paso:”
+  - “Herramienta estructural”
+  - “Monte Carlo (experimental)”
+  - build marker presente (HTML): build: 55522ff
+- Bundle probe OK:
+  - Bundle AnalyzerApp.*.js extraído desde HTML (anti-cache)
+  - Literales presentes: “Entrada del mazo”, “Índice cargado”, “Siguiente paso:”
+
+Cierre
+- Estado: F1.1 cerrado (UI-only + probes OK)

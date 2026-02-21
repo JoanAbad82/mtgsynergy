@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildAnalysisStatusModel } from "../panels/AnalysisStatusPanel";
+import { buildAnalysisStatusModel, formatStatusTitle } from "../panels/AnalysisStatusPanel";
 
 const baseInput = {
   summary: null,
@@ -15,6 +15,24 @@ const baseInput = {
 };
 
 describe("AnalysisStatusPanel helpers", () => {
+  test("formatStatusTitle handles empty", () => {
+    expect(formatStatusTitle(undefined).text).toBe("");
+    expect(formatStatusTitle(undefined).truncated).toBe(false);
+  });
+
+  test("formatStatusTitle keeps short text", () => {
+    const res = formatStatusTitle("Texto corto");
+    expect(res.text).toBe("Texto corto");
+    expect(res.truncated).toBe(false);
+  });
+
+  test("formatStatusTitle truncates long text", () => {
+    const raw = "x".repeat(500);
+    const res = formatStatusTitle(raw, 400);
+    expect(res.truncated).toBe(true);
+    expect(res.text.endsWith("…")).toBe(true);
+  });
+
   test("base strings include headings", () => {
     const model = buildAnalysisStatusModel(baseInput);
     expect(model.title).toContain("Estado del análisis");

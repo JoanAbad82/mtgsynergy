@@ -1,3 +1,4 @@
+import { useState } from "preact/hooks";
 import type { ShareDeckState, StructuralSummary } from "../../../engine";
 
 export type StatusLevel = "OK" | "WARN";
@@ -41,6 +42,20 @@ function extractCardsIndexCount(message?: string): number | null {
   if (!match) return null;
   const value = Number(match[1]);
   return Number.isFinite(value) ? value : null;
+}
+
+export function formatStatusTitle(
+  raw?: string,
+  maxLength = 400,
+): { text: string; truncated: boolean } {
+  if (!raw) return { text: "", truncated: false };
+  const collapsed = raw.replace(/\s+/g, " ").trim();
+  if (!collapsed) return { text: "", truncated: false };
+  if (collapsed.length <= maxLength) {
+    return { text: collapsed, truncated: false };
+  }
+  const slice = Math.max(0, maxLength - 1);
+  return { text: `${collapsed.slice(0, slice)}…`, truncated: true };
 }
 
 function getTaggingIssue(
@@ -231,6 +246,7 @@ export default function AnalysisStatusPanel(props: Props) {
   const model = buildAnalysisStatusModel(props);
   const canReanalyze = Boolean(props.onReanalyze) &&
     (Boolean(props.inputTextNonEmpty) || Boolean(props.summary && props.deckState));
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   return (
     <div className="panel">
@@ -238,50 +254,75 @@ export default function AnalysisStatusPanel(props: Props) {
       <p className="muted">
         Lectura rápida del estado del flujo.
       </p>
-      {model.sections.map((section) => (
-        <div key={section.id}>
-          <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span className="badge" title={section.statusTitle ?? section.status}>
-              {section.status}
-            </span>
-            <span>{section.title}</span>
-          </h3>
-          <p>{section.summary}</p>
-          <p className="muted" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            <span>{section.action}</span>
-            {section.actionId === "focusInput" && props.onFocusInput && (
-              <button
-                type="button"
-                className="muted"
-                style={{ textDecoration: "underline" }}
-                onClick={props.onFocusInput}
-              >
-                Ir a entrada
-              </button>
+      {model.sections.map((section) => {
+        const formattedTitle = formatStatusTitle(section.statusTitle);
+        return (
+          <div key={section.id}>
+            <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span className="badge" title={section.statusTitle ?? section.status}>
+                {section.status}
+              </span>
+              <span>{section.title}</span>
+            </h3>
+            <p>{section.summary}</p>
+            <p className="muted" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <span>{section.action}</span>
+              {section.actionId === "focusInput" && props.onFocusInput && (
+                <button
+                  type="button"
+                  className="muted"
+                  style={{ textDecoration: "underline" }}
+                  onClick={props.onFocusInput}
+                >
+                  Ir a entrada
+                </button>
+              )}
+              {section.actionId === "enableMc" && props.onEnableMc && (
+                <button
+                  type="button"
+                  className="muted"
+                  style={{ textDecoration: "underline" }}
+                  onClick={props.onEnableMc}
+                >
+                  Activar Monte Carlo
+                </button>
+              )}
+              {section.actionId === "reanalyze" && canReanalyze && (
+                <button
+                  type="button"
+                  className="muted"
+                  style={{ textDecoration: "underline" }}
+                  onClick={props.onReanalyze}
+                >
+                  Reanalizar
+                </button>
+              )}
+            </p>
+            {formattedTitle.text && (
+              <>
+                <button
+                  type="button"
+                  className="muted"
+                  style={{ textDecoration: "underline" }}
+                  onClick={() =>
+                    setExpanded((prev) => ({
+                      ...prev,
+                      [section.id]: !prev[section.id],
+                    }))
+                  }
+                >
+                  {expanded[section.id] ? "Ocultar" : "Detalles"}
+                </button>
+                {expanded[section.id] && (
+                  <div className="muted" style={{ whiteSpace: "pre-wrap" }}>
+                    {formattedTitle.text}
+                  </div>
+                )}
+              </>
             )}
-            {section.actionId === "enableMc" && props.onEnableMc && (
-              <button
-                type="button"
-                className="muted"
-                style={{ textDecoration: "underline" }}
-                onClick={props.onEnableMc}
-              >
-                Activar Monte Carlo
-              </button>
-            )}
-            {section.actionId === "reanalyze" && canReanalyze && (
-              <button
-                type="button"
-                className="muted"
-                style={{ textDecoration: "underline" }}
-                onClick={props.onReanalyze}
-              >
-                Reanalizar
-              </button>
-            )}
-          </p>
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

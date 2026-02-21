@@ -7,6 +7,7 @@ const baseInput = {
   issues: [],
   shareImported: false,
   jsonImported: false,
+  inputTextNonEmpty: false,
   mcParams: { enabled: false },
   mcStatus: "idle" as const,
   mcResult: null,
@@ -38,6 +39,31 @@ describe("AnalysisStatusPanel helpers", () => {
     });
     const tagging = model.sections.find((s) => s.id === "tagging");
     expect(tagging?.status).toBe("WARN");
+  });
+
+  test("sin análisis + input vacío", () => {
+    const model = buildAnalysisStatusModel(baseInput);
+    const input = model.sections.find((s) => s.id === "input");
+    expect(input?.summary).toContain("Entrada vacía");
+  });
+
+  test("sin análisis + input con texto", () => {
+    const model = buildAnalysisStatusModel({
+      ...baseInput,
+      inputTextNonEmpty: true,
+    });
+    const input = model.sections.find((s) => s.id === "input");
+    expect(input?.summary).toContain("No has analizado");
+  });
+
+  test("TAGGING_NO_MATCHES recomienda idioma/nombres", () => {
+    const model = buildAnalysisStatusModel({
+      ...baseInput,
+      issues: [{ code: "TAGGING_NO_MATCHES", severity: "warning", message: "nope" }],
+    });
+    const tagging = model.sections.find((s) => s.id === "tagging");
+    expect(tagging?.summary).toContain("sin coincidencias");
+    expect(tagging?.action).toContain("idioma");
   });
 
   test("MC disabled/enabled + running/done/error", () => {
@@ -72,6 +98,17 @@ describe("AnalysisStatusPanel helpers", () => {
     expect(errorMc?.summary).toContain("Error");
   });
 
+  test("MC enabled + idle -> pendiente", () => {
+    const model = buildAnalysisStatusModel({
+      ...baseInput,
+      mcParams: { enabled: true },
+      mcStatus: "idle",
+    });
+    const mc = model.sections.find((s) => s.id === "mc");
+    expect(mc?.summary).toContain("pendiente");
+    expect(mc?.action).toContain("Analizar");
+  });
+
   test("MC omitted with reason", () => {
     const model = buildAnalysisStatusModel({
       ...baseInput,
@@ -82,5 +119,6 @@ describe("AnalysisStatusPanel helpers", () => {
     const mc = model.sections.find((s) => s.id === "mc");
     expect(mc?.summary).toContain("Omitido");
     expect(mc?.summary).toContain("SPS base");
+    expect(mc?.summary).toContain("effective_n=0");
   });
 });

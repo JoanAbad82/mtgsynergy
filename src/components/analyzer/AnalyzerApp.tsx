@@ -48,6 +48,7 @@ export default function AnalyzerApp() {
     iterations: 1000,
     seed: 1,
   }));
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const mcRunId = useRef(0);
   const edges = (deckState as any)?.edges ?? [];
   const edgesByKind = useMemo(() => groupEdgesForPanel(edges), [edges]);
@@ -256,6 +257,7 @@ export default function AnalyzerApp() {
           placeholder="Pega aquí tu export de MTG Arena..."
           value={inputText}
           onChange={(e) => setInputText(e.currentTarget.value)}
+          ref={inputRef}
         />
         <button onClick={handleAnalyze} disabled={isAnalyzing}>
           {isAnalyzing ? "Analizando..." : "Analizar"}
@@ -295,10 +297,25 @@ export default function AnalyzerApp() {
         issues={issues}
         shareImported={shareImported}
         jsonImported={jsonImported}
+        inputTextNonEmpty={inputText.trim().length > 0}
         mcParams={mcParams}
         mcStatus={mcStatus}
         mcResult={mcResult}
         mcError={mcError}
+        onFocusInput={() => {
+          const el = inputRef.current;
+          if (!el) return;
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+          el.focus();
+        }}
+        onEnableMc={() => {
+          if (mcParams.enabled) return;
+          handleToggleMonteCarlo(true);
+        }}
+        onReanalyze={() => {
+          if (!inputText.trim()) return;
+          analyze(inputText);
+        }}
       />
 
       {summary && (

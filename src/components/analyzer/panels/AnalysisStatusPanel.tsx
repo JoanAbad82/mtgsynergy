@@ -8,6 +8,7 @@ export type AnalysisStatusSection = {
   status: StatusLevel;
   summary: string;
   action: string;
+  actionId?: "focusInput" | "enableMc" | "reanalyze";
   statusTitle?: string;
 };
 
@@ -24,10 +25,14 @@ export type AnalysisStatusInputs = {
   issues?: IssueLike[];
   shareImported?: boolean;
   jsonImported?: boolean;
+  inputTextNonEmpty?: boolean;
   mcParams?: { enabled: boolean };
   mcStatus?: "idle" | "running" | "done" | "error";
   mcResult?: any | null;
   mcError?: string | null;
+  onFocusInput?: () => void;
+  onEnableMc?: () => void;
+  onReanalyze?: () => void;
 };
 
 function extractCardsIndexCount(message?: string): number | null {
@@ -83,6 +88,7 @@ export function buildAnalysisStatusModel(
   const issues = input.issues ?? [];
   const shareImported = Boolean(input.shareImported);
   const jsonImported = Boolean(input.jsonImported);
+  const inputTextNonEmpty = Boolean(input.inputTextNonEmpty);
   const mcParams = input.mcParams ?? { enabled: false };
   const mcStatus = input.mcStatus ?? "idle";
   const mcResult = input.mcResult ?? null;
@@ -98,16 +104,24 @@ export function buildAnalysisStatusModel(
         ? "análisis local"
         : null;
 
+  const noInputYet = !inputOk;
+  const inputSummary = noInputYet
+    ? inputTextNonEmpty
+      ? "No has analizado todavía."
+      : "Entrada vacía."
+    : `Entrada válida${inputSource ? ` (${inputSource})` : ""}.`;
+
   const inputSection: AnalysisStatusSection = {
     id: "input",
     title: "Entrada / parsing",
     status: inputOk ? "OK" : "WARN",
-    summary: inputOk
-      ? `Entrada válida${inputSource ? ` (${inputSource})` : ""}.`
-      : "Sin datos parseables.",
+    summary: inputSummary,
     action: inputOk
       ? "Acción: revisar resultados."
-      : "Acción: pega un export y pulsa Analizar.",
+      : inputTextNonEmpty
+        ? "Acción: pulsa Analizar."
+        : "Acción: pega un export y pulsa Analizar.",
+    actionId: inputOk ? "reanalyze" : "focusInput",
     statusTitle: inputSource ? `Origen: ${inputSource}` : undefined,
   };
 
@@ -128,7 +142,7 @@ export function buildAnalysisStatusModel(
     taggingSummary = taggingCount != null
       ? `Índice sin coincidencias (${taggingCount}).`
       : "Índice sin coincidencias.";
-    taggingAction = "Acción: revisa nombres/idioma del deck.";
+    taggingAction = "Acción: revisa idioma/nombres del deck (MTGA).";
   } else if (taggingIssue?.code === "TAGGING_UNAVAILABLE") {
     taggingStatus = "WARN";
     taggingSummary = "Índice no disponible.";
@@ -156,24 +170,29 @@ export function buildAnalysisStatusModel(
   let mcSummary = "Desactivado.";
   let mcAction = "Acción: activa Monte Carlo.";
   let mcStatusTitle: string | undefined;
+  let mcActionId: AnalysisStatusSection["actionId"] = "enableMc";
 
   if (!mcParams.enabled) {
     mcStatusLabel = "WARN";
     mcSummary = "Desactivado.";
     mcAction = "Acción: activa Monte Carlo.";
+    mcActionId = "enableMc";
+  } else if (mcStatus === "idle") {
+    mcStatusLabel = "WARN";
+    mcSummary = "Activado, pendiente de ejecución (pulsa Analizar).";
+    mcAction = "Acción: pulsa Analizar.";
+    mcActionId = "reanalyze";
   } else if (mcStatus === "running") {
     mcStatusLabel = "OK";
     mcSummary = "Ejecutando.";
     mcAction = "Acción: espera.";
+    mcActionId = undefined;
   } else if (mcStatus === "error") {
     mcStatusLabel = "WARN";
     mcSummary = "Error en la ejecución.";
     mcAction = "Acción: baja iteraciones o recarga.";
     mcStatusTitle = mcError ?? "Error";
-  } else if (mcStatus === "idle") {
-    mcStatusLabel = "WARN";
-    mcSummary = "Pendiente.";
-    mcAction = "Acción: analiza un mazo para correr MC.";
+    mcActionId = "reanalyze";
   } else if (mcStatus === "done") {
     const omittedInfo = getMcOmittedReason(mcResult);
     if (omittedInfo.omitted) {
@@ -181,10 +200,12 @@ export function buildAnalysisStatusModel(
       mcSummary = `Omitido${omittedInfo.reason ? `: ${omittedInfo.reason}` : ""}.`;
       mcAction = "Acción: usa un mazo con sinergias.";
       mcStatusTitle = omittedInfo.reason;
+      mcActionId = "reanalyze";
     } else {
       mcStatusLabel = "OK";
       mcSummary = "Listo.";
       mcAction = "Acción: revisar métricas.";
+      mcActionId = "reanalyze";
     }
   }
 
@@ -194,6 +215,7 @@ export function buildAnalysisStatusModel(
     status: mcStatusLabel,
     summary: mcSummary,
     action: mcAction,
+    actionId: mcActionId,
     statusTitle: mcStatusTitle,
   };
 
@@ -207,6 +229,8 @@ type Props = AnalysisStatusInputs;
 
 export default function AnalysisStatusPanel(props: Props) {
   const model = buildAnalysisStatusModel(props);
+  const canReanalyze = Boolean(props.onReanalyze) &&
+    (Boolean(props.inputTextNonEmpty) || Boolean(props.summary && props.deckState));
 
   return (
     <div className="panel">
@@ -223,7 +247,39 @@ export default function AnalysisStatusPanel(props: Props) {
             <span>{section.title}</span>
           </h3>
           <p>{section.summary}</p>
-          <p className="muted">{section.action}</p>
+          <p className="muted" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <span>{section.action}</span>
+            {section.actionId === "focusInput" && props.onFocusInput && (
+              <button
+                type="button"
+                className="muted"
+                style={{ textDecoration: "underline" }}
+                onClick={props.onFocusInput}
+              >
+                Ir a entrada
+              </button>
+            )}
+            {section.actionId === "enableMc" && props.onEnableMc && (
+              <button
+                type="button"
+                className="muted"
+                style={{ textDecoration: "underline" }}
+                onClick={props.onEnableMc}
+              >
+                Activar Monte Carlo
+              </button>
+            )}
+            {section.actionId === "reanalyze" && canReanalyze && (
+              <button
+                type="button"
+                className="muted"
+                style={{ textDecoration: "underline" }}
+                onClick={props.onReanalyze}
+              >
+                Reanalizar
+              </button>
+            )}
+          </p>
         </div>
       ))}
     </div>

@@ -1,0 +1,43 @@
+# ============================================================================
+# MTGSynergy — Line endings policy (repo-level, deterministic)
+# Goal: avoid LF/CRLF warnings and keep diffs stable across Windows/macOS/Linux.
+# ============================================================================
+
+# Default: treat all text as text and normalize to LF in the repository.
+* text=auto eol=lf
+
+# Markdown / text logs (force LF)
+*.md  text eol=lf
+*.txt text eol=lf
+*.mdx text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+
+# Shell scripts must be LF
+*.sh  text eol=lf
+
+# PowerShell scripts: keep CRLF (native on Windows; avoids execution oddities)
+*.ps1 text eol=crlf
+
+# Binary assets (never touch)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.gz binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.zip binary

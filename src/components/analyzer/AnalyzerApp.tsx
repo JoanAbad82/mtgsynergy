@@ -17,6 +17,7 @@ import { exportJson, importJson } from "./state/jsonFallback";
 import StructuralPanel from "./panels/StructuralPanel";
 import RoleGraphPanel from "./panels/RoleGraphPanel";
 import SharePanel from "./panels/SharePanel";
+import AnalysisStatusPanel from "./panels/AnalysisStatusPanel";
 import HowItWorksSection from "./sections/HowItWorksSection";
 import ExamplesSection from "./sections/ExamplesSection";
 import FaqSection from "./sections/FaqSection";
@@ -32,6 +33,8 @@ export default function AnalyzerApp() {
   const [error, setError] = useState<string | null>(null);
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [shareImported, setShareImported] = useState(false);
+  const [jsonImported, setJsonImported] = useState(false);
   const [tooLong, setTooLong] = useState(false);
   const [jsonFallback, setJsonFallback] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -75,6 +78,8 @@ export default function AnalyzerApp() {
       setSummary(s);
       setShareToken(token);
       setShareUrl(window.location.href);
+      setShareImported(true);
+      setJsonImported(false);
     } catch (err) {
       setError("No se pudo cargar el share link.");
     }
@@ -163,6 +168,8 @@ export default function AnalyzerApp() {
     setError(null);
     setTooLong(false);
     setIsAnalyzing(true);
+    setShareImported(false);
+    setJsonImported(false);
 
     try {
       const res = await analyzeMtgaExportAsync(text, { enableCardIndex: true });
@@ -217,6 +224,8 @@ export default function AnalyzerApp() {
       setDeckState(ds);
       setSummary(s);
       setError(null);
+      setJsonImported(true);
+      setShareImported(false);
     } catch {
       setError("JSON inválido.");
     }
@@ -279,6 +288,18 @@ export default function AnalyzerApp() {
           Calcula estabilidad/robustez. Puede tardar y no siempre aplica.
         </p>
       </div>
+
+      <AnalysisStatusPanel
+        summary={summary}
+        deckState={deckState}
+        issues={issues}
+        shareImported={shareImported}
+        jsonImported={jsonImported}
+        mcParams={mcParams}
+        mcStatus={mcStatus}
+        mcResult={mcResult}
+        mcError={mcError}
+      />
 
       {summary && (
         <>

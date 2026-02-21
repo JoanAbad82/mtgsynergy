@@ -248,7 +248,7 @@ export default function AnalyzerApp() {
   return (
     <div className="analyzer">
       <div className="panel">
-        <span className="badge">Próximamente: Simulación Monte Carlo</span>
+        <span className="badge">Monte Carlo (experimental)</span>
         <p className="muted" style={{ marginTop: "10px" }}>
           Pega un export de MTG Arena para analizar la estructura.
         </p>

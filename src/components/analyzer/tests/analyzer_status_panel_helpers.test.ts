@@ -49,6 +49,7 @@ describe("AnalysisStatusPanel helpers", () => {
     });
     const tagging = model.sections.find((s) => s.id === "tagging");
     expect(tagging?.status).toBe("OK");
+    expect(tagging?.summary).toContain("Índice cargado");
   });
 
   test("maps TAGGING_UNAVAILABLE to WARN", () => {

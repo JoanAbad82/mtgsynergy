@@ -249,3 +249,35 @@ OPS — Probes postdeploy (anti-cache)
 
 Cierre
 - Estado: B1.2 cerrado (UI-only + probes OK)
+
+===================================================================== H10
+B1.3 — Panel “Estado del análisis”: acciones + anti-camuflaje (UI-only)
+Fecha actualización: 2026-02-21
+=====================================================================
+
+Resumen
+- Mejora UX del panel “Estado del análisis” (B1.2):
+  - Acciones clicables: “Ir a entrada”, “Activar Monte Carlo”, “Reanalizar” (condicional).
+  - Mensajes más precisos: “Entrada vacía” vs “No has analizado todavía”, TAGGING_NO_MATCHES recomienda idioma/nombres (MTGA), MC enabled+idle “pendiente (pulsa Analizar)”, y razones de omitted más legibles.
+- Integración segura SSR/hydration: focus/scroll via refs y handlers (sin window en render).
+- Tests puros actualizados para los nuevos mapeos.
+
+Commit
+- 95be870  ui: improve analysis status panel actions (B1.3)
+
+OPS — Cloudflare Pages
+- Production: main @ 95be870 — Success
+
+OPS — Probes postdeploy (anti-cache)
+- Ruta canónica: /es/analizador-de-mazos-mtg/
+- HTML probe OK:
+  - “Estado del análisis”
+  - “Ir a entrada”
+  - “Activar Monte Carlo”
+  - Nota: “Reanalizar” es condicional (no aparece en arranque en frío sin texto/análisis).
+- Bundle probe OK:
+  - Bundle AnalyzerApp hashed detectado desde HTML: /_astro/AnalyzerApp.DyWCUCu6.js
+  - Literales “Estado del análisis” y “Ir a entrada” presentes en bundle.
+
+Cierre
+- Estado: B1.3 cerrado (UI-only + probes OK)

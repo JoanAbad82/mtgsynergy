@@ -221,3 +221,31 @@ OPS — Verificación producción (UX MC Status/Reason)
 - Bundle AnalyzerApp hashed (desde HTML): /_astro/AnalyzerApp.BnakZ8TH.js
 - Verificación: "MC Status / Reason" presente en bundle AnalyzerApp (client hydration). SSR puede no contener el literal.
 - Evidencias locales (NO commitear): OPS_PROD_HTML_probe_mc_ux.html, OPS_PROD_JS_probe_mc_ux.js
+
+===================================================================== H9
+B1.2 — Panel “Estado del análisis” (UI-only) + probes
+Fecha actualización: 2026-02-21
+=====================================================================
+
+Resumen
+- Añadido panel “Estado del análisis” con 3 secciones: Entrada/Parsing, Índice de cartas (TAGGING), Monte Carlo (MC-SSL).
+- Helpers puros para mapear estados a UI + test unitario vitest.
+
+Commits
+- fe66ffb  ui: add analysis status panel (B1.2)
+- d077551  chore(data): revert cards index artifacts for UI-only B1.2
+  - Motivo: el build local regeneró public/data/cards_index*; revert para mantener B1.2 UI-only.
+
+OPS — Cloudflare Pages
+- Production: main @ d077551 — Success (deploy verificado antes de probe)
+
+OPS — Probes postdeploy (anti-cache)
+- HTML probe OK: strings presentes en /es/analizador-de-mazos-mtg/
+  - “Estado del análisis”
+  - “Índice de cartas”
+  - “Monte Carlo (MC-SSL)”
+- Bundle probe OK: mismas strings presentes en AnalyzerApp.*.js extraído desde el HTML.
+- Nota operativa: probe robusto con construcción de URI ([Uri]::new(...)) para evitar bug de URL mal concatenada.
+
+Cierre
+- Estado: B1.2 cerrado (UI-only + probes OK)

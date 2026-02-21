@@ -313,3 +313,33 @@ OPS — Probes postdeploy (anti-cache)
 
 Cierre
 - Estado: B1.4 cerrado (UI-only + probes OK + BUILD_SHA aligned)
+
+===================================================================== H12
+F1.0 — Lenguaje friendly (microcopy ES) para el analizador (UI-only)
+Fecha actualización: 2026-02-21
+=====================================================================
+
+Resumen
+- Centralización de microcopy ES del panel “Estado del análisis” en:
+  - src/components/analyzer/i18n/es.ts
+- Reescritura de mensajes a tono más humano y accionable (sin tocar lógica):
+  - “Aún no has cargado un mazo.”
+  - “Tienes un mazo pegado, pero falta pulsar Analizar.”
+  - “No he podido reconocer cartas (idioma/nombres).”
+- Tests ajustados para validar keywords friendly + shape del i18n.
+
+Commit
+- dc56cbb  ui: friendly microcopy for analyzer (F1.0)
+
+OPS — Cloudflare Pages
+- Production: main @ dc56cbb — Success
+
+OPS — Probes postdeploy (anti-cache)
+- Ruta canónica: /es/analizador-de-mazos-mtg/
+- Bundle probe OK:
+  - “Aún no has cargado un mazo”
+  - “No he podido reconocer cartas”
+- Nota: Validación realizada sobre AnalyzerApp.*.js extraído desde HTML (anti-cache cb).
+
+Cierre
+- Estado: F1.0 cerrado (UI-only + probes OK)

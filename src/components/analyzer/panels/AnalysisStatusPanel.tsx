@@ -260,21 +260,23 @@ export default function AnalysisStatusPanel(props: Props) {
       {model.sections.map((section) => {
         const formattedTitle = formatStatusTitle(section.statusTitle);
         return (
-          <div key={section.id}>
-            <h3 style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span className="badge" title={section.statusTitle ?? section.status}>
+          <div key={section.id} className="status-section">
+            <h3 className="status-header">
+              <span
+                className={`badge status-badge status-${section.status.toLowerCase()}`}
+                title={section.statusTitle ?? section.status}
+              >
                 {section.status}
               </span>
               <span>{section.title}</span>
             </h3>
             <p>{section.summary}</p>
-            <p className="muted" style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <p className="muted status-actions">
               <span>{section.action}</span>
               {section.actionId === "focusInput" && props.onFocusInput && (
                 <button
                   type="button"
-                  className="muted"
-                  style={{ textDecoration: "underline" }}
+                  className="muted link-button"
                   onClick={props.onFocusInput}
                 >
                   {es.analysisStatus.labels.focusInput}
@@ -283,8 +285,7 @@ export default function AnalysisStatusPanel(props: Props) {
               {section.actionId === "enableMc" && props.onEnableMc && (
                 <button
                   type="button"
-                  className="muted"
-                  style={{ textDecoration: "underline" }}
+                  className="muted link-button"
                   onClick={props.onEnableMc}
                 >
                   {es.analysisStatus.labels.enableMc}
@@ -293,8 +294,7 @@ export default function AnalysisStatusPanel(props: Props) {
               {section.actionId === "reanalyze" && canReanalyze && (
                 <button
                   type="button"
-                  className="muted"
-                  style={{ textDecoration: "underline" }}
+                  className="muted link-button"
                   onClick={props.onReanalyze}
                 >
                   {es.analysisStatus.labels.reanalyze}
@@ -305,8 +305,7 @@ export default function AnalysisStatusPanel(props: Props) {
               <>
                 <button
                   type="button"
-                  className="muted"
-                  style={{ textDecoration: "underline" }}
+                  className="muted link-button status-toggle"
                   onClick={() =>
                     setExpanded((prev) => ({
                       ...prev,
@@ -319,7 +318,7 @@ export default function AnalysisStatusPanel(props: Props) {
                     : es.analysisStatus.labels.details}
                 </button>
                 {expanded[section.id] && (
-                  <div className="muted" style={{ whiteSpace: "pre-wrap" }}>
+                  <div className="muted status-details">
                     {formattedTitle.text}
                   </div>
                 )}

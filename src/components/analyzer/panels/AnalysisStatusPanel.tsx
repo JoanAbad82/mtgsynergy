@@ -1,5 +1,6 @@
 import { useState } from "preact/hooks";
 import type { ShareDeckState, StructuralSummary } from "../../../engine";
+import { es } from "../i18n/es";
 
 export type StatusLevel = "OK" | "WARN";
 
@@ -122,20 +123,22 @@ export function buildAnalysisStatusModel(
   const noInputYet = !inputOk;
   const inputSummary = noInputYet
     ? inputTextNonEmpty
-      ? "No has analizado todavía."
-      : "Entrada vacía."
-    : `Entrada válida${inputSource ? ` (${inputSource})` : ""}.`;
+      ? es.analysisStatus.sections.input.summaryNeedsAnalyze
+      : es.analysisStatus.sections.input.summaryEmpty
+    : inputSource
+      ? es.analysisStatus.sections.input.summaryWithSource(inputSource)
+      : es.analysisStatus.sections.input.summaryValid;
 
   const inputSection: AnalysisStatusSection = {
     id: "input",
-    title: "Entrada / parsing",
+    title: es.analysisStatus.sections.input.title,
     status: inputOk ? "OK" : "WARN",
     summary: inputSummary,
     action: inputOk
-      ? "Acción: revisar resultados."
+      ? es.analysisStatus.sections.input.actionReview
       : inputTextNonEmpty
-        ? "Acción: pulsa Analizar."
-        : "Acción: pega un export y pulsa Analizar.",
+        ? es.analysisStatus.sections.input.actionAnalyze
+        : es.analysisStatus.sections.input.actionPaste,
     actionId: inputOk ? "reanalyze" : "focusInput",
     statusTitle: inputSource ? `Origen: ${inputSource}` : undefined,
   };
@@ -143,33 +146,33 @@ export function buildAnalysisStatusModel(
   const taggingIssue = getTaggingIssue(issues);
   const taggingCount = extractCardsIndexCount(taggingIssue?.message);
   let taggingStatus: StatusLevel = "WARN";
-  let taggingSummary = "Índice no disponible.";
-  let taggingAction = "Acción: prueba /data/cards_index.json.gz y manifest.";
+  let taggingSummary = es.analysisStatus.sections.tagging.summaryUnavailable;
+  let taggingAction = es.analysisStatus.sections.tagging.actionProbe;
 
   if (taggingIssue?.code === "TAGGING_ACTIVE") {
     taggingStatus = "OK";
     taggingSummary = taggingCount != null
-      ? `Índice activo (${taggingCount}).`
-      : "Índice activo.";
-    taggingAction = "Acción: continuar con el análisis.";
+      ? es.analysisStatus.sections.tagging.summaryActiveCount(taggingCount)
+      : es.analysisStatus.sections.tagging.summaryActive;
+    taggingAction = es.analysisStatus.sections.tagging.actionContinue;
   } else if (taggingIssue?.code === "TAGGING_NO_MATCHES") {
     taggingStatus = "WARN";
     taggingSummary = taggingCount != null
-      ? `Índice sin coincidencias (${taggingCount}).`
-      : "Índice sin coincidencias.";
-    taggingAction = "Acción: revisa idioma/nombres del deck (MTGA).";
+      ? es.analysisStatus.sections.tagging.summaryNoMatchesCount(taggingCount)
+      : es.analysisStatus.sections.tagging.summaryNoMatches;
+    taggingAction = es.analysisStatus.sections.tagging.actionCheckNames;
   } else if (taggingIssue?.code === "TAGGING_UNAVAILABLE") {
     taggingStatus = "WARN";
-    taggingSummary = "Índice no disponible.";
-    taggingAction = "Acción: prueba /data/cards_index.json.gz y manifest.";
+    taggingSummary = es.analysisStatus.sections.tagging.summaryUnavailable;
+    taggingAction = es.analysisStatus.sections.tagging.actionProbe;
   } else if (!hasAnalysis) {
     taggingStatus = "WARN";
-    taggingSummary = "Índice pendiente.";
-    taggingAction = "Acción: analiza un mazo primero.";
+    taggingSummary = es.analysisStatus.sections.tagging.summaryPending;
+    taggingAction = es.analysisStatus.sections.tagging.actionAnalyzeFirst;
   } else {
     taggingStatus = "OK";
-    taggingSummary = "Índice activo.";
-    taggingAction = "Acción: continuar con el análisis.";
+    taggingSummary = es.analysisStatus.sections.tagging.summaryActive;
+    taggingAction = es.analysisStatus.sections.tagging.actionContinue;
   }
 
   const taggingSection: AnalysisStatusSection = {
@@ -182,51 +185,53 @@ export function buildAnalysisStatusModel(
   };
 
   let mcStatusLabel: StatusLevel = "WARN";
-  let mcSummary = "Desactivado.";
-  let mcAction = "Acción: activa Monte Carlo.";
+  let mcSummary = es.analysisStatus.sections.mc.summaryDisabled;
+  let mcAction = es.analysisStatus.sections.mc.actionEnable;
   let mcStatusTitle: string | undefined;
   let mcActionId: AnalysisStatusSection["actionId"] = "enableMc";
 
   if (!mcParams.enabled) {
     mcStatusLabel = "WARN";
-    mcSummary = "Desactivado.";
-    mcAction = "Acción: activa Monte Carlo.";
+    mcSummary = es.analysisStatus.sections.mc.summaryDisabled;
+    mcAction = es.analysisStatus.sections.mc.actionEnable;
     mcActionId = "enableMc";
   } else if (mcStatus === "idle") {
     mcStatusLabel = "WARN";
-    mcSummary = "Activado, pendiente de ejecución (pulsa Analizar).";
-    mcAction = "Acción: pulsa Analizar.";
+    mcSummary = es.analysisStatus.sections.mc.summaryIdleEnabled;
+    mcAction = es.analysisStatus.sections.mc.actionAnalyze;
     mcActionId = "reanalyze";
   } else if (mcStatus === "running") {
     mcStatusLabel = "OK";
-    mcSummary = "Ejecutando.";
-    mcAction = "Acción: espera.";
+    mcSummary = es.analysisStatus.sections.mc.summaryRunning;
+    mcAction = es.analysisStatus.sections.mc.actionWait;
     mcActionId = undefined;
   } else if (mcStatus === "error") {
     mcStatusLabel = "WARN";
-    mcSummary = "Error en la ejecución.";
-    mcAction = "Acción: baja iteraciones o recarga.";
+    mcSummary = es.analysisStatus.sections.mc.summaryError;
+    mcAction = es.analysisStatus.sections.mc.actionRetry;
     mcStatusTitle = mcError ?? "Error";
     mcActionId = "reanalyze";
   } else if (mcStatus === "done") {
     const omittedInfo = getMcOmittedReason(mcResult);
     if (omittedInfo.omitted) {
       mcStatusLabel = "WARN";
-      mcSummary = `Omitido${omittedInfo.reason ? `: ${omittedInfo.reason}` : ""}.`;
-      mcAction = "Acción: usa un mazo con sinergias.";
+      mcSummary = omittedInfo.reason
+        ? `${es.analysisStatus.sections.mc.summaryOmitted} ${omittedInfo.reason}.`
+        : es.analysisStatus.sections.mc.summaryOmitted;
+      mcAction = es.analysisStatus.sections.mc.actionUseSynergy;
       mcStatusTitle = omittedInfo.reason;
       mcActionId = "reanalyze";
     } else {
       mcStatusLabel = "OK";
-      mcSummary = "Listo.";
-      mcAction = "Acción: revisar métricas.";
+      mcSummary = es.analysisStatus.sections.mc.summaryReady;
+      mcAction = es.analysisStatus.sections.mc.actionReview;
       mcActionId = "reanalyze";
     }
   }
 
   const mcSection: AnalysisStatusSection = {
     id: "mc",
-    title: "Monte Carlo (MC-SSL)",
+    title: es.analysisStatus.sections.mc.title,
     status: mcStatusLabel,
     summary: mcSummary,
     action: mcAction,
@@ -235,7 +240,7 @@ export function buildAnalysisStatusModel(
   };
 
   return {
-    title: "Estado del análisis",
+    title: es.analysisStatus.title,
     sections: [inputSection, taggingSection, mcSection],
   };
 }
@@ -250,10 +255,8 @@ export default function AnalysisStatusPanel(props: Props) {
 
   return (
     <div className="panel">
-      <h2>{model.title}</h2>
-      <p className="muted">
-        Lectura rápida del estado del flujo.
-      </p>
+      <h2>{es.analysisStatus.title}</h2>
+      <p className="muted">{es.analysisStatus.subtitle}</p>
       {model.sections.map((section) => {
         const formattedTitle = formatStatusTitle(section.statusTitle);
         return (
@@ -274,7 +277,7 @@ export default function AnalysisStatusPanel(props: Props) {
                   style={{ textDecoration: "underline" }}
                   onClick={props.onFocusInput}
                 >
-                  Ir a entrada
+                  {es.analysisStatus.labels.focusInput}
                 </button>
               )}
               {section.actionId === "enableMc" && props.onEnableMc && (
@@ -284,7 +287,7 @@ export default function AnalysisStatusPanel(props: Props) {
                   style={{ textDecoration: "underline" }}
                   onClick={props.onEnableMc}
                 >
-                  Activar Monte Carlo
+                  {es.analysisStatus.labels.enableMc}
                 </button>
               )}
               {section.actionId === "reanalyze" && canReanalyze && (
@@ -294,7 +297,7 @@ export default function AnalysisStatusPanel(props: Props) {
                   style={{ textDecoration: "underline" }}
                   onClick={props.onReanalyze}
                 >
-                  Reanalizar
+                  {es.analysisStatus.labels.reanalyze}
                 </button>
               )}
             </p>
@@ -311,7 +314,9 @@ export default function AnalysisStatusPanel(props: Props) {
                     }))
                   }
                 >
-                  {expanded[section.id] ? "Ocultar" : "Detalles"}
+                  {expanded[section.id]
+                    ? es.analysisStatus.labels.hide
+                    : es.analysisStatus.labels.details}
                 </button>
                 {expanded[section.id] && (
                   <div className="muted" style={{ whiteSpace: "pre-wrap" }}>

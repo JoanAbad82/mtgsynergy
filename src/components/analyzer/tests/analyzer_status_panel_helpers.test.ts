@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { buildAnalysisStatusModel, formatStatusTitle } from "../panels/AnalysisStatusPanel";
+import { es } from "../i18n/es";
 
 const baseInput = {
   summary: null,
@@ -62,7 +63,7 @@ describe("AnalysisStatusPanel helpers", () => {
   test("sin análisis + input vacío", () => {
     const model = buildAnalysisStatusModel(baseInput);
     const input = model.sections.find((s) => s.id === "input");
-    expect(input?.summary).toContain("Entrada vacía");
+    expect(input?.summary.toLowerCase()).toContain("cargado");
   });
 
   test("sin análisis + input con texto", () => {
@@ -71,7 +72,7 @@ describe("AnalysisStatusPanel helpers", () => {
       inputTextNonEmpty: true,
     });
     const input = model.sections.find((s) => s.id === "input");
-    expect(input?.summary).toContain("No has analizado");
+    expect(input?.summary).toContain("pulsar Analizar");
   });
 
   test("TAGGING_NO_MATCHES recomienda idioma/nombres", () => {
@@ -80,14 +81,14 @@ describe("AnalysisStatusPanel helpers", () => {
       issues: [{ code: "TAGGING_NO_MATCHES", severity: "warning", message: "nope" }],
     });
     const tagging = model.sections.find((s) => s.id === "tagging");
-    expect(tagging?.summary).toContain("sin coincidencias");
-    expect(tagging?.action).toContain("idioma");
+    expect(tagging?.summary.toLowerCase()).toContain("reconocer cartas");
+    expect(tagging?.action.toLowerCase()).toContain("idioma");
   });
 
   test("MC disabled/enabled + running/done/error", () => {
     const disabled = buildAnalysisStatusModel(baseInput);
     const disabledMc = disabled.sections.find((s) => s.id === "mc");
-    expect(disabledMc?.summary).toContain("Desactivado");
+    expect(disabledMc?.summary.toLowerCase()).toContain("desactivado");
 
     const running = buildAnalysisStatusModel({
       ...baseInput,
@@ -95,7 +96,7 @@ describe("AnalysisStatusPanel helpers", () => {
       mcStatus: "running",
     });
     const runningMc = running.sections.find((s) => s.id === "mc");
-    expect(runningMc?.summary).toContain("Ejecutando");
+    expect(runningMc?.summary.toLowerCase()).toContain("ejecución");
 
     const done = buildAnalysisStatusModel({
       ...baseInput,
@@ -104,7 +105,7 @@ describe("AnalysisStatusPanel helpers", () => {
       mcResult: { base: { sps: 10 }, dist: { effective_n: 10 } },
     });
     const doneMc = done.sections.find((s) => s.id === "mc");
-    expect(doneMc?.summary).toContain("Listo");
+    expect(doneMc?.summary.toLowerCase()).toContain("listo");
 
     const error = buildAnalysisStatusModel({
       ...baseInput,
@@ -113,7 +114,7 @@ describe("AnalysisStatusPanel helpers", () => {
       mcError: "boom",
     });
     const errorMc = error.sections.find((s) => s.id === "mc");
-    expect(errorMc?.summary).toContain("Error");
+    expect(errorMc?.summary.toLowerCase()).toContain("falló");
   });
 
   test("MC enabled + idle -> pendiente", () => {
@@ -123,7 +124,7 @@ describe("AnalysisStatusPanel helpers", () => {
       mcStatus: "idle",
     });
     const mc = model.sections.find((s) => s.id === "mc");
-    expect(mc?.summary).toContain("pendiente");
+    expect(mc?.summary).toContain("pulsa Analizar");
     expect(mc?.action).toContain("Analizar");
   });
 
@@ -135,8 +136,17 @@ describe("AnalysisStatusPanel helpers", () => {
       mcResult: { base: { sps: 0 }, dist: { effective_n: 0 } },
     });
     const mc = model.sections.find((s) => s.id === "mc");
-    expect(mc?.summary).toContain("Omitido");
+    expect(mc?.summary.toLowerCase()).toContain("no aplica");
     expect(mc?.summary).toContain("SPS base");
     expect(mc?.summary).toContain("effective_n=0");
+  });
+
+  test("i18n shape includes key labels", () => {
+    expect(es.analysisStatus.title).toBeTruthy();
+    expect(es.analysisStatus.labels.details).toBeTruthy();
+    expect(es.analysisStatus.labels.hide).toBeTruthy();
+    expect(es.analysisStatus.labels.focusInput).toBeTruthy();
+    expect(es.analysisStatus.labels.enableMc).toBeTruthy();
+    expect(es.analysisStatus.labels.reanalyze).toBeTruthy();
   });
 });

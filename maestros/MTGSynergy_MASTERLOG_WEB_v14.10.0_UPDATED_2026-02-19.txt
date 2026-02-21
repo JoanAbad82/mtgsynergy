@@ -281,3 +281,35 @@ OPS — Probes postdeploy (anti-cache)
 
 Cierre
 - Estado: B1.3 cerrado (UI-only + probes OK)
+
+===================================================================== H11
+B1.4 — Panel “Estado del análisis”: toggle Detalles/Ocultar + truncado (UI-only)
+Fecha actualización: 2026-02-21
+=====================================================================
+
+Resumen
+- Añadido toggle “Detalles/Ocultar” por sección en el panel “Estado del análisis”.
+- El detalle se muestra solo si existe statusTitle útil (anti-camuflaje sin ruido).
+- Sanitización/truncado de statusTitle con helper puro:
+  - colapsa whitespace, trim, limita longitud (default 400 chars) y añade “…” si recorta.
+- Estado local por sección (expanded por section.id), SSR-safe (sin window en render).
+
+Commits
+- 55522ff  ui: add details toggle to analysis status panel (B1.4)
+- 1887b40  chore(analyzer): align BUILD_SHA with HEAD
+
+OPS — Cloudflare Pages
+- Production: main @ 55522ff — Success
+- Production: main @ 1887b40 — Success (build marker aligned)
+
+OPS — Probes postdeploy (anti-cache)
+- Ruta canónica: /es/analizador-de-mazos-mtg/
+- Bundle probe OK:
+  - “Detalles” y “Ocultar” presentes en AnalyzerApp.*.js (client hydration).
+- Nota SSR:
+  - “Detalles” puede no aparecer en HTML cold-start si no hay statusTitle (p.ej. sin análisis / sin issues / sin error MC).
+- Build marker OK:
+  - HTML contiene “build: 55522ff” (verificación anti-cache).
+
+Cierre
+- Estado: B1.4 cerrado (UI-only + probes OK + BUILD_SHA aligned)

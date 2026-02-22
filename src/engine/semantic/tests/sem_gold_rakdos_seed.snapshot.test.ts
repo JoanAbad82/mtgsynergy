@@ -26,9 +26,13 @@ describe("semantic gold seed: rakdos sacrifice", () => {
     const dataset = loadDataset() as {
       SEM_IR_VERSION: number;
       archetype: string;
+      card_id_scheme?: string;
+      notes_meta?: string;
       cards: Array<{
         name: string;
         notes: string;
+        card_name_norm?: string;
+        card_id_scheme?: string;
         expected_ir: {
           card_id: number;
           frames: Array<{
@@ -44,9 +48,15 @@ describe("semantic gold seed: rakdos sacrifice", () => {
     };
 
     expect(dataset.SEM_IR_VERSION).toBe(SEM_IR_VERSION);
+    expect(dataset.card_id_scheme).toBe("stable_name_rank_v1");
 
     for (const card of dataset.cards) {
       expect(typeof card.expected_ir.card_id).toBe("number");
+      expect(card.card_id_scheme).toBe("stable_name_rank_v1");
+      if (card.expected_ir.card_id !== 0) {
+        expect(typeof card.card_name_norm).toBe("string");
+        expect(card.card_name_norm && card.card_name_norm.length > 0).toBe(true);
+      }
       expect(Array.isArray(card.expected_ir.frames)).toBe(true);
 
       for (const frame of card.expected_ir.frames) {

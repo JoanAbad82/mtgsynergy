@@ -6,7 +6,7 @@
       "name": "Cauldron Familiar",
       "notes": "ETB drain modeled. Return-from-graveyard action not in v1, keep UNKNOWN_ACTION.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 4746,
         "frames": [
           {
             "kind": 1,
@@ -64,13 +64,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "cauldron familiar",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Witch's Oven",
       "notes": "Creates 1 or 2 Food depending on mana value; modeled as 1.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 34907,
         "frames": [
           {
             "kind": 2,
@@ -99,13 +101,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "witch's oven",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Claim the Firstborn",
       "notes": "Control change and untap are modeled; haste not represented.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 5393,
         "frames": [
           {
             "kind": 4,
@@ -127,13 +131,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "claim the firstborn",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Mayhem Devil",
       "notes": "Triggers on any sacrifice; target choice modeled via gate.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 18702,
         "frames": [
           {
             "kind": 1,
@@ -163,13 +169,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "mayhem devil",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Priest of Forgotten Gods",
       "notes": "Multiple effects modeled; mana color specifics omitted.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 22783,
         "frames": [
           {
             "kind": 2,
@@ -222,13 +230,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "priest of forgotten gods",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Deadly Dispute",
       "notes": "Additional cost sacrifice; treasure + draw modeled.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 7081,
         "frames": [
           {
             "kind": 4,
@@ -266,13 +276,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "deadly dispute",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Village Rites",
       "notes": "Additional cost sacrifice; draw two.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 33597,
         "frames": [
           {
             "kind": 4,
@@ -300,13 +312,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "village rites",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Voldaren Epicure",
       "notes": "ETB create Blood.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 33857,
         "frames": [
           {
             "kind": 1,
@@ -333,13 +347,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "voldaren epicure",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Oni-Cult Anvil",
       "notes": "Artifact leaves battlefield trigger simplified; token creation omitted.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 21275,
         "frames": [
           {
             "kind": 1,
@@ -375,13 +391,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "oni-cult anvil",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Bloodtithe Harvester",
       "notes": "ETB create Blood; sacrifice ability not modeled.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 3420,
         "frames": [
           {
             "kind": 1,
@@ -408,13 +426,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "bloodtithe harvester",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Fable of the Mirror-Breaker",
       "notes": "Chapter I token is a Goblin Shaman; use UNKNOWN_TOKEN.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 9952,
         "frames": [
           {
             "kind": 1,
@@ -443,13 +463,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "fable of the mirror-breaker // reflection of kiki-jiki",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Experimental Synthesizer",
       "notes": "ETB exile top card; LTB create Treasure.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 9829,
         "frames": [
           {
             "kind": 1,
@@ -495,13 +517,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "experimental synthesizer",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Unlucky Witness",
       "notes": "Dies exile top two cards until end of next turn.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 32861,
         "frames": [
           {
             "kind": 1,
@@ -523,13 +547,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "unlucky witness",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Shambling Ghast",
       "notes": "Dies choose one; modeled as optional Treasure.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 26652,
         "frames": [
           {
             "kind": 1,
@@ -560,13 +586,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "shambling ghast",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "The Meathook Massacre",
       "notes": "Creature dies triggers loss/gain simplified.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 31012,
         "frames": [
           {
             "kind": 1,
@@ -602,13 +630,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "the meathook massacre",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Kroxa, Titan of Death's Hunger",
       "notes": "Cast trigger simplified; escape not modeled.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 16836,
         "frames": [
           {
             "kind": 1,
@@ -647,13 +677,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "kroxa, titan of death's hunger",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Blood Artist",
       "notes": "Dies trigger; target player modeled via gate.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 3269,
         "frames": [
           {
             "kind": 1,
@@ -689,13 +721,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "blood artist",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Zulaport Cutthroat",
       "notes": "Each opponent loses life; you gain life.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 35604,
         "frames": [
           {
             "kind": 1,
@@ -731,13 +765,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "zulaport cutthroat",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Dockside Chef",
       "notes": "Pay 1, sacrifice artifact/creature: draw a card.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 7976,
         "frames": [
           {
             "kind": 2,
@@ -770,13 +806,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "dockside chef",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Sokenzan Smelter",
       "notes": "At combat you may sacrifice artifact; create 3/1 token. Event is UNKNOWN.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 27892,
         "frames": [
           {
             "kind": 1,
@@ -815,13 +853,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "sokenzan smelter",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Voltage Surge",
       "notes": "Additional cost sacrifice artifact to deal 4.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 33883,
         "frames": [
           {
             "kind": 4,
@@ -853,13 +893,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "voltage surge",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Reckoner's Bargain",
       "notes": "Sacrifice artifact/creature: draw 2 and gain life equal to toughness.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 24009,
         "frames": [
           {
             "kind": 4,
@@ -893,13 +935,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "reckoner's bargain",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Skullport Merchant",
       "notes": "Sacrifice a Treasure: draw a card.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 27463,
         "frames": [
           {
             "kind": 2,
@@ -927,13 +971,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "skullport merchant",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Blood Fountain",
       "notes": "ETB create two Blood tokens.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 3285,
         "frames": [
           {
             "kind": 1,
@@ -960,13 +1006,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "blood fountain",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Ob Nixilis, the Adversary",
       "notes": "Casualty and token creation not modeled; keep UNKNOWN_ACTION.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 20976,
         "frames": [
           {
             "kind": 4,
@@ -987,13 +1035,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "ob nixilis, the adversary",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Furnace Reins",
       "notes": "Gain control until end of turn; sacrifice at end step not modeled.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 11456,
         "frames": [
           {
             "kind": 4,
@@ -1012,13 +1062,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "furnace reins",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Immersturm Predator",
       "notes": "Sacrifice a creature: put +1/+1 counter.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 14779,
         "frames": [
           {
             "kind": 2,
@@ -1046,13 +1098,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "immersturm predator",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Rix Maadi Reveler",
       "notes": "Discard then draw; spectacle not modeled.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 24835,
         "frames": [
           {
             "kind": 4,
@@ -1080,13 +1134,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "rix maadi reveler",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Anje, Maid of Dishonor",
       "notes": "End step Blood creation uses UNKNOWN_EVENT; second ability modeled.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 1279,
         "frames": [
           {
             "kind": 1,
@@ -1148,13 +1204,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "anje, maid of dishonor",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Jadar, Ghoulcaller of Nephalia",
       "notes": "End step Zombie creation if none; event and condition simplified.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 15578,
         "frames": [
           {
             "kind": 1,
@@ -1185,13 +1243,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "jadar, ghoulcaller of nephalia",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Kari Zev, Skyship Raider",
       "notes": "Attack trigger uses UNKNOWN_EVENT; token type is UNKNOWN_TOKEN.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 16079,
         "frames": [
           {
             "kind": 1,
@@ -1220,13 +1280,15 @@
             "gates": []
           }
         ]
-      }
+      },
+      "card_name_norm": "kari zev, skyship raider",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Bloodchief's Thirst",
       "notes": "Destroy target creature or planeswalker; kicker ignored.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 3334,
         "frames": [
           {
             "kind": 4,
@@ -1245,13 +1307,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "bloodchief's thirst",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Fatal Push",
       "notes": "Destroy target creature with MV <= 2 (revolt ignored).",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 10194,
         "frames": [
           {
             "kind": 4,
@@ -1270,13 +1334,15 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "fatal push",
+      "card_id_scheme": "stable_name_rank_v1"
     },
     {
       "name": "Go for the Throat",
       "notes": "Destroy target nonartifact creature; restriction not encoded.",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 12388,
         "frames": [
           {
             "kind": 4,
@@ -1295,7 +1361,11 @@
             ]
           }
         ]
-      }
+      },
+      "card_name_norm": "go for the throat",
+      "card_id_scheme": "stable_name_rank_v1"
     }
-  ]
+  ],
+  "card_id_scheme": "stable_name_rank_v1",
+  "notes_meta": "card_id is a deterministic rank over normalized card names from cards_index"
 }

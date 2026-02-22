@@ -4,10 +4,13 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
 {
   "SEM_IR_VERSION": 1,
   "archetype": "rakdos_sacrifice",
+  "card_id_scheme": "stable_name_rank_v1",
   "cards": [
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "cauldron familiar",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 4746,
         "frames": [
           {
             "cost": [],
@@ -70,8 +73,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "ETB drain modeled. Return-from-graveyard action not in v1, keep UNKNOWN_ACTION.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "witch's oven",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 34907,
         "frames": [
           {
             "cost": [
@@ -105,8 +110,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Creates 1 or 2 Food depending on mana value; modeled as 1.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "claim the firstborn",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 5393,
         "frames": [
           {
             "cost": [],
@@ -133,8 +140,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Control change and untap are modeled; haste not represented.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "mayhem devil",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 18702,
         "frames": [
           {
             "cost": [],
@@ -169,8 +178,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Triggers on any sacrifice; target choice modeled via gate.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "priest of forgotten gods",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 22783,
         "frames": [
           {
             "cost": [
@@ -228,8 +239,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Multiple effects modeled; mana color specifics omitted.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "deadly dispute",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 7081,
         "frames": [
           {
             "cost": [
@@ -272,8 +285,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Additional cost sacrifice; treasure + draw modeled.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "village rites",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 33597,
         "frames": [
           {
             "cost": [
@@ -306,8 +321,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Additional cost sacrifice; draw two.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "voldaren epicure",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 33857,
         "frames": [
           {
             "cost": [],
@@ -339,8 +356,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "ETB create Blood.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "oni-cult anvil",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 21275,
         "frames": [
           {
             "cost": [],
@@ -381,8 +400,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Artifact leaves battlefield trigger simplified; token creation omitted.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "bloodtithe harvester",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 3420,
         "frames": [
           {
             "cost": [],
@@ -414,8 +435,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "ETB create Blood; sacrifice ability not modeled.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "fable of the mirror-breaker // reflection of kiki-jiki",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 9952,
         "frames": [
           {
             "cost": [],
@@ -449,8 +472,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Chapter I token is a Goblin Shaman; use UNKNOWN_TOKEN.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "experimental synthesizer",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 9829,
         "frames": [
           {
             "cost": [],
@@ -501,8 +526,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "ETB exile top card; LTB create Treasure.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "unlucky witness",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 32861,
         "frames": [
           {
             "cost": [],
@@ -529,8 +556,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Dies exile top two cards until end of next turn.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "shambling ghast",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 26652,
         "frames": [
           {
             "cost": [],
@@ -566,8 +595,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Dies choose one; modeled as optional Treasure.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "the meathook massacre",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 31012,
         "frames": [
           {
             "cost": [],
@@ -608,8 +639,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Creature dies triggers loss/gain simplified.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "kroxa, titan of death's hunger",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 16836,
         "frames": [
           {
             "cost": [],
@@ -653,8 +686,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Cast trigger simplified; escape not modeled.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "blood artist",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 3269,
         "frames": [
           {
             "cost": [],
@@ -695,8 +730,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Dies trigger; target player modeled via gate.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "zulaport cutthroat",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 35604,
         "frames": [
           {
             "cost": [],
@@ -737,8 +774,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Each opponent loses life; you gain life.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "dockside chef",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 7976,
         "frames": [
           {
             "cost": [
@@ -776,8 +815,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Pay 1, sacrifice artifact/creature: draw a card.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "sokenzan smelter",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 27892,
         "frames": [
           {
             "cost": [
@@ -821,8 +862,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "At combat you may sacrifice artifact; create 3/1 token. Event is UNKNOWN.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "voltage surge",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 33883,
         "frames": [
           {
             "cost": [
@@ -859,8 +902,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Additional cost sacrifice artifact to deal 4.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "reckoner's bargain",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 24009,
         "frames": [
           {
             "cost": [
@@ -899,8 +944,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Sacrifice artifact/creature: draw 2 and gain life equal to toughness.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "skullport merchant",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 27463,
         "frames": [
           {
             "cost": [
@@ -933,8 +980,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Sacrifice a Treasure: draw a card.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "blood fountain",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 3285,
         "frames": [
           {
             "cost": [],
@@ -966,8 +1015,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "ETB create two Blood tokens.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "ob nixilis, the adversary",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 20976,
         "frames": [
           {
             "cost": [
@@ -993,8 +1044,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Casualty and token creation not modeled; keep UNKNOWN_ACTION.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "furnace reins",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 11456,
         "frames": [
           {
             "cost": [],
@@ -1018,8 +1071,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Gain control until end of turn; sacrifice at end step not modeled.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "immersturm predator",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 14779,
         "frames": [
           {
             "cost": [
@@ -1052,8 +1107,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Sacrifice a creature: put +1/+1 counter.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "rix maadi reveler",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 24835,
         "frames": [
           {
             "cost": [],
@@ -1086,8 +1143,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Discard then draw; spectacle not modeled.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "anje, maid of dishonor",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 1279,
         "frames": [
           {
             "cost": [],
@@ -1154,8 +1213,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "End step Blood creation uses UNKNOWN_EVENT; second ability modeled.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "jadar, ghoulcaller of nephalia",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 15578,
         "frames": [
           {
             "cost": [],
@@ -1191,8 +1252,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "End step Zombie creation if none; event and condition simplified.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "kari zev, skyship raider",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 16079,
         "frames": [
           {
             "cost": [],
@@ -1226,8 +1289,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Attack trigger uses UNKNOWN_EVENT; token type is UNKNOWN_TOKEN.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "bloodchief's thirst",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 3334,
         "frames": [
           {
             "cost": [],
@@ -1251,8 +1316,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Destroy target creature or planeswalker; kicker ignored.",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "fatal push",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 10194,
         "frames": [
           {
             "cost": [],
@@ -1276,8 +1343,10 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Destroy target creature with MV <= 2 (revolt ignored).",
     },
     {
+      "card_id_scheme": "stable_name_rank_v1",
+      "card_name_norm": "go for the throat",
       "expected_ir": {
-        "card_id": 0,
+        "card_id": 12388,
         "frames": [
           {
             "cost": [],
@@ -1301,5 +1370,6 @@ exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots data
       "notes": "Destroy target nonartifact creature; restriction not encoded.",
     },
   ],
+  "notes_meta": "card_id is a deterministic rank over normalized card names from cards_index",
 }
 `;

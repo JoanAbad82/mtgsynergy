@@ -5,16 +5,22 @@ type Props = {
   metrics: SemanticOverlayMetrics;
   edges: SemanticEdge[];
   explainKey: (key: number) => string;
+  explainKeyHuman: (key: number) => string;
   idToName: Record<number, string>;
   deckEntriesCount: number;
+  resolvedUnique: number;
+  missingUnique: number;
 };
 
 export default function SemanticOverlayPanel({
   metrics,
   edges,
   explainKey,
+  explainKeyHuman,
   idToName,
   deckEntriesCount,
+  resolvedUnique,
+  missingUnique,
 }: Props) {
   const coveragePct = Math.round(metrics.semantic_coverage * 1000) / 10;
   const edgesTop = edges.slice(0, 10);
@@ -29,7 +35,8 @@ export default function SemanticOverlayPanel({
         coverage: {coveragePct}% ({metrics.covered_count}/{metrics.card_count})
       </p>
       <p>
-        unique cards analyzed: {metrics.card_count} / deck entries: {deckEntriesCount}
+        resolved unique: {resolvedUnique} · missing unique: {missingUnique} · deck entries:{" "}
+        {deckEntriesCount}
       </p>
       <p>
         SOS: {metrics.SOS.toFixed(2)} · total edge score: {metrics.total_edge_score}
@@ -49,11 +56,15 @@ export default function SemanticOverlayPanel({
                 {fromName} → {toName} (score {edge.score})
                 {reasons.length > 0 && (
                   <div className="muted">
-                    {reasons.map((reason) => (
-                      <div key={`${edge.from}-${edge.to}-${reason.key}`}>
-                        {explainKey(reason.key)} × {reason.weight}
-                      </div>
-                    ))}
+                    {reasons.map((reason) => {
+                      const label = explainKeyHuman(reason.key);
+                      const shown = label !== "Unknown" ? label : explainKey(reason.key);
+                      return (
+                        <div key={`${edge.from}-${edge.to}-${reason.key}`}>
+                          {shown} × {reason.weight}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </li>
@@ -67,11 +78,15 @@ export default function SemanticOverlayPanel({
         <p className="muted">None detected.</p>
       ) : (
         <ul>
-          {orphanTop.map((row) => (
-            <li key={`orphan-${row.key}`}>
-              {row.explain} · {row.consumed}
-            </li>
-          ))}
+          {orphanTop.map((row) => {
+            const label = explainKeyHuman(row.key);
+            const shown = label !== "Unknown" ? label : explainKey(row.key);
+            return (
+              <li key={`orphan-${row.key}`}>
+                {shown} · {row.consumed}
+              </li>
+            );
+          })}
         </ul>
       )}
 
@@ -80,11 +95,15 @@ export default function SemanticOverlayPanel({
         <p className="muted">None detected.</p>
       ) : (
         <ul>
-          {excessTop.map((row) => (
-            <li key={`excess-${row.key}`}>
-              {row.explain} · {row.produced}
-            </li>
-          ))}
+          {excessTop.map((row) => {
+            const label = explainKeyHuman(row.key);
+            const shown = label !== "Unknown" ? label : explainKey(row.key);
+            return (
+              <li key={`excess-${row.key}`}>
+                {shown} · {row.produced}
+              </li>
+            );
+          })}
         </ul>
       )}
 

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { normalizeCardName } from "../../cards/normalize";
-import { parseSemanticIrV0 } from "../parser/sem_parser_v0";
+import { parseSemanticIrV0 } from "../parser/sem_parser_v1";
 
 type GoldCard = {
   name: string;

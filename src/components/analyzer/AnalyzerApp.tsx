@@ -26,6 +26,10 @@ import MetricCoach from "./components/MetricCoach";
 import {
   interpretDensity,
   interpretEdgesTotal,
+  interpretEffectiveN,
+  interpretFragility,
+  interpretMcStatus,
+  interpretRobustVsBase,
   interpretRolesDominant,
   interpretSps,
 } from "./guidance/metric_guidance";
@@ -426,6 +430,93 @@ export default function AnalyzerApp() {
                             ? "MC pendiente: analiza un mazo para ejecutar."
                             : "MC listo."}
               </p>
+              {(() => {
+                const omittedReason =
+                  mcStatus === "done" && mcResult?.base?.sps <= 0
+                    ? "SPS base ≤ 0"
+                    : mcStatus === "done" && mcResult?.dist?.effective_n === 0
+                      ? "effective_n=0"
+                      : null;
+                const statusGuide = interpretMcStatus(mcStatus, omittedReason);
+                const effectiveN = mcResult?.dist?.effective_n ?? null;
+                const requestedN = mcResult?.dist?.requested_n ?? null;
+                const effectiveGuide = interpretEffectiveN(effectiveN, requestedN);
+                const robustGuide = interpretRobustVsBase(
+                  mcResult?.base?.sps ?? null,
+                  mcResult?.metrics?.robust_sps ?? null,
+                );
+                const fragilityGuide = interpretFragility(
+                  mcResult?.metrics?.fragility ?? null,
+                );
+                if (
+                  statusGuide.level === "na" &&
+                  effectiveGuide.level === "na" &&
+                  robustGuide.level === "na" &&
+                  fragilityGuide.level === "na"
+                )
+                  return null;
+                return (
+                  <div className="metric-coach-block">
+                    <MetricCoach
+                      label="Estado MC"
+                      value={
+                        mcStatus === "running"
+                          ? "MC ejecutándose"
+                          : mcStatus === "error"
+                            ? "MC con error"
+                            : mcStatus === "done"
+                              ? omittedReason
+                                ? "MC omitido"
+                                : "MC listo"
+                              : "MC listo para ejecutar"
+                      }
+                      level={statusGuide.level}
+                      meaning={statusGuide.meaning}
+                      advice={statusGuide.advice}
+                    />
+                    <MetricCoach
+                      label="Muestras"
+                      value={
+                        effectiveN != null && requestedN != null
+                          ? `effective_n / requested_n: ${effectiveN} / ${requestedN}`
+                          : undefined
+                      }
+                      level={effectiveGuide.level}
+                      meaning={effectiveGuide.meaning}
+                      advice={effectiveGuide.advice}
+                    />
+                    <MetricCoach
+                      label="Robustez"
+                      value={
+                        mcResult?.metrics?.robust_sps != null &&
+                        mcResult?.base?.sps != null
+                          ? `Robust SPS vs Base SPS: ${formatNumberCompact(
+                              mcResult.metrics.robust_sps,
+                              1,
+                            )} / ${formatNumberCompact(mcResult.base.sps, 1)}`
+                          : undefined
+                      }
+                      level={robustGuide.level}
+                      meaning={robustGuide.meaning}
+                      advice={robustGuide.advice}
+                    />
+                    <MetricCoach
+                      label="Fragilidad"
+                      value={
+                        mcResult?.metrics?.fragility != null
+                          ? `Fragility: ${formatNumberCompact(
+                              mcResult.metrics.fragility,
+                              1,
+                            )}`
+                          : undefined
+                      }
+                      level={fragilityGuide.level}
+                      meaning={fragilityGuide.meaning}
+                      advice={fragilityGuide.advice}
+                    />
+                  </div>
+                );
+              })()}
               {mcStatus === "done" && mcResult && (
                 <>
                   <p>Base SPS: {mcResult.base.sps}</p>

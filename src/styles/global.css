@@ -145,6 +145,12 @@ p { margin: 0 0 18px; color: var(--muted); }
   align-items: center;
 }
 
+.metric-coach-block {
+  margin: 10px 0 14px;
+  display: grid;
+  gap: 8px;
+}
+
 .level-chip {
   letter-spacing: 0.04em;
 }

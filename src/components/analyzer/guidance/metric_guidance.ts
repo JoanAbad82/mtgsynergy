@@ -13,6 +13,8 @@ export type RolesGuidance = {
   advice: string;
 };
 
+export type McStatusGuidance = MetricGuidance;
+
 function isNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
@@ -118,5 +120,153 @@ export function interpretRolesDominant(
     meaning: "Los roles dominantes sugieren dónde está el peso del plan.",
     advice:
       "Si falta PAYOFF/ENGINE, añade piezas que conviertan recursos en victoria.",
+  };
+}
+
+export function interpretMcStatus(
+  status: "idle" | "running" | "done" | "error",
+  omittedReason?: string | null,
+): McStatusGuidance {
+  if (status === "running") {
+    return {
+      level: "mid",
+      title: "Medio",
+      meaning: "Calculando estabilidad…",
+      advice: "Espera; puede tardar.",
+    };
+  }
+  if (status === "idle") {
+    return {
+      level: "mid",
+      title: "Medio",
+      meaning: "Listo para ejecutarse…",
+      advice: "Pulsa Analizar para correr MC.",
+    };
+  }
+  if (status === "error") {
+    return {
+      level: "low",
+      title: "Bajo",
+      meaning: "MC falló…",
+      advice: "Baja iteraciones o recarga.",
+    };
+  }
+  if (omittedReason) {
+    return {
+      level: "low",
+      title: "Bajo",
+      meaning: "No aplica con este mazo…",
+      advice: "Añade redundancia o más sinergias; prueba otro mazo.",
+    };
+  }
+  return {
+    level: "high",
+    title: "Alto",
+    meaning: "MC completado; ya estimamos estabilidad bajo perturbaciones.",
+    advice: "Revisa fragilidad y robustez vs base.",
+  };
+}
+
+export function interpretEffectiveN(
+  effectiveN: number | null | undefined,
+  requestedN: number | null | undefined,
+): MetricGuidance {
+  if (!isNumber(effectiveN) || !isNumber(requestedN) || requestedN <= 0) {
+    return { level: "na", title: "—", meaning: "", advice: "" };
+  }
+  const ratio = effectiveN / requestedN;
+  if (ratio >= 0.9) {
+    return {
+      level: "high",
+      title: "Alto",
+      meaning: "Estimación más fiable.",
+      advice: "OK.",
+    };
+  }
+  if (ratio >= 0.6) {
+    return {
+      level: "mid",
+      title: "Medio",
+      meaning: "Fiabilidad media.",
+      advice: "Considera subir iteraciones.",
+    };
+  }
+  return {
+    level: "low",
+    title: "Bajo",
+    meaning: "Pocas muestras válidas.",
+    advice: "Reduce ruido: usa mazo con más señal o ajusta parámetros.",
+  };
+}
+
+export function interpretRobustVsBase(
+  baseSps: number | null | undefined,
+  robustSps: number | null | undefined,
+): MetricGuidance {
+  if (!isNumber(baseSps) || !isNumber(robustSps) || baseSps <= 0) {
+    return { level: "na", title: "—", meaning: "", advice: "" };
+  }
+  if (robustSps === 0) {
+    return {
+      level: "low",
+      title: "Bajo",
+      meaning:
+        "En algunos mazos la robustez puede colapsar a 0; suele indicar dependencia extrema o que la perturbación anula las sinergias.",
+      advice:
+        "Añade redundancia (más copias/efectos similares) y cartas puente entre roles.",
+    };
+  }
+  const ratio = robustSps / baseSps;
+  if (ratio >= 0.8) {
+    return {
+      level: "high",
+      title: "Alto",
+      meaning: "Estabilidad alta: el plan aguanta perturbaciones.",
+      advice: "OK.",
+    };
+  }
+  if (ratio >= 0.5) {
+    return {
+      level: "mid",
+      title: "Medio",
+      meaning: "Estabilidad media: algunas piezas son críticas.",
+      advice: "Añade redundancia y alternativas.",
+    };
+  }
+  return {
+    level: "low",
+    title: "Bajo",
+    meaning: "Dependencia alta de pocas piezas.",
+    advice: "Añade redundancia y reduce cuellos de botella.",
+  };
+}
+
+export function interpretFragility(
+  f: number | null | undefined,
+): MetricGuidance {
+  if (!isNumber(f)) {
+    return { level: "na", title: "—", meaning: "", advice: "" };
+  }
+  if (f < 15) {
+    return {
+      level: "low",
+      title: "Baja",
+      meaning: "Caída pequeña bajo perturbaciones.",
+      advice: "OK.",
+    };
+  }
+  if (f <= 35) {
+    return {
+      level: "mid",
+      title: "Media",
+      meaning: "Caída moderada.",
+      advice: "Sube redundancia y reduce single points of failure.",
+    };
+  }
+  return {
+    level: "high",
+    title: "Alta",
+    meaning: "Caída grande: dependes de pocas cartas clave.",
+    advice: "Sube redundancia y reduce single points of failure.",
   };
 }

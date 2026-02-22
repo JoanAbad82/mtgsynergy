@@ -163,7 +163,8 @@ export function interpretMcStatus(
     level: "high",
     title: "Alto",
     meaning: "MC completado; ya estimamos estabilidad bajo perturbaciones.",
-    advice: "Revisa fragilidad y robustez vs base.",
+    advice:
+      "Si fragilidad es alta, añade redundancia; si robustez cae mucho, añade cartas puente.",
   };
 }
 
@@ -180,7 +181,7 @@ export function interpretEffectiveN(
       level: "high",
       title: "Alto",
       meaning: "Estimación más fiable.",
-      advice: "OK.",
+      advice: "",
     };
   }
   if (ratio >= 0.6) {
@@ -195,7 +196,8 @@ export function interpretEffectiveN(
     level: "low",
     title: "Bajo",
     meaning: "Pocas muestras válidas.",
-    advice: "Reduce ruido: usa mazo con más señal o ajusta parámetros.",
+    advice:
+      "Baja iteraciones o usa un mazo con más sinergias; con pocas muestras la estimación es inestable.",
   };
 }
 
@@ -213,7 +215,7 @@ export function interpretRobustVsBase(
       meaning:
         "En algunos mazos la robustez puede colapsar a 0; suele indicar dependencia extrema o que la perturbación anula las sinergias.",
       advice:
-        "Añade redundancia (más copias/efectos similares) y cartas puente entre roles.",
+        "Duplica habilitadores (efectos similares), añade un segundo motor, y reduce cartas únicas imprescindibles.",
     };
   }
   const ratio = robustSps / baseSps;
@@ -222,7 +224,7 @@ export function interpretRobustVsBase(
       level: "high",
       title: "Alto",
       meaning: "Estabilidad alta: el plan aguanta perturbaciones.",
-      advice: "OK.",
+      advice: "",
     };
   }
   if (ratio >= 0.5) {
@@ -252,7 +254,7 @@ export function interpretFragility(
       level: "low",
       title: "Baja",
       meaning: "Caída pequeña bajo perturbaciones.",
-      advice: "OK.",
+      advice: "",
     };
   }
   if (f <= 35) {
@@ -260,13 +262,45 @@ export function interpretFragility(
       level: "mid",
       title: "Media",
       meaning: "Caída moderada.",
-      advice: "Sube redundancia y reduce single points of failure.",
+      advice: "Sube redundancia y reduce puntos únicos de fallo.",
     };
   }
   return {
     level: "high",
     title: "Alta",
     meaning: "Caída grande: dependes de pocas cartas clave.",
-    advice: "Sube redundancia y reduce single points of failure.",
+    advice: "Suele indicar dependencia; añade redundancia y puentes.",
   };
+}
+
+export type McLabelKey =
+  | "samples"
+  | "no_op"
+  | "base_sps"
+  | "robust_sps"
+  | "fragility"
+  | "percentiles"
+  | "mean_stdev"
+  | "iqr"
+  | "min_max"
+  | "delta_p50"
+  | "delta_p10"
+  | "delta_p90";
+
+export function mapMcLabel(key: McLabelKey): string {
+  const labels: Record<McLabelKey, string> = {
+    samples: "muestras válidas / solicitadas",
+    no_op: "sin cambios (no_op)",
+    base_sps: "SPS base",
+    robust_sps: "SPS robusto",
+    fragility: "Fragilidad",
+    percentiles: "Percentiles",
+    mean_stdev: "media ± desviación",
+    iqr: "rango intercuartílico (IQR)",
+    min_max: "mín–máx",
+    delta_p50: "caída típica (p50)",
+    delta_p10: "caída típica (p10)",
+    delta_p90: "caída típica (p90)",
+  };
+  return labels[key];
 }

@@ -53,4 +53,23 @@ export const es = {
       reanalyze: "Reanalizar",
     },
   },
+  mc: {
+    summary: {
+      line1: "Simula perturbaciones para estimar estabilidad.",
+      line2: "Mira fragilidad y robustez frente a la base.",
+      line3:
+        "Si robustez cae a 0 o fragilidad es alta: añade redundancia y cartas puente.",
+    },
+    toggles: {
+      details: "Detalles técnicos",
+      hide: "Ocultar detalles",
+    },
+    labels: {
+      guided: "Lectura guiada",
+      status: "Estado MC",
+      samples: "Muestras",
+      robustness: "Robustez",
+      fragility: "Fragilidad",
+    },
+  },
 } as const;

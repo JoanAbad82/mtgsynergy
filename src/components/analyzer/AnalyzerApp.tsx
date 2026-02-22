@@ -32,7 +32,9 @@ import {
   interpretRobustVsBase,
   interpretRolesDominant,
   interpretSps,
+  mapMcLabel,
 } from "./guidance/metric_guidance";
+import { es } from "./i18n/es";
 
 export default function AnalyzerApp() {
   const [inputText, setInputText] = useState("");
@@ -59,6 +61,7 @@ export default function AnalyzerApp() {
     iterations: 1000,
     seed: 1,
   }));
+  const [mcDetailsOpen, setMcDetailsOpen] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const mcRunId = useRef(0);
   const edges = (deckState as any)?.edges ?? [];
@@ -409,26 +412,7 @@ export default function AnalyzerApp() {
             <div className="panel">
               <h2>Monte Carlo (experimental)</h2>
               <p className="muted">
-                MC Status / Reason:{" "}
-                {mcStatus === "running"
-                  ? "Running Monte Carlo… (puede tardar)"
-                  : mcStatus === "error"
-                    ? `Error: ${mcError ?? "Unknown error"}`
-                    : mcStatus === "done" && !mcResult
-                      ? "MC no disponible (sin resultados)."
-                      : mcStatus === "done" && mcResult?.base?.sps <= 0
-                        ? "MC omitido: SPS base ≤ 0 (no hay edges/relaciones suficientes). Prueba con un mazo con sinergias."
-                        : mcStatus === "done" && mcResult?.dist?.effective_n === 0
-                          ? `MC omitido: conjunto elegible degenerado (effective_n=0). Revisa el deck (exceso de LAND o roles insuficientes).${
-                              mcResult?.warnings?.some(
-                                (w: any) => w.code === "DEGENERATE_ELIGIBLE_SET",
-                              )
-                                ? " (warning: DEGENERATE_ELIGIBLE_SET)"
-                                : ""
-                            }`
-                          : mcStatus === "idle"
-                            ? "MC pendiente: analiza un mazo para ejecutar."
-                            : "MC listo."}
+                {es.mc.summary.line1} {es.mc.summary.line2} {es.mc.summary.line3}
               </p>
               {(() => {
                 const omittedReason =
@@ -455,10 +439,18 @@ export default function AnalyzerApp() {
                   fragilityGuide.level === "na"
                 )
                   return null;
+                const improvementNote =
+                  statusGuide.level === "low" && omittedReason
+                    ? "Para mejorarlo: añade redundancia o prueba otro mazo."
+                    : fragilityGuide.level === "high"
+                      ? "Para mejorarlo: añade redundancia y cartas puente entre roles."
+                      : robustGuide.level === "low"
+                        ? "Para mejorarlo: duplica habilitadores y añade un segundo motor."
+                        : "";
                 return (
                   <div className="metric-coach-block">
                     <MetricCoach
-                      label="Estado MC"
+                      label={es.mc.labels.status}
                       value={
                         mcStatus === "running"
                           ? "MC ejecutándose"
@@ -475,10 +467,10 @@ export default function AnalyzerApp() {
                       advice={statusGuide.advice}
                     />
                     <MetricCoach
-                      label="Muestras"
+                      label={es.mc.labels.samples}
                       value={
                         effectiveN != null && requestedN != null
-                          ? `effective_n / requested_n: ${effectiveN} / ${requestedN}`
+                          ? `${mapMcLabel("samples")}: ${effectiveN} / ${requestedN}`
                           : undefined
                       }
                       level={effectiveGuide.level}
@@ -486,11 +478,11 @@ export default function AnalyzerApp() {
                       advice={effectiveGuide.advice}
                     />
                     <MetricCoach
-                      label="Robustez"
+                      label={es.mc.labels.robustness}
                       value={
                         mcResult?.metrics?.robust_sps != null &&
                         mcResult?.base?.sps != null
-                          ? `Robust SPS vs Base SPS: ${formatNumberCompact(
+                          ? `${mapMcLabel("robust_sps")} vs ${mapMcLabel("base_sps")}: ${formatNumberCompact(
                               mcResult.metrics.robust_sps,
                               1,
                             )} / ${formatNumberCompact(mcResult.base.sps, 1)}`
@@ -501,10 +493,10 @@ export default function AnalyzerApp() {
                       advice={robustGuide.advice}
                     />
                     <MetricCoach
-                      label="Fragilidad"
+                      label={es.mc.labels.fragility}
                       value={
                         mcResult?.metrics?.fragility != null
-                          ? `Fragility: ${formatNumberCompact(
+                          ? `${mapMcLabel("fragility")}: ${formatNumberCompact(
                               mcResult.metrics.fragility,
                               1,
                             )}`
@@ -514,26 +506,60 @@ export default function AnalyzerApp() {
                       meaning={fragilityGuide.meaning}
                       advice={fragilityGuide.advice}
                     />
+                    {improvementNote && (
+                      <p className="muted">{improvementNote}</p>
+                    )}
                   </div>
                 );
               })()}
-              {mcStatus === "done" && mcResult && (
+              <button
+                type="button"
+                className="muted link-button"
+                onClick={() => setMcDetailsOpen((prev) => !prev)}
+              >
+                {mcDetailsOpen ? es.mc.toggles.hide : es.mc.toggles.details}
+              </button>
+              {mcDetailsOpen && (
+                <div>
+                  <p className="muted">
+                    Estado MC / motivo:{" "}
+                    {mcStatus === "running"
+                      ? "Calculando Monte Carlo… (puede tardar)"
+                      : mcStatus === "error"
+                        ? `Error: ${mcError ?? "Error desconocido"}`
+                        : mcStatus === "done" && !mcResult
+                          ? "MC no disponible (sin resultados)."
+                          : mcStatus === "done" && mcResult?.base?.sps <= 0
+                            ? "MC omitido: SPS base ≤ 0 (no hay relaciones suficientes). Prueba con un mazo con sinergias."
+                            : mcStatus === "done" && mcResult?.dist?.effective_n === 0
+                              ? `MC omitido: conjunto elegible degenerado (effective_n=0). Revisa el deck (exceso de LAND o roles insuficientes).${
+                                  mcResult?.warnings?.some(
+                                    (w: any) => w.code === "DEGENERATE_ELIGIBLE_SET",
+                                  )
+                                    ? " (aviso: DEGENERATE_ELIGIBLE_SET)"
+                                    : ""
+                                }`
+                              : mcStatus === "idle"
+                                ? "MC pendiente: analiza un mazo para ejecutar."
+                                : "MC listo."}
+                  </p>
+                  {mcStatus === "done" && mcResult && (
                 <>
-                  <p>Base SPS: {mcResult.base.sps}</p>
+                  <p>{mapMcLabel("base_sps")}: {mcResult.base.sps}</p>
                   <p>
-                    seed: {mcResult.settings.seed} · iterations:{" "}
+                    semilla: {mcResult.settings.seed} · iteraciones:{" "}
                     {mcResult.settings.iterations}
                   </p>
                   <p>
-                    effective_n / requested_n: {mcResult.dist.effective_n} /{" "}
-                    {mcResult.dist.requested_n} (no_op: {mcResult.dist.no_op})
+                    {mapMcLabel("samples")}: {mcResult.dist.effective_n} /{" "}
+                    {mcResult.dist.requested_n} ({mapMcLabel("no_op")}: {mcResult.dist.no_op})
                   </p>
-                  <p>Robust SPS: {mcResult.metrics.robust_sps}</p>
-                  <p>Fragility: {mcResult.metrics.fragility}</p>
+                  <p>{mapMcLabel("robust_sps")}: {mcResult.metrics.robust_sps}</p>
+                  <p>{mapMcLabel("fragility")}: {mcResult.metrics.fragility}</p>
                   {mcResult.dist_ext ? (
                     <>
                       <p>
-                        Percentiles: p05{" "}
+                        {mapMcLabel("percentiles")}: p05{" "}
                         {formatNumberCompact(mcResult.dist_ext.percentiles.p05, 1)}
                         {" · "}p10{" "}
                         {formatNumberCompact(mcResult.dist_ext.percentiles.p10, 1)}
@@ -549,41 +575,43 @@ export default function AnalyzerApp() {
                         {formatNumberCompact(mcResult.dist_ext.percentiles.p95, 1)}
                       </p>
                       <p>
-                        mean ± stdev:{" "}
+                        {mapMcLabel("mean_stdev")}:{" "}
                         {formatNumberCompact(mcResult.dist_ext.mean, 1)} ±{" "}
                         {formatNumberCompact(mcResult.dist_ext.stdev, 1)}
                       </p>
                       <p>
-                        IQR: {formatNumberCompact(mcResult.dist_ext.iqr, 1)}
+                        {mapMcLabel("iqr")}: {formatNumberCompact(mcResult.dist_ext.iqr, 1)}
                       </p>
                       <p>
-                        min–max:{" "}
+                        {mapMcLabel("min_max")}:{" "}
                         {formatNumberCompact(mcResult.dist_ext.min, 1)} –{" "}
                         {formatNumberCompact(mcResult.dist_ext.max, 1)}
                       </p>
                       <p>
-                        Δ(p50):{" "}
+                        {mapMcLabel("delta_p50")}:{" "}
                         {formatSigned(mcResult.dist_ext.deltas_abs_vs_base.p50, 1)}{" "}
-                        SPS points · Δ(p10):{" "}
+                        puntos SPS · {mapMcLabel("delta_p10")}:{" "}
                         {formatSigned(mcResult.dist_ext.deltas_abs_vs_base.p10, 1)}{" "}
-                        SPS points · Δ(p90):{" "}
+                        puntos SPS · {mapMcLabel("delta_p90")}:{" "}
                         {formatSigned(mcResult.dist_ext.deltas_abs_vs_base.p90, 1)}{" "}
-                        SPS points
+                        puntos SPS
                       </p>
                     </>
                   ) : (
-                    <p className="muted">Extended stats not available</p>
+                    <p className="muted">Estadísticas extendidas no disponibles</p>
                   )}
                   {mcResult.warnings?.length > 0 && (
                     <ul className="issues">
                       {mcResult.warnings.map((w: any) => (
                         <li key={`${w.code}-${w.detail}`}>
-                          warning: {w.code} ({w.detail})
+                          aviso: {w.code} ({w.detail})
                         </li>
                       ))}
                     </ul>
                   )}
                 </>
+                  )}
+                </div>
               )}
             </div>
           )}

@@ -4,11 +4,14 @@ import {
   interpretFragility,
   interpretMcStatus,
   interpretRobustVsBase,
+  mapMcLabel,
 } from "../guidance/metric_guidance";
 
 describe("metric guidance MC", () => {
   test("fragility levels", () => {
-    expect(interpretFragility(10).level).toBe("low");
+    const low = interpretFragility(10);
+    expect(low.level).toBe("low");
+    expect(low.advice).not.toContain("OK.");
     expect(interpretFragility(25).level).toBe("mid");
     expect(interpretFragility(50).level).toBe("high");
   });
@@ -31,5 +34,10 @@ describe("metric guidance MC", () => {
   test("mc status levels", () => {
     expect(interpretMcStatus("done", null).level).toBe("high");
     expect(interpretMcStatus("error").level).toBe("low");
+  });
+
+  test("mc label mapping", () => {
+    expect(mapMcLabel("samples")).toContain("muestras");
+    expect(mapMcLabel("robust_sps")).toContain("SPS robusto");
   });
 });

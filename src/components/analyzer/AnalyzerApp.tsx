@@ -12,12 +12,15 @@ import {
 import { generateEdges } from "../../engine/edges";
 import { runMonteCarloV1 } from "../../engine/montecarlo";
 import { computeStructuralPowerScore } from "../../engine/structural/sps";
+import { lookupCard } from "../../engine/cards/lookup";
+import { normalizeCardName } from "../../engine/cards/normalize";
 import { buildShareUrl, getShareTokenFromUrl } from "./state/shareUrl";
 import { exportJson, importJson } from "./state/jsonFallback";
 import StructuralPanel from "./panels/StructuralPanel";
 import RoleGraphPanel from "./panels/RoleGraphPanel";
 import SharePanel from "./panels/SharePanel";
 import AnalysisStatusPanel from "./panels/AnalysisStatusPanel";
+import SemanticOverlayPanel from "./SemanticOverlayPanel";
 import HowItWorksSection from "./sections/HowItWorksSection";
 import ExamplesSection from "./sections/ExamplesSection";
 import FaqSection from "./sections/FaqSection";
@@ -35,6 +38,10 @@ import {
   mapMcLabel,
 } from "./guidance/metric_guidance";
 import { es } from "./i18n/es";
+import { buildSemanticEdges } from "../../engine/semantic/overlay/sem_edges";
+import { buildSemanticOverlayMetrics } from "../../engine/semantic/overlay/sem_metrics";
+import { explainKey } from "../../engine/semantic/overlay/sem_profile";
+import { parseSemanticIrV0 } from "../../engine/semantic/parser/sem_parser_v1";
 
 export default function AnalyzerApp() {
   const [inputText, setInputText] = useState("");
@@ -62,8 +69,18 @@ export default function AnalyzerApp() {
     seed: 1,
   }));
   const [mcDetailsOpen, setMcDetailsOpen] = useState(false);
+  const [semanticOverlayStatus, setSemanticOverlayStatus] = useState<
+    "idle" | "loading" | "ready" | "error"
+  >("idle");
+  const [semanticOverlay, setSemanticOverlay] = useState<null | {
+    metrics: ReturnType<typeof buildSemanticOverlayMetrics>;
+    edgesTop: ReturnType<typeof buildSemanticEdges>;
+    idToName: Record<number, string>;
+  }>(null);
+  const [semanticOverlayError, setSemanticOverlayError] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const mcRunId = useRef(0);
+  const semanticRunId = useRef(0);
   const edges = (deckState as any)?.edges ?? [];
   const edgesByKind = useMemo(() => groupEdgesForPanel(edges), [edges]);
   const nameMap = useMemo(() => buildNameMapFromDeckState(deckState), [deckState]);
@@ -178,6 +195,89 @@ export default function AnalyzerApp() {
         setMcError(err instanceof Error ? err.message : String(err));
       });
   }, [mcParams, deckState, summary]);
+
+  useEffect(() => {
+    const entries = deckState?.deck?.entries ?? [];
+    if (entries.length === 0) {
+      setSemanticOverlay(null);
+      setSemanticOverlayStatus("idle");
+      setSemanticOverlayError(null);
+      return;
+    }
+
+    semanticRunId.current += 1;
+    const rid = semanticRunId.current;
+    setSemanticOverlayStatus("loading");
+    setSemanticOverlay(null);
+    setSemanticOverlayError(null);
+
+    const run = async () => {
+      const uniqueNames = Array.from(new Set(entries.map((entry) => entry.name)));
+      const resolved = await Promise.all(
+        uniqueNames.map(async (name) => {
+          const card = await lookupCard(name);
+          if (!card || !card.oracle_text) return null;
+          return {
+            name: card.name,
+            name_norm: card.name_norm ?? normalizeCardName(card.name),
+            oracle_text: card.oracle_text,
+            type_line: card.type_line ?? null,
+          };
+        }),
+      );
+      const found = resolved.filter((card): card is NonNullable<typeof card> => !!card);
+
+      const byNorm = new Map<string, (typeof found)[number]>();
+      for (const card of found) {
+        if (!byNorm.has(card.name_norm)) {
+          byNorm.set(card.name_norm, card);
+        }
+      }
+
+      const ordered = Array.from(byNorm.values()).sort((a, b) =>
+        a.name_norm.localeCompare(b.name_norm),
+      );
+      const idToName: Record<number, string> = {};
+      const cards = ordered.map((card, index) => {
+        let oracleText = card.oracle_text ?? "";
+        oracleText = oracleText.replace(/\([^)]*\)/g, "");
+        oracleText = oracleText.replace(/\s+/g, " ").trim();
+        const ir = parseSemanticIrV0({
+          name: card.name,
+          oracle_text: oracleText,
+          type_line: card.type_line ?? null,
+        });
+        const card_id = index + 1;
+        ir.card_id = card_id;
+        idToName[card_id] = card.name;
+        return { card_id, ir };
+      });
+
+      if (rid !== semanticRunId.current) return;
+      if (cards.length === 0) {
+        setSemanticOverlay(null);
+        setSemanticOverlayStatus("ready");
+        return;
+      }
+
+      const edges = buildSemanticEdges(cards);
+      const metrics = buildSemanticOverlayMetrics({ cards, edges, topN: 10 });
+      setSemanticOverlay({
+        metrics,
+        edgesTop: edges.slice(0, 10),
+        idToName,
+        deckEntriesCount: entries.length,
+      });
+      setSemanticOverlayStatus("ready");
+    };
+
+    run().catch((err) => {
+      if (rid !== semanticRunId.current) return;
+      setSemanticOverlay(null);
+      setSemanticOverlayStatus("error");
+      setSemanticOverlayError(err instanceof Error ? err.message : String(err));
+    });
+  }, [deckState]);
 
   async function analyze(text: string) {
     setError(null);
@@ -408,6 +508,31 @@ export default function AnalyzerApp() {
           </div>
           <StructuralPanel summary={summary} />
           <RoleGraphPanel summary={summary} />
+          {semanticOverlayStatus === "loading" && (
+            <div className="panel">
+              <h2>Semantic Overlay (Experimental)</h2>
+              <p className="muted">Loading…</p>
+            </div>
+          )}
+          {semanticOverlayStatus === "error" && (
+            <div className="panel">
+              <h2>Semantic Overlay (Experimental)</h2>
+              <p className="muted">
+                Error: {semanticOverlayError ?? "Error desconocido"}
+              </p>
+            </div>
+          )}
+          {semanticOverlayStatus === "ready" &&
+            semanticOverlay &&
+            semanticOverlay.metrics.card_count > 0 && (
+              <SemanticOverlayPanel
+                metrics={semanticOverlay.metrics}
+                edges={semanticOverlay.edgesTop}
+                explainKey={explainKey}
+                idToName={semanticOverlay.idToName}
+                deckEntriesCount={semanticOverlay.deckEntriesCount}
+              />
+            )}
           {mcParams.enabled && (
             <div className="panel">
               <h2>Monte Carlo (experimental)</h2>

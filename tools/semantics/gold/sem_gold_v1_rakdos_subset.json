@@ -1,0 +1,569 @@
+{
+  "SEM_IR_VERSION": 1,
+  "archetype": "rakdos_sacrifice_subset_v1",
+  "cards": [
+    {
+      "name": "Village Rites",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  2
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "village rites",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Deadly Dispute",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  2
+                ]
+              },
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 1,
+                  "n": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              },
+              {
+                "id": 10
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "deadly dispute",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Witch's Oven",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 2,
+            "watch": [],
+            "cost": [
+              {
+                "res": 0,
+                "cost": 3,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 2,
+                  "n": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 11
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "witch's oven",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Mayhem Devil",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 5
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 5,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "mayhem devil",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Voldaren Epicure",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 2
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 5,
+                "args": [
+                  1
+                ]
+              },
+              {
+                "action": 3,
+                "tokenData": {
+                  "n": 1,
+                  "kind": 4
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              },
+              {
+                "id": 13
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "voldaren epicure",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Blood Fountain",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 2
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 4,
+                  "n": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 13
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              },
+              {
+                "id": 8
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "blood fountain",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Fatal Push",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 9
+              }
+            ],
+            "touch": [],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "fatal push",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Claim the Firstborn",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 19
+              },
+              {
+                "action": 16
+              }
+            ],
+            "touch": [],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "claim the firstborn",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Thoughtseize",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 2,
+                "args": [
+                  1
+                ]
+              },
+              {
+                "action": 7,
+                "args": [
+                  2
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              },
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "thoughtseize",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Duress",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 2,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "duress",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Kroxa, Titan of Death's Hunger",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 2
+              },
+              {
+                "id": 5
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 2,
+                "args": [
+                  1
+                ]
+              },
+              {
+                "action": 7,
+                "args": [
+                  3
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              },
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 7
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "kroxa titan of deaths hunger",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Play with Fire",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 5,
+                "args": [
+                  2
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "play with fire",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Zulaport Cutthroat",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 6,
+                "args": [
+                  1
+                ]
+              },
+              {
+                "action": 7,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 7
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "zulaport cutthroat",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Sign in Blood",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  2
+                ]
+              },
+              {
+                "action": 7,
+                "args": [
+                  2
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              },
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "sign in blood",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Lightning Strike",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 5,
+                "args": [
+                  3
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "lightning strike",
+      "card_id_scheme": "stable_name_rank_v1"
+    }
+  ]
+}

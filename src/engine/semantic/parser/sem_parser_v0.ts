@@ -128,11 +128,26 @@ export function parseSemanticIrV0(input: {
   const gates: Array<{ id: GateId }> = [];
   const touch: Array<{ id: ResourceId }> = [];
 
-  const drawMatch = /draw\s+(a|an|one|two|three|four|\d+)\s+cards?/i.exec(text);
+  const drawMatch = /draws?\s+(a|an|one|two|three|four|\d+)\s+cards?/i.exec(text);
   if (drawMatch) {
     const n = parseCount(drawMatch[1]) ?? 1;
     doList.push({ action: ActionId.DRAW_CARDS, args: [n] });
     addUnique(touch, { id: ResourceId.CARD }, (a, b) => a.id === b.id);
+  }
+
+  const discardMatch =
+    /discard\w*\s+(a|an|one|two|three|four|\d+|that)\s+cards?/i.exec(text);
+  if (discardMatch) {
+    const token = discardMatch[1].toLowerCase();
+    const n = token === "that" ? 1 : parseCount(discardMatch[1]) ?? 1;
+    doList.push({ action: ActionId.DISCARD_CARDS, args: [n] });
+    addUnique(touch, { id: ResourceId.CARD }, (a, b) => a.id === b.id);
+    if (/each opponent/i.test(text)) {
+      addUnique(gates, { id: GateId.EACH_OPPONENT }, (a, b) => a.id === b.id);
+    }
+    if (/target/i.test(text)) {
+      addUnique(gates, { id: GateId.TARGET_REQUIRED }, (a, b) => a.id === b.id);
+    }
   }
 
   const tokenMatch = /create\s+(a|an|one|two|three|four|\d+)\s+(treasure|food|blood|clue)\s+tokens?/i.exec(text);
@@ -153,6 +168,33 @@ export function parseSemanticIrV0(input: {
     }
   }
 
+  const gainLifeMatch = /you gain\s+(a|an|one|two|three|four|\d+)\s+life/i.exec(text);
+  if (gainLifeMatch) {
+    const n = parseCount(gainLifeMatch[1]) ?? 1;
+    doList.push({ action: ActionId.GAIN_LIFE, args: [n] });
+    addUnique(touch, { id: ResourceId.LIFE }, (a, b) => a.id === b.id);
+  }
+
+  const loseLifeMatch = /loses\s+(a|an|one|two|three|four|\d+)\s+life/i.exec(text);
+  if (loseLifeMatch) {
+    const n = parseCount(loseLifeMatch[1]) ?? 1;
+    doList.push({ action: ActionId.LOSE_LIFE, args: [n] });
+    addUnique(touch, { id: ResourceId.LIFE }, (a, b) => a.id === b.id);
+    if (/each opponent/i.test(text)) {
+      addUnique(gates, { id: GateId.EACH_OPPONENT }, (a, b) => a.id === b.id);
+    }
+    if (/target/i.test(text)) {
+      addUnique(gates, { id: GateId.TARGET_REQUIRED }, (a, b) => a.id === b.id);
+    }
+  }
+
+  const youLoseLifeMatch = /you lose\s+(a|an|one|two|three|four|\d+)\s+life/i.exec(text);
+  if (youLoseLifeMatch) {
+    const n = parseCount(youLoseLifeMatch[1]) ?? 1;
+    doList.push({ action: ActionId.LOSE_LIFE, args: [n] });
+    addUnique(touch, { id: ResourceId.LIFE }, (a, b) => a.id === b.id);
+  }
+
   if (/destroy\s+target/i.test(text)) {
     doList.push({ action: ActionId.DESTROY_PERMANENT });
     addUnique(gates, { id: GateId.TARGET_REQUIRED }, (a, b) => a.id === b.id);
@@ -168,6 +210,15 @@ export function parseSemanticIrV0(input: {
     if (/target/i.test(text)) {
       addUnique(gates, { id: GateId.TARGET_REQUIRED }, (a, b) => a.id === b.id);
     }
+  }
+
+  if (/any target/i.test(text)) {
+    addUnique(gates, { id: GateId.TARGET_REQUIRED }, (a, b) => a.id === b.id);
+  }
+
+  if (/up to\s+(a|an|one|two|three|four|\d+)\s+target/i.test(text)) {
+    addUnique(gates, { id: GateId.UP_TO }, (a, b) => a.id === b.id);
+    addUnique(gates, { id: GateId.TARGET_REQUIRED }, (a, b) => a.id === b.id);
   }
 
   normalizeIds(watch, (w) => w.id);

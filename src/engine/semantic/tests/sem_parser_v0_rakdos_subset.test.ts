@@ -30,7 +30,7 @@ type GoldDataset = {
 };
 
 const here = dirname(fileURLToPath(import.meta.url));
-const datasetPath = join(here, "../../../../tools/semantics/gold/sem_gold_v0_rakdos_subset.json");
+const datasetPath = join(here, "../../../../tools/semantics/gold/sem_gold_v1_rakdos_subset.json");
 const cardsIndexPath = join(here, "../../../../public/data/cards_index.json.gz");
 
 function loadDataset(): GoldDataset {

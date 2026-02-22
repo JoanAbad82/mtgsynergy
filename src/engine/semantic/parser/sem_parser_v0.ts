@@ -98,10 +98,10 @@ export function parseSemanticIrV0(input: {
 
   const watch: Array<{ id: EventId; args?: ReadonlyArray<number> }> = [];
   if (kind === FrameKind.TRIGGERED) {
-    if (/enters the battlefield/i.test(text)) {
+    if (/\benters(?: the battlefield)?\b/i.test(text)) {
       watch.push({ id: EventId.ENTERS_BATTLEFIELD });
     }
-    if (/\bsacrifice\w*\b/i.test(text)) {
+    if (/\b(when|whenever|at the beginning)[^.]*\bsacrifice\w*\b/i.test(text)) {
       watch.push({ id: EventId.SACRIFICE });
     }
   }
@@ -111,11 +111,13 @@ export function parseSemanticIrV0(input: {
   if (additionalCostMatch) {
     cost.push({ cost: CostId.SACRIFICE_AS_COST, res: ResourceId.UNKNOWN_RESOURCE, n: 1 });
   }
-  const activatedCostMatch = /sacrifice[^:]*:/i.exec(text);
-  if (activatedCostMatch) {
-    const tokenKind = tokenKindFromText(activatedCostMatch[0]);
-    const res = tokenKind ? tokenResourceFromKind(tokenKind) : ResourceId.UNKNOWN_RESOURCE;
-    cost.push({ cost: CostId.SACRIFICE_AS_COST, res, n: 1 });
+  if (kind === FrameKind.ACTIVATED) {
+    const activatedCostMatch = /sacrifice[^:]*:/i.exec(text);
+    if (activatedCostMatch) {
+      const tokenKind = tokenKindFromText(activatedCostMatch[0]);
+      const res = tokenKind ? tokenResourceFromKind(tokenKind) : ResourceId.UNKNOWN_RESOURCE;
+      cost.push({ cost: CostId.SACRIFICE_AS_COST, res, n: 1 });
+    }
   }
 
   const doList: Array<{

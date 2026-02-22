@@ -111,6 +111,10 @@ export function parseSemanticIrV0(input: {
   if (additionalCostMatch) {
     cost.push({ cost: CostId.SACRIFICE_AS_COST, res: ResourceId.UNKNOWN_RESOURCE, n: 1 });
   }
+  const additionalDiscardMatch = /as an additional cost to cast[^.]*discard[^.]*/i.test(text);
+  if (additionalDiscardMatch) {
+    cost.push({ cost: CostId.DISCARD_AS_COST, res: ResourceId.CARD, n: 1 });
+  }
   if (kind === FrameKind.ACTIVATED) {
     const activatedCostMatch = /sacrifice[^:]*:/i.exec(text);
     if (activatedCostMatch) {
@@ -137,7 +141,7 @@ export function parseSemanticIrV0(input: {
 
   const discardMatch =
     /discard\w*\s+(a|an|one|two|three|four|\d+|that)\s+cards?/i.exec(text);
-  if (discardMatch) {
+  if (discardMatch && !additionalDiscardMatch) {
     const token = discardMatch[1].toLowerCase();
     const n = token === "that" ? 1 : parseCount(discardMatch[1]) ?? 1;
     doList.push({ action: ActionId.DISCARD_CARDS, args: [n] });

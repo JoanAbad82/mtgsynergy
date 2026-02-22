@@ -533,36 +533,38 @@
       "card_id_scheme": "stable_name_rank_v1"
     },
     {
-      "name": "Lightning Strike",
+      "name": "Thrill of Possibility",
       "expected_ir": {
         "card_id": 0,
         "frames": [
           {
             "kind": 4,
             "watch": [],
-            "cost": [],
+            "cost": [
+              {
+                "cost": 4,
+                "res": 3,
+                "n": 1
+              }
+            ],
             "do": [
               {
-                "action": 5,
+                "action": 1,
                 "args": [
-                  3
+                  2
                 ]
               }
             ],
             "touch": [
               {
-                "id": 2
-              }
-            ],
-            "gates": [
-              {
                 "id": 3
               }
-            ]
+            ],
+            "gates": []
           }
         ]
       },
-      "card_name_norm": "lightning strike",
+      "card_name_norm": "thrill of possibility",
       "card_id_scheme": "stable_name_rank_v1"
     }
   ]

@@ -84,10 +84,8 @@ export default function AnalyzerApp() {
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const mcRunId = useRef(0);
   const semanticRunId = useRef(0);
-  const edgesByKind = useMemo(() => {
-    const edges = (deckState as any)?.edges ?? [];
-    return groupEdgesForPanel(edges);
-  }, [deckState]);
+  const edges = (deckState as any)?.edges ?? [];
+  const edgesByKind = useMemo(() => groupEdgesForPanel(edges), [edges]);
   const nameMap = useMemo(() => buildNameMapFromDeckState(deckState), [deckState]);
   const countsMap = useMemo(
     () =>

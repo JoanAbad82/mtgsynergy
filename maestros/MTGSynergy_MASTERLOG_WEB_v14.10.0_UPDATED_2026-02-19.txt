@@ -380,3 +380,33 @@ OPS — Probes postdeploy (anti-cache)
 
 Cierre
 - Estado: F1.1 cerrado (UI-only + probes OK)
+
+===================================================================== H14
+S1.0 — Estética del analizador (layout/spacing/badges/link-buttons) (UI-only)
+Fecha actualización: 2026-02-21
+=====================================================================
+
+Resumen
+- Pulido visual del analizador sin tocar motor:
+  - Estilos de .panel: padding consistente, borde sutil, radius suave y fondo de tarjeta.
+  - Jerarquía tipográfica en paneles: h2/h3 con tamaños y márgenes más claros.
+  - Badges tipo “pill” (OK/WARN) con estilo más legible.
+  - Botones tipo link unificados (Ir a entrada / Activar MC / Reanalizar / Detalles-Ocultar) con focus visible.
+  - Panel “Estado del análisis” refactor: menos inline styles, más clases (separadores por sección, acciones con gap y wrap).
+
+Commits
+- 0ae5c06  ui: analyzer visual polish (S1.0)
+- ac576b5  chore(analyzer): align BUILD_SHA with HEAD (post S1.0)
+
+OPS — Cloudflare Pages
+- Production: main @ 0ae5c06 — Success
+- Production: main @ ac576b5 — Success
+
+OPS — Probes postdeploy (anti-cache)
+- Ruta canónica: /es/analizador-de-mazos-mtg/
+- HTML probe OK:
+  - build marker presente (HTML): build: 0ae5c06
+  - Bundle AnalyzerApp hashed referenciado en HTML: /_astro/AnalyzerApp.*.js (HTTP 200)
+
+Cierre
+- Estado: S1.0 cerrado (UI-only + probes OK + BUILD_SHA aligned)

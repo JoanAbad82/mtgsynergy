@@ -1,0 +1,151 @@
+{
+  "SEM_IR_VERSION": 1,
+  "archetype": "rakdos_sacrifice_subset_v0",
+  "cards": [
+    {
+      "name": "Village Rites",
+      "oracle_text": "As an additional cost to cast this spell, sacrifice a creature. Draw two cards.",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [{ "cost": 3, "res": 0, "n": 1 }],
+            "do": [{ "action": 1, "args": [2] }],
+            "touch": [{ "id": 3 }],
+            "gates": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "Deadly Dispute",
+      "oracle_text": "As an additional cost to cast this spell, sacrifice an artifact or creature. Draw two cards. Create a Treasure token.",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [{ "cost": 3, "res": 0, "n": 1 }],
+            "do": [
+              { "action": 1, "args": [2] },
+              { "action": 3, "tokenData": { "kind": 1, "n": 1 } }
+            ],
+            "touch": [{ "id": 3 }, { "id": 10 }],
+            "gates": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "Witch's Oven",
+      "oracle_text": "{T}, Sacrifice a creature: Create a Food token.",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 2,
+            "watch": [],
+            "cost": [{ "cost": 3, "res": 0, "n": 1 }],
+            "do": [{ "action": 3, "tokenData": { "kind": 2, "n": 1 } }],
+            "touch": [{ "id": 11 }],
+            "gates": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "Mayhem Devil",
+      "oracle_text": "Whenever a player sacrifices a permanent, Mayhem Devil deals 1 damage to any target.",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [{ "id": 5 }],
+            "cost": [],
+            "do": [{ "action": 5, "args": [1] }],
+            "touch": [{ "id": 2 }],
+            "gates": [{ "id": 3 }]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Voldaren Epicure",
+      "oracle_text": "When Voldaren Epicure enters the battlefield, it deals 1 damage to each opponent and you create a Blood token.",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [{ "id": 2 }],
+            "cost": [],
+            "do": [
+              { "action": 5, "args": [1] },
+              { "action": 3, "tokenData": { "kind": 4, "n": 1 } }
+            ],
+            "touch": [{ "id": 2 }, { "id": 13 }],
+            "gates": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "Blood Fountain",
+      "oracle_text": "When Blood Fountain enters the battlefield, create two Blood tokens.",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [{ "id": 2 }],
+            "cost": [],
+            "do": [{ "action": 3, "tokenData": { "kind": 4, "n": 2 } }],
+            "touch": [{ "id": 13 }],
+            "gates": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "Fatal Push",
+      "oracle_text": "Destroy target creature if it has mana value 2 or less.",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [{ "action": 9 }],
+            "touch": [],
+            "gates": [{ "id": 3 }]
+          }
+        ]
+      }
+    },
+    {
+      "name": "Claim the Firstborn",
+      "oracle_text": "Gain control of target creature until end of turn. Untap that creature. It gains haste until end of turn.",
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              { "action": 19 },
+              { "action": 16 }
+            ],
+            "touch": [],
+            "gates": [{ "id": 3 }]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,1305 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`semantic gold seed: rakdos sacrifice > validates ids and snapshots dataset 1`] = `
+{
+  "SEM_IR_VERSION": 1,
+  "archetype": "rakdos_sacrifice",
+  "cards": [
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  1,
+                ],
+              },
+              {
+                "action": 6,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [
+              {
+                "id": 7,
+              },
+            ],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 2,
+              },
+            ],
+            "watch": [
+              {
+                "id": 2,
+              },
+            ],
+          },
+          {
+            "cost": [
+              {
+                "cost": 3,
+                "n": 1,
+                "res": 11,
+              },
+            ],
+            "do": [
+              {
+                "action": 0,
+              },
+            ],
+            "gates": [],
+            "kind": 2,
+            "touch": [
+              {
+                "id": 11,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Cauldron Familiar",
+      "notes": "ETB drain modeled. Return-from-graveyard action not in v1, keep UNKNOWN_ACTION.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [
+              {
+                "cost": 3,
+                "n": 1,
+                "res": 0,
+              },
+            ],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 2,
+                  "n": 1,
+                },
+              },
+            ],
+            "gates": [],
+            "kind": 2,
+            "touch": [
+              {
+                "id": 11,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Witch's Oven",
+      "notes": "Creates 1 or 2 Food depending on mana value; modeled as 1.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 19,
+              },
+              {
+                "action": 16,
+              },
+            ],
+            "gates": [
+              {
+                "id": 3,
+              },
+            ],
+            "kind": 4,
+            "touch": [],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Claim the Firstborn",
+      "notes": "Control change and untap are modeled; haste not represented.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 5,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [
+              {
+                "id": 3,
+              },
+            ],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 2,
+              },
+            ],
+            "watch": [
+              {
+                "id": 5,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Mayhem Devil",
+      "notes": "Triggers on any sacrifice; target choice modeled via gate.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [
+              {
+                "cost": 2,
+              },
+              {
+                "cost": 3,
+                "n": 2,
+                "res": 0,
+              },
+            ],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  2,
+                ],
+              },
+              {
+                "action": 14,
+                "args": [
+                  2,
+                ],
+              },
+              {
+                "action": 1,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [
+              {
+                "id": 7,
+              },
+            ],
+            "kind": 2,
+            "touch": [
+              {
+                "id": 2,
+              },
+              {
+                "id": 1,
+              },
+              {
+                "id": 3,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Priest of Forgotten Gods",
+      "notes": "Multiple effects modeled; mana color specifics omitted.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [
+              {
+                "cost": 3,
+                "n": 1,
+                "res": 0,
+              },
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  2,
+                ],
+              },
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 1,
+                  "n": 1,
+                },
+              },
+            ],
+            "gates": [],
+            "kind": 4,
+            "touch": [
+              {
+                "id": 3,
+              },
+              {
+                "id": 10,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Deadly Dispute",
+      "notes": "Additional cost sacrifice; treasure + draw modeled.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [
+              {
+                "cost": 3,
+                "n": 1,
+                "res": 0,
+              },
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  2,
+                ],
+              },
+            ],
+            "gates": [],
+            "kind": 4,
+            "touch": [
+              {
+                "id": 3,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Village Rites",
+      "notes": "Additional cost sacrifice; draw two.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 4,
+                  "n": 1,
+                },
+              },
+            ],
+            "gates": [],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 13,
+              },
+            ],
+            "watch": [
+              {
+                "id": 2,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Voldaren Epicure",
+      "notes": "ETB create Blood.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  1,
+                ],
+              },
+              {
+                "action": 6,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [
+              {
+                "id": 3,
+              },
+            ],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 2,
+              },
+            ],
+            "watch": [
+              {
+                "id": 3,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Oni-Cult Anvil",
+      "notes": "Artifact leaves battlefield trigger simplified; token creation omitted.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 4,
+                  "n": 1,
+                },
+              },
+            ],
+            "gates": [],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 13,
+              },
+            ],
+            "watch": [
+              {
+                "id": 2,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Bloodtithe Harvester",
+      "notes": "ETB create Blood; sacrifice ability not modeled.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 0,
+                  "n": 1,
+                  "p": 2,
+                  "t": 2,
+                },
+              },
+            ],
+            "gates": [],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 9,
+              },
+            ],
+            "watch": [
+              {
+                "id": 2,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Fable of the Mirror-Breaker",
+      "notes": "Chapter I token is a Goblin Shaman; use UNKNOWN_TOKEN.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 22,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [],
+            "kind": 1,
+            "touch": [],
+            "watch": [
+              {
+                "id": 2,
+              },
+            ],
+          },
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 1,
+                  "n": 1,
+                },
+              },
+            ],
+            "gates": [],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 10,
+              },
+            ],
+            "watch": [
+              {
+                "id": 3,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Experimental Synthesizer",
+      "notes": "ETB exile top card; LTB create Treasure.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 22,
+                "args": [
+                  2,
+                ],
+              },
+            ],
+            "gates": [],
+            "kind": 1,
+            "touch": [],
+            "watch": [
+              {
+                "id": 4,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Unlucky Witness",
+      "notes": "Dies exile top two cards until end of next turn.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 1,
+                  "n": 1,
+                },
+              },
+            ],
+            "gates": [
+              {
+                "id": 9,
+              },
+            ],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 10,
+              },
+            ],
+            "watch": [
+              {
+                "id": 4,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Shambling Ghast",
+      "notes": "Dies choose one; modeled as optional Treasure.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  1,
+                ],
+              },
+              {
+                "action": 6,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [
+              {
+                "id": 7,
+              },
+            ],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 2,
+              },
+            ],
+            "watch": [
+              {
+                "id": 4,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "The Meathook Massacre",
+      "notes": "Creature dies triggers loss/gain simplified.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 2,
+                "args": [
+                  1,
+                ],
+              },
+              {
+                "action": 7,
+                "args": [
+                  3,
+                ],
+              },
+            ],
+            "gates": [
+              {
+                "id": 7,
+              },
+            ],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 3,
+              },
+              {
+                "id": 2,
+              },
+            ],
+            "watch": [
+              {
+                "id": 1,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Kroxa, Titan of Death's Hunger",
+      "notes": "Cast trigger simplified; escape not modeled.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  1,
+                ],
+              },
+              {
+                "action": 6,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [
+              {
+                "id": 3,
+              },
+            ],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 2,
+              },
+            ],
+            "watch": [
+              {
+                "id": 4,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Blood Artist",
+      "notes": "Dies trigger; target player modeled via gate.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  1,
+                ],
+              },
+              {
+                "action": 6,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [
+              {
+                "id": 7,
+              },
+            ],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 2,
+              },
+            ],
+            "watch": [
+              {
+                "id": 4,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Zulaport Cutthroat",
+      "notes": "Each opponent loses life; you gain life.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [
+              {
+                "cost": 1,
+                "n": 1,
+                "res": 1,
+              },
+              {
+                "cost": 3,
+                "n": 1,
+                "res": 0,
+              },
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [],
+            "kind": 2,
+            "touch": [
+              {
+                "id": 3,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Dockside Chef",
+      "notes": "Pay 1, sacrifice artifact/creature: draw a card.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [
+              {
+                "cost": 3,
+                "n": 1,
+                "res": 0,
+              },
+            ],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 0,
+                  "n": 1,
+                  "p": 3,
+                  "t": 1,
+                },
+              },
+            ],
+            "gates": [
+              {
+                "id": 9,
+              },
+            ],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 9,
+              },
+            ],
+            "watch": [
+              {
+                "id": 0,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Sokenzan Smelter",
+      "notes": "At combat you may sacrifice artifact; create 3/1 token. Event is UNKNOWN.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [
+              {
+                "cost": 3,
+                "n": 1,
+                "res": 0,
+              },
+            ],
+            "do": [
+              {
+                "action": 5,
+                "args": [
+                  4,
+                ],
+              },
+            ],
+            "gates": [
+              {
+                "id": 3,
+              },
+            ],
+            "kind": 4,
+            "touch": [
+              {
+                "id": 2,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Voltage Surge",
+      "notes": "Additional cost sacrifice artifact to deal 4.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [
+              {
+                "cost": 3,
+                "n": 1,
+                "res": 0,
+              },
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  2,
+                ],
+              },
+              {
+                "action": 6,
+              },
+            ],
+            "gates": [],
+            "kind": 4,
+            "touch": [
+              {
+                "id": 3,
+              },
+              {
+                "id": 2,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Reckoner's Bargain",
+      "notes": "Sacrifice artifact/creature: draw 2 and gain life equal to toughness.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [
+              {
+                "cost": 3,
+                "n": 1,
+                "res": 10,
+              },
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [],
+            "kind": 2,
+            "touch": [
+              {
+                "id": 3,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Skullport Merchant",
+      "notes": "Sacrifice a Treasure: draw a card.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 4,
+                  "n": 2,
+                },
+              },
+            ],
+            "gates": [],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 13,
+              },
+            ],
+            "watch": [
+              {
+                "id": 2,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Blood Fountain",
+      "notes": "ETB create two Blood tokens.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [
+              {
+                "cost": 3,
+                "n": 1,
+                "res": 0,
+              },
+            ],
+            "do": [
+              {
+                "action": 0,
+              },
+            ],
+            "gates": [],
+            "kind": 4,
+            "touch": [],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Ob Nixilis, the Adversary",
+      "notes": "Casualty and token creation not modeled; keep UNKNOWN_ACTION.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 19,
+              },
+            ],
+            "gates": [
+              {
+                "id": 3,
+              },
+            ],
+            "kind": 4,
+            "touch": [],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Furnace Reins",
+      "notes": "Gain control until end of turn; sacrifice at end step not modeled.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [
+              {
+                "cost": 3,
+                "n": 1,
+                "res": 0,
+              },
+            ],
+            "do": [
+              {
+                "action": 4,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [],
+            "kind": 2,
+            "touch": [
+              {
+                "id": 4,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Immersturm Predator",
+      "notes": "Sacrifice a creature: put +1/+1 counter.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 2,
+                "args": [
+                  1,
+                ],
+              },
+              {
+                "action": 1,
+                "args": [
+                  1,
+                ],
+              },
+            ],
+            "gates": [],
+            "kind": 4,
+            "touch": [
+              {
+                "id": 3,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Rix Maadi Reveler",
+      "notes": "Discard then draw; spectacle not modeled.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 4,
+                  "n": 1,
+                },
+              },
+            ],
+            "gates": [],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 13,
+              },
+            ],
+            "watch": [
+              {
+                "id": 0,
+              },
+            ],
+          },
+          {
+            "cost": [
+              {
+                "cost": 3,
+                "n": 2,
+                "res": 13,
+              },
+            ],
+            "do": [
+              {
+                "action": 5,
+                "args": [
+                  2,
+                ],
+              },
+              {
+                "action": 6,
+                "args": [
+                  2,
+                ],
+              },
+            ],
+            "gates": [
+              {
+                "id": 3,
+              },
+            ],
+            "kind": 2,
+            "touch": [
+              {
+                "id": 2,
+              },
+            ],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Anje, Maid of Dishonor",
+      "notes": "End step Blood creation uses UNKNOWN_EVENT; second ability modeled.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 6,
+                  "n": 1,
+                },
+              },
+            ],
+            "gates": [
+              {
+                "id": 4,
+              },
+            ],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 15,
+              },
+            ],
+            "watch": [
+              {
+                "id": 0,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Jadar, Ghoulcaller of Nephalia",
+      "notes": "End step Zombie creation if none; event and condition simplified.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 0,
+                  "n": 1,
+                  "p": 2,
+                  "t": 1,
+                },
+              },
+            ],
+            "gates": [],
+            "kind": 1,
+            "touch": [
+              {
+                "id": 9,
+              },
+            ],
+            "watch": [
+              {
+                "id": 0,
+              },
+            ],
+          },
+        ],
+      },
+      "name": "Kari Zev, Skyship Raider",
+      "notes": "Attack trigger uses UNKNOWN_EVENT; token type is UNKNOWN_TOKEN.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 9,
+              },
+            ],
+            "gates": [
+              {
+                "id": 3,
+              },
+            ],
+            "kind": 4,
+            "touch": [],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Bloodchief's Thirst",
+      "notes": "Destroy target creature or planeswalker; kicker ignored.",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 9,
+              },
+            ],
+            "gates": [
+              {
+                "id": 3,
+              },
+            ],
+            "kind": 4,
+            "touch": [],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Fatal Push",
+      "notes": "Destroy target creature with MV <= 2 (revolt ignored).",
+    },
+    {
+      "expected_ir": {
+        "card_id": 0,
+        "frames": [
+          {
+            "cost": [],
+            "do": [
+              {
+                "action": 9,
+              },
+            ],
+            "gates": [
+              {
+                "id": 3,
+              },
+            ],
+            "kind": 4,
+            "touch": [],
+            "watch": [],
+          },
+        ],
+      },
+      "name": "Go for the Throat",
+      "notes": "Destroy target nonartifact creature; restriction not encoded.",
+    },
+  ],
+}
+`;

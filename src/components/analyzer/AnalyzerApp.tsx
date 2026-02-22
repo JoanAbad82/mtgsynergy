@@ -22,6 +22,13 @@ import HowItWorksSection from "./sections/HowItWorksSection";
 import ExamplesSection from "./sections/ExamplesSection";
 import FaqSection from "./sections/FaqSection";
 import LabCTASection from "./sections/LabCTASection";
+import MetricCoach from "./components/MetricCoach";
+import {
+  interpretDensity,
+  interpretEdgesTotal,
+  interpretRolesDominant,
+  interpretSps,
+} from "./guidance/metric_guidance";
 
 export default function AnalyzerApp() {
   const [inputText, setInputText] = useState("");
@@ -329,17 +336,67 @@ export default function AnalyzerApp() {
               </span>
               : {formatNumberCompact(summary.structuralPowerScore, 1)}
             </p>
+            {(() => {
+              const spsValue = getSpsNumber(summary.structuralPowerScore);
+              const spsGuide = interpretSps(spsValue);
+              return (
+                <MetricCoach
+                  label="SPS"
+                  value={formatNumberCompact(summary.structuralPowerScore, 1)}
+                  level={spsGuide.level}
+                  meaning={spsGuide.meaning}
+                  advice={spsGuide.advice}
+                />
+              );
+            })()}
             <p>
               Sinergias detectadas: {summary.edges_total} ·{" "}
               <span title="Densidad del grafo de roles">Densidad</span>:{" "}
               {formatNumberCompact(summary.density, 3)}
             </p>
+            {(() => {
+              const edgesGuide = interpretEdgesTotal(summary.edges_total);
+              return (
+                <MetricCoach
+                  label="Sinergias"
+                  value={String(summary.edges_total)}
+                  level={edgesGuide.level}
+                  meaning={edgesGuide.meaning}
+                  advice={edgesGuide.advice}
+                />
+              );
+            })()}
             <p>
               <span title="Roles con mayor presencia en el mazo">
                 Roles dominantes
               </span>
               : {getDominantRoles(summary.role_counts).join(", ") || "—"}
             </p>
+            {(() => {
+              const densityGuide = interpretDensity(summary.density);
+              return (
+                <MetricCoach
+                  label="Densidad"
+                  value={formatNumberCompact(summary.density, 3)}
+                  level={densityGuide.level}
+                  meaning={densityGuide.meaning}
+                  advice={densityGuide.advice}
+                />
+              );
+            })()}
+            {(() => {
+              const roles = getDominantRoles(summary.role_counts);
+              const rolesGuide = interpretRolesDominant(roles);
+              if (!rolesGuide.meaning && !rolesGuide.advice) return null;
+              return (
+                <MetricCoach
+                  label="Roles dominantes"
+                  value={rolesGuide.title}
+                  meaning={rolesGuide.meaning}
+                  advice={rolesGuide.advice}
+                />
+              );
+            })()}
             <p>{getQuickDiagnosis(summary.edges_total, summary.density)}</p>
           </div>
           <StructuralPanel summary={summary} />

@@ -134,6 +134,36 @@ p { margin: 0 0 18px; color: var(--muted); }
   white-space: pre-wrap;
 }
 
+.metric-coach {
+  margin: 6px 0 12px;
+}
+
+.metric-coach-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.level-chip {
+  letter-spacing: 0.04em;
+}
+
+.level-chip.level-low {
+  border-color: rgba(255, 186, 90, 0.35);
+  background: rgba(255, 186, 90, 0.12);
+}
+
+.level-chip.level-mid {
+  border-color: rgba(122, 162, 255, 0.4);
+  background: rgba(122, 162, 255, 0.12);
+}
+
+.level-chip.level-high {
+  border-color: rgba(120, 210, 170, 0.35);
+  background: rgba(120, 210, 170, 0.12);
+}
+
 .card {
   margin-top: 24px;
   padding: 18px;

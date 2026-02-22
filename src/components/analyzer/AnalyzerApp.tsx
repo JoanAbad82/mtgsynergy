@@ -809,7 +809,7 @@ export type EdgeUi = {
   score?: number;
 };
 
-export const BUILD_SHA = "0ae5c06";
+export const BUILD_SHA = "9b795fa";
 
 export function parseMcParams(
   input: string | URL,

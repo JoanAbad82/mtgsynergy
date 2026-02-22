@@ -115,3 +115,14 @@ export function explainKey(key: number): string {
   }
   return "UNKNOWN";
 }
+
+export function explainKeyHuman(key: number): string {
+  const raw = explainKey(key);
+  if (raw === "UNKNOWN") return "Unknown";
+  const [prefix, rest] = raw.split(":");
+  if (!prefix || !rest) return "Unknown";
+  if (prefix === "EVENT") return `Event · ${rest}`;
+  if (prefix === "ACTION") return `Action · ${rest}`;
+  if (prefix === "RESOURCE") return `Resource · ${rest}`;
+  return "Unknown";
+}

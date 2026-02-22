@@ -40,7 +40,7 @@ import {
 import { es } from "./i18n/es";
 import { buildSemanticEdges } from "../../engine/semantic/overlay/sem_edges";
 import { buildSemanticOverlayMetrics } from "../../engine/semantic/overlay/sem_metrics";
-import { explainKey } from "../../engine/semantic/overlay/sem_profile";
+import { explainKey, explainKeyHuman } from "../../engine/semantic/overlay/sem_profile";
 import { parseSemanticIrV0 } from "../../engine/semantic/parser/sem_parser_v1";
 
 export default function AnalyzerApp() {
@@ -76,13 +76,18 @@ export default function AnalyzerApp() {
     metrics: ReturnType<typeof buildSemanticOverlayMetrics>;
     edgesTop: ReturnType<typeof buildSemanticEdges>;
     idToName: Record<number, string>;
+    resolvedUnique: number;
+    missingUnique: number;
+    deckEntriesCount: number;
   }>(null);
   const [semanticOverlayError, setSemanticOverlayError] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const mcRunId = useRef(0);
   const semanticRunId = useRef(0);
-  const edges = (deckState as any)?.edges ?? [];
-  const edgesByKind = useMemo(() => groupEdgesForPanel(edges), [edges]);
+  const edgesByKind = useMemo(() => {
+    const edges = (deckState as any)?.edges ?? [];
+    return groupEdgesForPanel(edges);
+  }, [deckState]);
   const nameMap = useMemo(() => buildNameMapFromDeckState(deckState), [deckState]);
   const countsMap = useMemo(
     () =>
@@ -226,6 +231,8 @@ export default function AnalyzerApp() {
         }),
       );
       const found = resolved.filter((card): card is NonNullable<typeof card> => !!card);
+      const resolvedUnique = found.length;
+      const missingUnique = uniqueNames.length - resolvedUnique;
 
       const byNorm = new Map<string, (typeof found)[number]>();
       for (const card of found) {
@@ -266,6 +273,8 @@ export default function AnalyzerApp() {
         metrics,
         edgesTop: edges.slice(0, 10),
         idToName,
+        resolvedUnique,
+        missingUnique,
         deckEntriesCount: entries.length,
       });
       setSemanticOverlayStatus("ready");
@@ -529,8 +538,11 @@ export default function AnalyzerApp() {
                 metrics={semanticOverlay.metrics}
                 edges={semanticOverlay.edgesTop}
                 explainKey={explainKey}
+                explainKeyHuman={explainKeyHuman}
                 idToName={semanticOverlay.idToName}
                 deckEntriesCount={semanticOverlay.deckEntriesCount}
+                resolvedUnique={semanticOverlay.resolvedUnique}
+                missingUnique={semanticOverlay.missingUnique}
               />
             )}
           {mcParams.enabled && (

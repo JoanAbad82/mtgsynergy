@@ -8,6 +8,7 @@ import {
   SemanticCardIR,
   TokenKindId,
 } from "../contract";
+import { normalizeOracleTextV1 } from "../normalize";
 
 const WORD_NUMBERS: Record<string, number> = {
   a: 1,
@@ -68,7 +69,7 @@ export function parseSemanticIrV0(input: {
   oracle_text: string;
   type_line?: string | null;
 }): SemanticCardIR {
-  const text = input.oracle_text ?? "";
+  const text = normalizeOracleTextV1(input.oracle_text ?? "");
   const lower = text.toLowerCase();
   const typeLine = (input.type_line ?? "").toLowerCase();
 

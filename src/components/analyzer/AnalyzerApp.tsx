@@ -42,6 +42,7 @@ import { buildSemanticEdges } from "../../engine/semantic/overlay/sem_edges";
 import { buildSemanticOverlayMetrics } from "../../engine/semantic/overlay/sem_metrics";
 import { explainKey, explainKeyHuman } from "../../engine/semantic/overlay/sem_profile";
 import { parseSemanticIrV0 } from "../../engine/semantic/parser/sem_parser_v1";
+import { normalizeOracleTextV1 } from "../../engine/semantic/normalize";
 
 export default function AnalyzerApp() {
   const [inputText, setInputText] = useState("");
@@ -244,9 +245,7 @@ export default function AnalyzerApp() {
       );
       const idToName: Record<number, string> = {};
       const cards = ordered.map((card, index) => {
-        let oracleText = card.oracle_text ?? "";
-        oracleText = oracleText.replace(/\([^)]*\)/g, "");
-        oracleText = oracleText.replace(/\s+/g, " ").trim();
+        const oracleText = normalizeOracleTextV1(card.oracle_text ?? "");
         const ir = parseSemanticIrV0({
           name: card.name,
           oracle_text: oracleText,

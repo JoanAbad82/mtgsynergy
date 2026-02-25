@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { gunzipSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import { normalizeCardName } from "../../cards/normalize";
+import { normalizeOracleTextV1 } from "../normalize";
 import { parseSemanticIrV0 } from "../parser/sem_parser_v1";
 import { buildSemanticEdges } from "../overlay/sem_edges";
 import { buildSemanticOverlayMetrics } from "../overlay/sem_metrics";
@@ -83,9 +84,7 @@ describe("semantic overlay metrics: rakdos subset v1", () => {
       if (!record || !record.oracle_text) {
         throw new Error(`Missing oracle_text for card: ${canonical}`);
       }
-      let oracleText = record.oracle_text ?? "";
-      oracleText = oracleText.replace(/\([^)]*\)/g, "");
-      oracleText = oracleText.replace(/\s+/g, " ").trim();
+      const oracleText = normalizeOracleTextV1(record.oracle_text ?? "");
       const ir = parseSemanticIrV0({
         name: canonical,
         oracle_text: oracleText,

@@ -13,7 +13,6 @@ import { generateEdges } from "../../engine/edges";
 import { runMonteCarloV1 } from "../../engine/montecarlo";
 import { computeStructuralPowerScore } from "../../engine/structural/sps";
 import { lookupCard } from "../../engine/cards/lookup";
-import { normalizeCardName } from "../../engine/cards/normalize";
 import { buildShareUrl, getShareTokenFromUrl } from "./state/shareUrl";
 import { exportJson, importJson } from "./state/jsonFallback";
 import StructuralPanel from "./panels/StructuralPanel";
@@ -38,11 +37,8 @@ import {
   mapMcLabel,
 } from "./guidance/metric_guidance";
 import { es } from "./i18n/es";
-import { buildSemanticEdges } from "../../engine/semantic/overlay/sem_edges";
-import { buildSemanticOverlayMetrics } from "../../engine/semantic/overlay/sem_metrics";
 import { explainKey, explainKeyHuman } from "../../engine/semantic/overlay/sem_profile";
-import { parseSemanticIrV0 } from "../../engine/semantic/parser/sem_parser_v1";
-import { normalizeOracleTextV1 } from "../../engine/semantic/normalize";
+import { computeSemanticOverlayFromDeckEntries } from "../../engine/semantic/overlay/sem_overlay_compute";
 
 export default function AnalyzerApp() {
   const [inputText, setInputText] = useState("");
@@ -216,64 +212,14 @@ export default function AnalyzerApp() {
     setSemanticOverlayError(null);
 
     const run = async () => {
-      const uniqueNames = Array.from(new Set(entries.map((entry) => entry.name)));
-      const resolved = await Promise.all(
-        uniqueNames.map(async (name) => {
-          const card = await lookupCard(name);
-          if (!card || !card.oracle_text) return null;
-          return {
-            name: card.name,
-            name_norm: card.name_norm ?? normalizeCardName(card.name),
-            oracle_text: card.oracle_text,
-            type_line: card.type_line ?? null,
-          };
-        }),
-      );
-      const found = resolved.filter((card): card is NonNullable<typeof card> => !!card);
-      const resolvedUnique = found.length;
-      const missingUnique = uniqueNames.length - resolvedUnique;
-
-      const byNorm = new Map<string, (typeof found)[number]>();
-      for (const card of found) {
-        if (!byNorm.has(card.name_norm)) {
-          byNorm.set(card.name_norm, card);
-        }
-      }
-
-      const ordered = Array.from(byNorm.values()).sort((a, b) =>
-        a.name_norm.localeCompare(b.name_norm),
-      );
-      const idToName: Record<number, string> = {};
-      const cards = ordered.map((card, index) => {
-        const oracleText = normalizeOracleTextV1(card.oracle_text ?? "");
-        const ir = parseSemanticIrV0({
-          name: card.name,
-          oracle_text: oracleText,
-          type_line: card.type_line ?? null,
-        });
-        const card_id = index + 1;
-        ir.card_id = card_id;
-        idToName[card_id] = card.name;
-        return { card_id, ir };
-      });
-
+      const result = await computeSemanticOverlayFromDeckEntries(entries, lookupCard);
       if (rid !== semanticRunId.current) return;
-      if (cards.length === 0) {
+      if (result.metrics.card_count === 0) {
         setSemanticOverlay(null);
         setSemanticOverlayStatus("ready");
         return;
       }
-
-      const edges = buildSemanticEdges(cards);
-      const metrics = buildSemanticOverlayMetrics({ cards, edges, topN: 10 });
-      setSemanticOverlay({
-        metrics,
-        edgesTop: edges.slice(0, 10),
-        idToName,
-        resolvedUnique,
-        missingUnique,
-        deckEntriesCount: entries.length,
-      });
+      setSemanticOverlay(result);
       setSemanticOverlayStatus("ready");
     };
 

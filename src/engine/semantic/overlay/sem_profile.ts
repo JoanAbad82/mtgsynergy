@@ -1,5 +1,6 @@
 import {
   ActionId,
+  CostId,
   EventId,
   ResourceId,
   SemanticCardIR,
@@ -49,6 +50,9 @@ export function buildSemanticCardProfile(
   for (const frame of ir.frames) {
     for (const watch of frame.watch) {
       addToMap(consumed, keyOf(KeyKind.EVENT, watch.id), 1);
+    }
+    if (frame.cost.some((cost) => cost.cost === CostId.SACRIFICE_AS_COST)) {
+      addToMap(produced, keyOf(KeyKind.EVENT, EventId.SACRIFICE), 1);
     }
     for (const cost of frame.cost) {
       if (cost.res !== undefined) {

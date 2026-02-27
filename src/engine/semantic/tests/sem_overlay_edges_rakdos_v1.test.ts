@@ -8,7 +8,7 @@ import { normalizeOracleTextV1 } from "../normalize";
 import { parseSemanticIrV0 } from "../parser/sem_parser_v1";
 import { buildSemanticEdges } from "../overlay/sem_edges";
 import { KeyKind, buildSemanticCardProfile, keyOf } from "../overlay/sem_profile";
-import { ActionId, ResourceId } from "../contract";
+import { ActionId, EventId, ResourceId } from "../contract";
 
 type GoldCard = {
   name: string;
@@ -89,6 +89,24 @@ describe("semantic overlay edges: rakdos subset v1", () => {
     for (const edge of edgesA) {
       expect(edge.from).not.toBe(edge.to);
     }
+
+    const sacrificeEventKey = keyOf(KeyKind.EVENT, EventId.SACRIFICE);
+    expect(edgesA.length).toBeGreaterThan(0);
+    expect(edgesA.some((edge) => edge.reasons.some((reason) => reason.key === sacrificeEventKey))).toBe(true);
+
+    const producers = new Set<number>();
+    const listeners = new Set<number>();
+    for (const { ir } of cards) {
+      const profile = buildSemanticCardProfile(ir);
+      if ((profile.produced.get(sacrificeEventKey) ?? 0) > 0) {
+        producers.add(ir.card_id);
+      }
+      if ((profile.consumed.get(sacrificeEventKey) ?? 0) > 0) {
+        listeners.add(ir.card_id);
+      }
+    }
+    const hasProducerListenerEdge = edgesA.some((edge) => producers.has(edge.from) && listeners.has(edge.to));
+    expect(hasProducerListenerEdge).toBe(true);
 
     const hasTokenConsumer = cards.some(({ ir }) =>
       ir.frames.some((frame) => frame.cost.some((cost) => cost.res !== undefined))

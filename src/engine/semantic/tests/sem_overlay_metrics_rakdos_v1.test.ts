@@ -103,6 +103,8 @@ describe("semantic overlay metrics: rakdos subset v1", () => {
     expect(metricsA.covered_count).toBeLessThanOrEqual(metricsA.card_count);
     expect(metricsA.semantic_coverage).toBeGreaterThanOrEqual(0);
     expect(metricsA.semantic_coverage).toBeLessThanOrEqual(1);
+    expect(metricsA.total_edge_score).toBeGreaterThan(0);
+    expect(metricsA.SOS).toBeGreaterThan(0);
 
     const orphanRows = metricsA.orphan_listeners.map((entry) => ({
       key: entry.key,

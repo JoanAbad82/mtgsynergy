@@ -22,6 +22,7 @@ const canonical = new URL(path, site).toString();
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
     <link rel="canonical" href={canonical} />
+    <slot name="head" />
   </head>
   <body>
     <div class="wrap">

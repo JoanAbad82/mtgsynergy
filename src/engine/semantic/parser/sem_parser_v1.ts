@@ -102,6 +102,12 @@ export function parseSemanticIrV0(input: {
     if (/\benters(?: the battlefield)?\b/i.test(text)) {
       watch.push({ id: EventId.ENTERS_BATTLEFIELD });
     }
+    if (/\bleaves(?: the battlefield)?\b/i.test(text)) {
+      watch.push({ id: EventId.LEAVES_BATTLEFIELD });
+    }
+    if (/\b(when|whenever|at the beginning)[^.]*\bgain\s+life\b/i.test(text)) {
+      watch.push({ id: EventId.LIFE_GAIN });
+    }
     if (/\b(when|whenever|at the beginning)[^.]*\bsacrifice\w*\b/i.test(text)) {
       watch.push({ id: EventId.SACRIFICE });
     }
@@ -119,13 +125,11 @@ export function parseSemanticIrV0(input: {
   if (additionalDiscardMatch) {
     cost.push({ cost: CostId.DISCARD_AS_COST, res: ResourceId.CARD, n: 1 });
   }
-  if (kind === FrameKind.ACTIVATED) {
-    const activatedCostMatch = /sacrifice[^:]*:/i.exec(text);
-    if (activatedCostMatch) {
-      const tokenKind = tokenKindFromText(activatedCostMatch[0]);
-      const res = tokenKind ? tokenResourceFromKind(tokenKind) : ResourceId.UNKNOWN_RESOURCE;
-      cost.push({ cost: CostId.SACRIFICE_AS_COST, res, n: 1 });
-    }
+  const activatedCostMatch = /sacrifice[^:]*:/i.exec(text);
+  if (activatedCostMatch) {
+    const tokenKind = tokenKindFromText(activatedCostMatch[0]);
+    const res = tokenKind ? tokenResourceFromKind(tokenKind) : ResourceId.UNKNOWN_RESOURCE;
+    cost.push({ cost: CostId.SACRIFICE_AS_COST, res, n: 1 });
   }
 
   const doList: Array<{
@@ -159,11 +163,23 @@ export function parseSemanticIrV0(input: {
   }
 
   const tokenMatch = /create\s+(a|an|one|two|three|four|\d+)\s+(treasure|food|blood|clue)\s+tokens?/i.exec(text);
-  if (tokenMatch) {
-    const n = parseCount(tokenMatch[1]) ?? 1;
-    const kind = tokenKindFromText(tokenMatch[2]) ?? TokenKindId.UNKNOWN_TOKEN;
+  const genericTokenMatch = /create\s+(a|an|one|two|three|four|\d+)\s+([^.]+?)\s+tokens?/i.exec(text);
+  if (tokenMatch || genericTokenMatch) {
+    const match = tokenMatch ?? genericTokenMatch!;
+    const n = parseCount(match[1]) ?? 1;
+    const kind = tokenKindFromText(match[2]) ?? TokenKindId.UNKNOWN_TOKEN;
     doList.push({ action: ActionId.CREATE_TOKEN, tokenData: { kind, n } });
     addUnique(touch, { id: tokenResourceFromKind(kind) }, (a, b) => a.id === b.id);
+  }
+
+  const counterMatch = /put\s+(a|an|one|two|three|four|\d+)\s+\+1\/\+1\s+counters?/i.exec(text);
+  if (counterMatch) {
+    const n = parseCount(counterMatch[1]) ?? 1;
+    doList.push({ action: ActionId.ADD_COUNTERS, args: [n] });
+    addUnique(touch, { id: ResourceId.COUNTER_P1P1 }, (a, b) => a.id === b.id);
+    if (/target/i.test(text)) {
+      addUnique(gates, { id: GateId.TARGET_REQUIRED }, (a, b) => a.id === b.id);
+    }
   }
 
   const damageMatch = /deal\w*\s+(\d+)\s+damage/i.exec(text);

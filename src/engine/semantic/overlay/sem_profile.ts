@@ -78,6 +78,9 @@ export function buildSemanticCardProfile(
         const n = eff.args?.[0] ?? 1;
         addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.LIFE), n);
       }
+      if (eff.action === ActionId.GAIN_LIFE) {
+        addToMap(produced, keyOf(KeyKind.EVENT, EventId.LIFE_GAIN), 1);
+      }
     }
   }
 

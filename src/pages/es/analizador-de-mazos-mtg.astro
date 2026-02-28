@@ -17,7 +17,7 @@ import { gitShaFull, gitShaShort } from "../../lib/buildMeta";
   </p>
 
   <AnalyzerApp client:load />
-  {Astro.raw(`<!-- git: ${gitShaShort} -->`)}
+  <!-- git: {gitShaShort} -->
 </BaseLayout>
 
 <style>

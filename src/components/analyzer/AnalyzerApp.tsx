@@ -462,13 +462,13 @@ export default function AnalyzerApp() {
           <RoleGraphPanel summary={summary} />
           {semanticOverlayStatus === "loading" && (
             <div className="panel">
-              <h2>Semantic Overlay (Experimental)</h2>
-              <p className="muted">Loading…</p>
+              <h2>Superposición semántica (experimental)</h2>
+              <p className="muted">Cargando…</p>
             </div>
           )}
           {semanticOverlayStatus === "error" && (
             <div className="panel">
-              <h2>Semantic Overlay (Experimental)</h2>
+              <h2>Superposición semántica (experimental)</h2>
               <p className="muted">
                 Error: {semanticOverlayError ?? "Error desconocido"}
               </p>

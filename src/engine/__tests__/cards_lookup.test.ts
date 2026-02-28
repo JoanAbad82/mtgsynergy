@@ -2,6 +2,7 @@ import pako from "pako";
 import { describe, expect, test, vi } from "vitest";
 import { normalizeCardName } from "../cards/normalize";
 import { getCardsIndexCount, lookupCard, __testing } from "../cards/lookup";
+import { computeSemanticOverlayFromDeckEntries } from "../semantic/overlay/sem_overlay_compute";
 import { extractFeatures } from "../cards/features";
 
 const payload = {
@@ -46,6 +47,58 @@ describe("cards helpers", () => {
       expect(fetchMock).toHaveBeenCalledWith("/data/cards_index.json.gz");
       const count = await getCardsIndexCount();
       expect(count).toBe(2);
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("lookupCard reuses a single fetch for multiple calls", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(payload));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+    }));
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+
+    try {
+      __testing.clearCache();
+      await Promise.all([
+        lookupCard("Llanowar Elves"),
+        lookupCard("Forest"),
+        lookupCard("Llanowar Elves"),
+      ]);
+      const count = await getCardsIndexCount();
+      expect(count).toBe(2);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("overlay compute reuses cards index loader", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(payload));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+    }));
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+
+    try {
+      __testing.clearCache();
+      const entries = [
+        { name: "Llanowar Elves" },
+        { name: "Forest" },
+        { name: "Llanowar Elves" },
+      ];
+      await computeSemanticOverlayFromDeckEntries(entries, lookupCard);
+      await computeSemanticOverlayFromDeckEntries(entries, lookupCard);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
     } finally {
       // @ts-expect-error restore
       globalThis.fetch = originalFetch;

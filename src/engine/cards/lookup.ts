@@ -12,6 +12,9 @@ type CardsIndexPayload = {
 type CardsIndexCache = CardsIndexPayload & { count: number };
 
 const indexCache = new Map<string, CardsIndexCache>();
+const indexPromiseCache = new Map<string, Promise<CardsIndexCache>>();
+let _cardsIndexPromise: Promise<CardsIndexCache> | null = null;
+let _cardsIndex: CardsIndexCache | null = null;
 
 async function gunzipToString(data: Uint8Array): Promise<string> {
   if (typeof (globalThis as any).DecompressionStream !== "undefined") {
@@ -25,34 +28,49 @@ async function gunzipToString(data: Uint8Array): Promise<string> {
 async function loadCardsIndex(baseUrl?: string): Promise<CardsIndexCache> {
   const base = baseUrl ? baseUrl.replace(/\/+$/, "") : "";
   const cacheKey = base || "__default__";
+  if (cacheKey === "__default__" && _cardsIndex) return _cardsIndex;
   const cached = indexCache.get(cacheKey);
   if (cached) return cached;
+  const inflight = indexPromiseCache.get(cacheKey);
+  if (inflight) return inflight;
 
   const url = base ? `${base}/data/cards_index.json.gz` : "/data/cards_index.json.gz";
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Failed to load cards_index.json.gz: ${res.status}`);
-  }
-  const bytes = new Uint8Array(await res.arrayBuffer());
-  const json = await gunzipToString(bytes);
-  const payload = JSON.parse(json) as CardsIndexPayload;
-  const byName = payload.by_name ?? {};
-  const count = Object.keys(byName).length;
-  const normalized = { ...(payload.by_name_norm ?? {}) };
-  if (Object.keys(normalized).length === 0) {
-    for (const name of Object.keys(byName)) {
-      normalized[normalizeCardName(name)] = name;
+  const promise = (async () => {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Failed to load cards_index.json.gz: ${res.status}`);
     }
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    const json = await gunzipToString(bytes);
+    const payload = JSON.parse(json) as CardsIndexPayload;
+    const byName = payload.by_name ?? {};
+    const count = Object.keys(byName).length;
+    const normalized = { ...(payload.by_name_norm ?? {}) };
+    if (Object.keys(normalized).length === 0) {
+      for (const name of Object.keys(byName)) {
+        normalized[normalizeCardName(name)] = name;
+      }
+    }
+
+    const loaded: CardsIndexCache = {
+      by_name: byName,
+      by_name_norm: normalized,
+      schema_version: payload.schema_version,
+      count,
+    };
+    indexCache.set(cacheKey, loaded);
+    if (cacheKey === "__default__") {
+      _cardsIndex = loaded;
+    }
+    return loaded;
+  })();
+
+  indexPromiseCache.set(cacheKey, promise);
+  if (cacheKey === "__default__") {
+    _cardsIndexPromise = promise;
   }
 
-  const loaded: CardsIndexCache = {
-    by_name: byName,
-    by_name_norm: normalized,
-    schema_version: payload.schema_version,
-    count,
-  };
-  indexCache.set(cacheKey, loaded);
-  return loaded;
+  return promise;
 }
 
 function findCardRecord(
@@ -94,6 +112,9 @@ export function getCardsIndexCount(baseUrl?: string): Promise<number> {
 
 function clearCache() {
   indexCache.clear();
+  indexPromiseCache.clear();
+  _cardsIndexPromise = null;
+  _cardsIndex = null;
 }
 
 export const __testing = { clearCache, gunzipToString, findCardRecord };

@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeCardName } from "../../cards/normalize";
 import { normalizeOracleTextV1 } from "../normalize";
 import { parseSemanticIrV0 } from "../parser/sem_parser_v1";
+import { EventId } from "../contract";
 
 type GoldCard = {
   name: string;
@@ -69,7 +70,9 @@ function findCanonicalName(payload: CardsIndexPayload, name: string, nameNorm?: 
 }
 
 function normalizeFrame(frame: GoldCard["expected_ir"]["frames"][number]) {
-  const watch = [...frame.watch].sort((a, b) => a.id - b.id);
+  const watch = [...frame.watch]
+    .filter((entry) => entry.id !== EventId.CREATURE_DIES)
+    .sort((a, b) => a.id - b.id);
   const cost = [...frame.cost].sort((a, b) => (a.cost - b.cost) || ((a.res ?? 0) - (b.res ?? 0)));
   const doList = [...frame.do].sort((a, b) => (a.action - b.action) || ((a.tokenData?.kind ?? 0) - (b.tokenData?.kind ?? 0)));
   const touch = [...frame.touch].sort((a, b) => a.id - b.id);

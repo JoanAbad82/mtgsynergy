@@ -105,6 +105,9 @@ export function parseSemanticIrV0(input: {
     if (/\b(when|whenever|at the beginning)[^.]*\bsacrifice\w*\b/i.test(text)) {
       watch.push({ id: EventId.SACRIFICE });
     }
+    if (/\b(when|whenever|at the beginning)[^.]*\bdies\b/i.test(text)) {
+      watch.push({ id: EventId.CREATURE_DIES });
+    }
   }
 
   const cost: Array<{ cost: CostId; res?: ResourceId; n?: number; x?: boolean }> = [];

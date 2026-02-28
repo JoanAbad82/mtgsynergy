@@ -1,0 +1,1335 @@
+{
+  "SEM_IR_VERSION": 1,
+  "archetype": "rakdos_sacrifice_subset_v2",
+  "cards": [
+    {
+      "name": "Cauldron Familiar",
+      "expected_ir": {
+        "card_id": 4746,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 2
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  1
+                ]
+              },
+              {
+                "action": 6,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 7
+              }
+            ]
+          },
+          {
+            "kind": 2,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 11,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 0
+              }
+            ],
+            "touch": [
+              {
+                "id": 11
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "cauldron familiar",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Witch's Oven",
+      "expected_ir": {
+        "card_id": 34907,
+        "frames": [
+          {
+            "kind": 2,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 2,
+                  "n": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 11
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "witch's oven",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Claim the Firstborn",
+      "expected_ir": {
+        "card_id": 5393,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 19
+              },
+              {
+                "action": 16
+              }
+            ],
+            "touch": [],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "claim the firstborn",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Mayhem Devil",
+      "expected_ir": {
+        "card_id": 18702,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 5
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 5,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "mayhem devil",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Priest of Forgotten Gods",
+      "expected_ir": {
+        "card_id": 22783,
+        "frames": [
+          {
+            "kind": 2,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 2
+              },
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 2
+              }
+            ],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  2
+                ]
+              },
+              {
+                "action": 14,
+                "args": [
+                  2
+                ]
+              },
+              {
+                "action": 1,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              },
+              {
+                "id": 1
+              },
+              {
+                "id": 3
+              }
+            ],
+            "gates": [
+              {
+                "id": 7
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "priest of forgotten gods",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Deadly Dispute",
+      "expected_ir": {
+        "card_id": 7081,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  2
+                ]
+              },
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 1,
+                  "n": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              },
+              {
+                "id": 10
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "deadly dispute",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Village Rites",
+      "expected_ir": {
+        "card_id": 33597,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  2
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "village rites",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Voldaren Epicure",
+      "expected_ir": {
+        "card_id": 33857,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 2
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 4,
+                  "n": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 13
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "voldaren epicure",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Oni-Cult Anvil",
+      "expected_ir": {
+        "card_id": 21275,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 3
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  1
+                ]
+              },
+              {
+                "action": 6,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "oni-cult anvil",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Bloodtithe Harvester",
+      "expected_ir": {
+        "card_id": 3420,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 2
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 4,
+                  "n": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 13
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "bloodtithe harvester",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Fable of the Mirror-Breaker",
+      "expected_ir": {
+        "card_id": 9952,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 2
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 0,
+                  "n": 1,
+                  "p": 2,
+                  "t": 2
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 9
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "fable of the mirror-breaker // reflection of kiki-jiki",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Experimental Synthesizer",
+      "expected_ir": {
+        "card_id": 9829,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 2
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 22,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [],
+            "gates": []
+          },
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 3
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 1,
+                  "n": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 10
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "experimental synthesizer",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Unlucky Witness",
+      "expected_ir": {
+        "card_id": 32861,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 4
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 22,
+                "args": [
+                  2
+                ]
+              }
+            ],
+            "touch": [],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "unlucky witness",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Shambling Ghast",
+      "expected_ir": {
+        "card_id": 26652,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 4
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 1,
+                  "n": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 10
+              }
+            ],
+            "gates": [
+              {
+                "id": 9
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "shambling ghast",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "The Meathook Massacre",
+      "expected_ir": {
+        "card_id": 31012,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 4
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  1
+                ]
+              },
+              {
+                "action": 6,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 7
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "the meathook massacre",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Kroxa, Titan of Death's Hunger",
+      "expected_ir": {
+        "card_id": 16836,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 1
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 2,
+                "args": [
+                  1
+                ]
+              },
+              {
+                "action": 7,
+                "args": [
+                  3
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              },
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 7
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "kroxa, titan of death's hunger",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Blood Artist",
+      "expected_ir": {
+        "card_id": 3269,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 4
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  1
+                ]
+              },
+              {
+                "action": 6,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "blood artist",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Zulaport Cutthroat",
+      "expected_ir": {
+        "card_id": 35604,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 4
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 7,
+                "args": [
+                  1
+                ]
+              },
+              {
+                "action": 6,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 7
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "zulaport cutthroat",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Dockside Chef",
+      "expected_ir": {
+        "card_id": 7976,
+        "frames": [
+          {
+            "kind": 2,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 1,
+                "res": 1,
+                "n": 1
+              },
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "dockside chef",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Sokenzan Smelter",
+      "expected_ir": {
+        "card_id": 27892,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 0
+              }
+            ],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 0,
+                  "n": 1,
+                  "p": 3,
+                  "t": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 9
+              }
+            ],
+            "gates": [
+              {
+                "id": 9
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "sokenzan smelter",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Voltage Surge",
+      "expected_ir": {
+        "card_id": 33883,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 5,
+                "args": [
+                  4
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "voltage surge",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Reckoner's Bargain",
+      "expected_ir": {
+        "card_id": 24009,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  2
+                ]
+              },
+              {
+                "action": 6
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              },
+              {
+                "id": 2
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "reckoner's bargain",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Skullport Merchant",
+      "expected_ir": {
+        "card_id": 27463,
+        "frames": [
+          {
+            "kind": 2,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 10,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 1,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "skullport merchant",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Blood Fountain",
+      "expected_ir": {
+        "card_id": 3285,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 2
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 4,
+                  "n": 2
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 13
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "blood fountain",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Ob Nixilis, the Adversary",
+      "expected_ir": {
+        "card_id": 20976,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 0
+              }
+            ],
+            "touch": [],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "ob nixilis, the adversary",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Furnace Reins",
+      "expected_ir": {
+        "card_id": 11456,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 19
+              }
+            ],
+            "touch": [],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "furnace reins",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Immersturm Predator",
+      "expected_ir": {
+        "card_id": 14779,
+        "frames": [
+          {
+            "kind": 2,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 0,
+                "n": 1
+              }
+            ],
+            "do": [
+              {
+                "action": 4,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 4
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "immersturm predator",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Rix Maadi Reveler",
+      "expected_ir": {
+        "card_id": 24835,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 2,
+                "args": [
+                  1
+                ]
+              },
+              {
+                "action": 1,
+                "args": [
+                  1
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 3
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "rix maadi reveler",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Anje, Maid of Dishonor",
+      "expected_ir": {
+        "card_id": 1279,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 0
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 4,
+                  "n": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 13
+              }
+            ],
+            "gates": []
+          },
+          {
+            "kind": 2,
+            "watch": [],
+            "cost": [
+              {
+                "cost": 3,
+                "res": 13,
+                "n": 2
+              }
+            ],
+            "do": [
+              {
+                "action": 5,
+                "args": [
+                  2
+                ]
+              },
+              {
+                "action": 6,
+                "args": [
+                  2
+                ]
+              }
+            ],
+            "touch": [
+              {
+                "id": 2
+              }
+            ],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "anje, maid of dishonor",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Jadar, Ghoulcaller of Nephalia",
+      "expected_ir": {
+        "card_id": 15578,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 0
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 6,
+                  "n": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 15
+              }
+            ],
+            "gates": [
+              {
+                "id": 4
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "jadar, ghoulcaller of nephalia",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Kari Zev, Skyship Raider",
+      "expected_ir": {
+        "card_id": 16079,
+        "frames": [
+          {
+            "kind": 1,
+            "watch": [
+              {
+                "id": 0
+              }
+            ],
+            "cost": [],
+            "do": [
+              {
+                "action": 3,
+                "tokenData": {
+                  "kind": 0,
+                  "n": 1,
+                  "p": 2,
+                  "t": 1
+                }
+              }
+            ],
+            "touch": [
+              {
+                "id": 9
+              }
+            ],
+            "gates": []
+          }
+        ]
+      },
+      "card_name_norm": "kari zev, skyship raider",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Bloodchief's Thirst",
+      "expected_ir": {
+        "card_id": 3334,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 9
+              }
+            ],
+            "touch": [],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "bloodchief's thirst",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Fatal Push",
+      "expected_ir": {
+        "card_id": 10194,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 9
+              }
+            ],
+            "touch": [],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "fatal push",
+      "card_id_scheme": "stable_name_rank_v1"
+    },
+    {
+      "name": "Go for the Throat",
+      "expected_ir": {
+        "card_id": 12388,
+        "frames": [
+          {
+            "kind": 4,
+            "watch": [],
+            "cost": [],
+            "do": [
+              {
+                "action": 9
+              }
+            ],
+            "touch": [],
+            "gates": [
+              {
+                "id": 3
+              }
+            ]
+          }
+        ]
+      },
+      "card_name_norm": "go for the throat",
+      "card_id_scheme": "stable_name_rank_v1"
+    }
+  ]
+}

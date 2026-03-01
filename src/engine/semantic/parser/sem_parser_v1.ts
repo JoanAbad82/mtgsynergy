@@ -1,13 +1,5 @@
-import {
-  ActionId,
-  CostId,
-  EventId,
-  FrameKind,
-  GateId,
-  ResourceId,
-  SemanticCardIR,
-  TokenKindId,
-} from "../contract";
+import { ActionId, CostId, EventId, FrameKind, GateId, ResourceId, TokenKindId } from "../contract";
+import type { SemanticCardIR } from "../contract";
 import { normalizeOracleTextV1 } from "../normalize";
 
 const WORD_NUMBERS: Record<string, number> = {

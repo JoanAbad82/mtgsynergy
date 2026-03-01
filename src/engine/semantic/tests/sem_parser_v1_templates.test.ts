@@ -59,7 +59,7 @@ describe("semantic parser v1 templates", () => {
 
   it("detects draw-second trigger", () => {
     const ir = parseText("Whenever you draw your second card each turn, create a 1/1 token.");
-    expect(ir.frames[0]?.watch.some((w) => w.id === EventId.DRAW_SECOND_CARD_TURN)).toBe(true);
+    expect(ir.frames[0]?.watch.some((w) => w.id === EventId.DRAW_EXTRA_CARD_TURN)).toBe(true);
   });
 
   it("detects card draw", () => {

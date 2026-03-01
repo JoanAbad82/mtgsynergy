@@ -20,7 +20,7 @@
     { "id": 17, "key": "SEARCH_LIBRARY", "desc": "A library is searched.", "examples": ["search your library"] },
     { "id": 18, "key": "SHUFFLE", "desc": "A library is shuffled.", "examples": ["shuffle your library"] },
     { "id": 19, "key": "CONTROL_CHANGE", "desc": "Control of a permanent changes.", "examples": ["gain control"] },
-    { "id": 20, "key": "DRAW_SECOND_CARD_TURN", "desc": "Draw your second card each turn.", "examples": ["draw your second card each turn"] }
+    { "id": 20, "key": "DRAW_EXTRA_CARD_TURN", "desc": "Draw extra cards during the turn.", "examples": ["draw your second card each turn"] }
   ],
   "ActionId": [
     { "id": 0, "key": "UNKNOWN_ACTION", "desc": "Unclassified or unmapped action.", "examples": [] },

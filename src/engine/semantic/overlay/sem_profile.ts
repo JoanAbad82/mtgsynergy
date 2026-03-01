@@ -84,7 +84,7 @@ export function buildSemanticCardProfile(
         addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.CARD), n);
       }
       if (eff.action === ActionId.DRAW_CARDS) {
-        addToMap(produced, keyOf(KeyKind.EVENT, EventId.DRAW_SECOND_CARD_TURN), 1);
+        addToMap(produced, keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN), 1);
       }
       if (
         eff.action === ActionId.GAIN_LIFE ||
@@ -146,7 +146,9 @@ export function explainKeyHuman(key: number): string {
   if (!prefix || !rest) return "Unknown";
   if (prefix === "EVENT") {
     if (rest === "CAST_SPELL") return "Lanzas instantáneo o conjuro (experimental)";
-    if (rest === "DRAW_SECOND_CARD_TURN") return "Robas la segunda carta del turno (experimental)";
+    if (rest === "DRAW_EXTRA_CARD_TURN") {
+      return "Robas cartas adicionales en el turno (experimental)";
+    }
     return `Event · ${rest}`;
   }
   if (prefix === "ACTION") return `Action · ${rest}`;

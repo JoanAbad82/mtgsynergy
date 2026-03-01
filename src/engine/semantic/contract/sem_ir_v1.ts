@@ -28,7 +28,7 @@ export enum EventId {
   SEARCH_LIBRARY = 17,
   SHUFFLE = 18,
   CONTROL_CHANGE = 19,
-  DRAW_SECOND_CARD_TURN = 20,
+  DRAW_EXTRA_CARD_TURN = 20,
 }
 
 export enum ActionId {

@@ -16,7 +16,7 @@ import { gitShaFull, gitShaShort } from "../../lib/buildMeta";
     Herramienta estructural para MTG Arena. Sin servidor, sin cuentas, 100% local.
   </p>
 
-  <AnalyzerApp client:load />
+  <AnalyzerApp client:load buildSha={gitShaFull} />
   <!-- git: {gitShaShort} -->
 </BaseLayout>
 

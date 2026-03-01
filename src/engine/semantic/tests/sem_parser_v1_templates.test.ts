@@ -52,6 +52,16 @@ describe("semantic parser v1 templates", () => {
     expect(ir.frames[0]?.touch.some((t) => t.id === ResourceId.TOKEN_GENERIC)).toBe(true);
   });
 
+  it("detects cast instant or sorcery trigger", () => {
+    const ir = parseText("Whenever you cast an instant or sorcery spell, create a 1/1 token.");
+    expect(ir.frames[0]?.watch.some((w) => w.id === EventId.CAST_SPELL)).toBe(true);
+  });
+
+  it("detects draw-second trigger", () => {
+    const ir = parseText("Whenever you draw your second card each turn, create a 1/1 token.");
+    expect(ir.frames[0]?.watch.some((w) => w.id === EventId.DRAW_SECOND_CARD_TURN)).toBe(true);
+  });
+
   it("detects card draw", () => {
     const ir = parseText("Draw a card.");
     expect(ir.frames[0]?.do.some((d) => d.action === ActionId.DRAW_CARDS)).toBe(true);

@@ -134,6 +134,12 @@ export function parseSemanticIrV0(input: {
     ) {
       addWatch(EventId.TOKEN_CREATED);
     }
+    if (/\b(when|whenever)[^.]*\bcast\b[^.]*\binstant\b[^.]*\bsorcery\b/i.test(text)) {
+      addWatch(EventId.CAST_SPELL);
+    }
+    if (/\b(when|whenever)[^.]*\bdraw\b[^.]*\bsecond card\b[^.]*each turn\b/i.test(text)) {
+      addWatch(EventId.DRAW_SECOND_CARD_TURN);
+    }
   }
 
   const cost: Array<{ cost: CostId; res?: ResourceId; n?: number; x?: boolean }> = [];

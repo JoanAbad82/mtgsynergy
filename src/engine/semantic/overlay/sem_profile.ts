@@ -1,4 +1,4 @@
-import { ActionId, CostId, EventId, ResourceId, TokenKindId } from "../contract";
+import { ActionId, CostId, EventId, FrameKind, ResourceId, TokenKindId } from "../contract";
 import type { SemanticCardIR } from "../contract";
 
 export enum KeyKind {
@@ -54,6 +54,9 @@ export function buildSemanticCardProfile(
   const consumed = new Map<number, number>();
 
   for (const frame of ir.frames) {
+    if (frame.kind === FrameKind.SPELL) {
+      addToMap(produced, keyOf(KeyKind.EVENT, EventId.CAST_SPELL), 1);
+    }
     for (const watch of frame.watch) {
       addToMap(consumed, keyOf(KeyKind.EVENT, watch.id), 1);
     }
@@ -79,6 +82,9 @@ export function buildSemanticCardProfile(
       if (eff.action === ActionId.DRAW_CARDS || eff.action === ActionId.DISCARD_CARDS) {
         const n = eff.args?.[0] ?? 1;
         addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.CARD), n);
+      }
+      if (eff.action === ActionId.DRAW_CARDS) {
+        addToMap(produced, keyOf(KeyKind.EVENT, EventId.DRAW_SECOND_CARD_TURN), 1);
       }
       if (
         eff.action === ActionId.GAIN_LIFE ||
@@ -138,7 +144,11 @@ export function explainKeyHuman(key: number): string {
   if (raw === "UNKNOWN") return "Unknown";
   const [prefix, rest] = raw.split(":");
   if (!prefix || !rest) return "Unknown";
-  if (prefix === "EVENT") return `Event · ${rest}`;
+  if (prefix === "EVENT") {
+    if (rest === "CAST_SPELL") return "Lanzas instantáneo o conjuro (experimental)";
+    if (rest === "DRAW_SECOND_CARD_TURN") return "Robas la segunda carta del turno (experimental)";
+    return `Event · ${rest}`;
+  }
   if (prefix === "ACTION") return `Action · ${rest}`;
   if (prefix === "RESOURCE") return `Resource · ${rest}`;
   return "Unknown";

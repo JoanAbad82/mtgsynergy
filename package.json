@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "node scripts/build_cards_index.mjs && node scripts/fetch_scryfall_art_crops.mjs",
+    "prebuild": "node scripts/verify_cards_index.mjs",
     "build": "astro build",
     "test": "vitest",
     "preview": "astro preview",
     "cards:index:build": "node scripts/build_cards_index.mjs",
-    "cards:index:verify": "node scripts/verify_cards_index.mjs"
+    "cards:index:verify": "node scripts/verify_cards_index.mjs",
+    "build:cards-index": "node scripts/build_cards_index.mjs && node scripts/fetch_scryfall_art_crops.mjs && node scripts/verify_cards_index.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.13",

@@ -1,5 +1,5 @@
-import { SemanticEdge } from "../../engine/semantic/overlay/sem_edges";
-import { SemanticOverlayMetrics } from "../../engine/semantic/overlay/sem_metrics";
+import type { SemanticEdge } from "../../engine/semantic/overlay/sem_edges";
+import type { SemanticOverlayMetrics } from "../../engine/semantic/overlay/sem_metrics";
 
 export const SEMANTIC_OVERLAY_COPY = {
   title: "Superposición semántica (experimental)",

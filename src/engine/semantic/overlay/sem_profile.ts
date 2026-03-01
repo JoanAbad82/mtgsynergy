@@ -1,11 +1,5 @@
-import {
-  ActionId,
-  CostId,
-  EventId,
-  ResourceId,
-  SemanticCardIR,
-  TokenKindId,
-} from "../contract";
+import { ActionId, CostId, EventId, ResourceId, TokenKindId } from "../contract";
+import type { SemanticCardIR } from "../contract";
 
 export enum KeyKind {
   EVENT = 1,

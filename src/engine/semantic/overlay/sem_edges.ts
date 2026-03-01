@@ -1,4 +1,4 @@
-import { SemanticCardIR } from "../contract";
+import type { SemanticCardIR } from "../contract";
 import { buildSemanticCardProfile } from "./sem_profile";
 
 export type SemanticEdgeReason = {

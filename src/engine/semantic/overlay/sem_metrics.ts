@@ -1,5 +1,5 @@
-import { SemanticCardIR } from "../contract";
-import { SemanticEdge } from "./sem_edges";
+import type { SemanticCardIR } from "../contract";
+import type { SemanticEdge } from "./sem_edges";
 import { buildSemanticCardProfile, explainKey, mergeProfiles } from "./sem_profile";
 
 export type SemanticOverlayMetrics = {

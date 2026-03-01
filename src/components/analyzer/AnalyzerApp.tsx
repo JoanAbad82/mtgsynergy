@@ -40,7 +40,11 @@ import { es } from "./i18n/es";
 import { explainKey, explainKeyHuman } from "../../engine/semantic/overlay/sem_profile";
 import { computeSemanticOverlayFromDeckEntries } from "../../engine/semantic/overlay/sem_overlay_compute";
 
-export default function AnalyzerApp() {
+type Props = {
+  buildSha?: string;
+};
+
+export default function AnalyzerApp({ buildSha }: Props) {
   const [inputText, setInputText] = useState("");
   const [deckState, setDeckState] = useState<ShareDeckState | null>(null);
   const [summary, setSummary] = useState<StructuralSummary | null>(null);
@@ -318,7 +322,7 @@ export default function AnalyzerApp() {
         <p className="muted" style={{ marginTop: "10px" }}>
           Pega un export de MTG Arena para analizar la estructura.
         </p>
-        <p className="muted">build: {BUILD_SHA}</p>
+        <p className="muted">build: {formatBuildShaShort(buildSha)}</p>
         <textarea
           placeholder="Pega aquí tu export de MTG Arena..."
           value={inputText}
@@ -752,7 +756,10 @@ export type EdgeUi = {
   score?: number;
 };
 
-export const BUILD_SHA = "9b795fa";
+export function formatBuildShaShort(sha?: string): string {
+  if (!sha) return "unknown";
+  return sha.length >= 7 ? sha.slice(0, 7) : sha;
+}
 
 export function parseMcParams(
   input: string | URL,

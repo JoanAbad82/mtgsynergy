@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildNameMapFromDeckState, BUILD_SHA, explainEdgeKind, formatEdgeLine, formatNumberCompact, getSpsNumber, groupEdgesForPanel, parseMcParams } from "../AnalyzerApp";
+import { buildNameMapFromDeckState, explainEdgeKind, formatBuildShaShort, formatEdgeLine, formatNumberCompact, getSpsNumber, groupEdgesForPanel, parseMcParams } from "../AnalyzerApp";
 
 describe("AnalyzerApp edges panel grouping", () => {
   test("groups edges by kind", () => {
@@ -104,8 +104,11 @@ describe("formatNumberCompact", () => {
 });
 
 describe("build marker", () => {
-  test("exports BUILD_SHA constant", () => {
-    expect(`build: ${BUILD_SHA}`).toMatch(/build:\s*[0-9a-f]{7}/);
+  test("formats build sha to short form", () => {
+    const sha = "abcdef1234567890";
+    expect(formatBuildShaShort(sha)).toBe("abcdef1");
+    expect(formatBuildShaShort("abc")).toBe("abc");
+    expect(formatBuildShaShort()).toBe("unknown");
   });
 });
 

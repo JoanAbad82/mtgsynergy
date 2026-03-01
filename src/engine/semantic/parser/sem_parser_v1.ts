@@ -9,6 +9,7 @@ const WORD_NUMBERS: Record<string, number> = {
   two: 2,
   three: 3,
   four: 4,
+  x: 1,
 };
 
 function parseCount(raw: string | undefined): number | undefined {
@@ -38,6 +39,9 @@ function tokenKindFromText(text: string): TokenKindId | null {
   if (lower.includes("food")) return TokenKindId.FOOD;
   if (lower.includes("blood")) return TokenKindId.BLOOD;
   if (lower.includes("clue")) return TokenKindId.CLUE;
+  if (lower.includes("soldier")) return TokenKindId.SOLDIER;
+  if (lower.includes("zombie")) return TokenKindId.ZOMBIE;
+  if (/\bcreature\b/.test(lower)) return TokenKindId.UNKNOWN_TOKEN;
   return null;
 }
 
@@ -90,21 +94,45 @@ export function parseSemanticIrV0(input: {
   }
 
   const watch: Array<{ id: EventId; args?: ReadonlyArray<number> }> = [];
+  const addWatch = (id: EventId) => {
+    if (!watch.some((entry) => entry.id === id)) {
+      watch.push({ id });
+    }
+  };
   if (kind === FrameKind.TRIGGERED) {
     if (/\benters(?: the battlefield)?\b/i.test(text)) {
-      watch.push({ id: EventId.ENTERS_BATTLEFIELD });
+      addWatch(EventId.ENTERS_BATTLEFIELD);
     }
     if (/\bleaves(?: the battlefield)?\b/i.test(text)) {
-      watch.push({ id: EventId.LEAVES_BATTLEFIELD });
+      addWatch(EventId.LEAVES_BATTLEFIELD);
     }
     if (/\b(when|whenever|at the beginning)[^.]*\bgain\s+life\b/i.test(text)) {
-      watch.push({ id: EventId.LIFE_GAIN });
+      addWatch(EventId.LIFE_GAIN);
     }
     if (/\b(when|whenever|at the beginning)[^.]*\bsacrifice\w*\b/i.test(text)) {
-      watch.push({ id: EventId.SACRIFICE });
+      addWatch(EventId.SACRIFICE);
     }
     if (/\b(when|whenever|at the beginning)[^.]*\bdies\b/i.test(text)) {
-      watch.push({ id: EventId.CREATURE_DIES });
+      addWatch(EventId.CREATURE_DIES);
+    }
+    if (
+      /\b(when|whenever)[^.]*\b(one or more\s+)?creatures?\s+enter(?:s)?\s+the battlefield\b[^.]*\bunder your control\b/i.test(
+        text,
+      )
+    ) {
+      addWatch(EventId.ENTERS_BATTLEFIELD);
+    }
+    if (
+      /\b(when|whenever)[^.]*\byou\s+create\b[^.]*\btoken\b/i.test(text)
+    ) {
+      addWatch(EventId.TOKEN_CREATED);
+    }
+    if (
+      /\b(when|whenever)[^.]*\b(one or more\s+)?tokens?\s+enter(?:s)?\s+the battlefield\b[^.]*\bunder your control\b/i.test(
+        text,
+      )
+    ) {
+      addWatch(EventId.TOKEN_CREATED);
     }
   }
 
@@ -154,12 +182,14 @@ export function parseSemanticIrV0(input: {
     }
   }
 
-  const tokenMatch = /create\s+(a|an|one|two|three|four|\d+)\s+(treasure|food|blood|clue)\s+tokens?/i.exec(text);
-  const genericTokenMatch = /create\s+(a|an|one|two|three|four|\d+)\s+([^.]+?)\s+tokens?/i.exec(text);
-  if (tokenMatch || genericTokenMatch) {
-    const match = tokenMatch ?? genericTokenMatch!;
+  const tokenMatch = /create\s+(a|an|one|two|three|four|\d+|x)\s+(treasure|food|blood|clue)\s+tokens?/i.exec(text);
+  const genericTokenMatch = /create\s+(a|an|one|two|three|four|\d+|x)\s+([^.]+?)\s+tokens?/i.exec(text);
+  const tokenBareMatch = /create\s+(a|an|one|two|three|four|\d+|x)\s+tokens?\b/i.exec(text);
+  if (tokenMatch || genericTokenMatch || tokenBareMatch) {
+    const match = tokenMatch ?? genericTokenMatch ?? tokenBareMatch!;
     const n = parseCount(match[1]) ?? 1;
-    const kind = tokenKindFromText(match[2]) ?? TokenKindId.UNKNOWN_TOKEN;
+    const kindText = tokenMatch ? match[2] : genericTokenMatch ? match[2] : "token";
+    const kind = tokenKindFromText(kindText) ?? TokenKindId.UNKNOWN_TOKEN;
     doList.push({ action: ActionId.CREATE_TOKEN, tokenData: { kind, n } });
     addUnique(touch, { id: tokenResourceFromKind(kind) }, (a, b) => a.id === b.id);
   }

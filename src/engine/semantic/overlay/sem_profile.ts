@@ -30,6 +30,18 @@ function tokenResourceFromKind(kind: TokenKindId): ResourceId {
   }
 }
 
+function tokenIsCreature(kind: TokenKindId): boolean {
+  switch (kind) {
+    case TokenKindId.TREASURE:
+    case TokenKindId.FOOD:
+    case TokenKindId.CLUE:
+    case TokenKindId.BLOOD:
+      return false;
+    default:
+      return true;
+  }
+}
+
 function addToMap(map: Map<number, number>, key: number, delta: number): void {
   const next = (map.get(key) ?? 0) + delta;
   map.set(key, next);
@@ -59,6 +71,10 @@ export function buildSemanticCardProfile(
       if (eff.action === ActionId.CREATE_TOKEN && eff.tokenData) {
         const res = tokenResourceFromKind(eff.tokenData.kind);
         addToMap(produced, keyOf(KeyKind.RESOURCE, res), eff.tokenData.n ?? 1);
+        addToMap(produced, keyOf(KeyKind.EVENT, EventId.TOKEN_CREATED), 1);
+        if (tokenIsCreature(eff.tokenData.kind)) {
+          addToMap(produced, keyOf(KeyKind.EVENT, EventId.ENTERS_BATTLEFIELD), 1);
+        }
       }
       if (eff.action === ActionId.DRAW_CARDS || eff.action === ActionId.DISCARD_CARDS) {
         const n = eff.args?.[0] ?? 1;

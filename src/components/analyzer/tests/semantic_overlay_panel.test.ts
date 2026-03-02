@@ -7,12 +7,63 @@ import {
   getSignalStatus,
 } from "../SemanticOverlayPanel";
 
+const panelCopyText = [
+  SEMANTIC_OVERLAY_COPY.title,
+  SEMANTIC_OVERLAY_COPY.intro,
+  SEMANTIC_OVERLAY_COPY.coverageLabel,
+  SEMANTIC_OVERLAY_COPY.reasonsTitle,
+  SEMANTIC_OVERLAY_COPY.reasonsNone,
+  SEMANTIC_OVERLAY_COPY.reasonMissingIndex,
+  SEMANTIC_OVERLAY_COPY.reasonUnrecognized,
+  SEMANTIC_OVERLAY_COPY.resolvedLabel,
+  SEMANTIC_OVERLAY_COPY.missingLabel,
+  SEMANTIC_OVERLAY_COPY.entriesLabel,
+  SEMANTIC_OVERLAY_COPY.sosLabel,
+  SEMANTIC_OVERLAY_COPY.totalEdgeScoreLabel,
+  SEMANTIC_OVERLAY_COPY.signalFoundLabel,
+  SEMANTIC_OVERLAY_COPY.signalMissingLabel,
+  SEMANTIC_OVERLAY_COPY.signalMissingHint,
+  SEMANTIC_OVERLAY_COPY.edgesTitle,
+  SEMANTIC_OVERLAY_COPY.noEdges,
+  SEMANTIC_OVERLAY_COPY.edgeScoreLabel,
+  SEMANTIC_OVERLAY_COPY.orphanTitle,
+  SEMANTIC_OVERLAY_COPY.excessTitle,
+  SEMANTIC_OVERLAY_COPY.noneDetected,
+  SEMANTIC_OVERLAY_COPY.redundancyTitle,
+  SEMANTIC_OVERLAY_COPY.redundancyNotApplicable,
+  SEMANTIC_OVERLAY_COPY.glossaryTitle,
+  ...SEMANTIC_OVERLAY_COPY.glossaryItems,
+].join(" ");
+
+const countOccurrences = (text: string, term: string) =>
+  text.split(term).length - 1;
+
 describe("SemanticOverlayPanel copy", () => {
   it("usa texto en español para los encabezados principales", () => {
     expect(SEMANTIC_OVERLAY_COPY.title).toContain("Superposición semántica");
     expect(SEMANTIC_OVERLAY_COPY.edgesTitle).toContain("Conexiones");
     expect(SEMANTIC_OVERLAY_COPY.noEdges).toContain("No hay conexiones");
-    expect(SEMANTIC_OVERLAY_COPY.redundancyNotApplicable).toContain("no aplicable");
+    expect(SEMANTIC_OVERLAY_COPY.redundancyNotApplicable.toLowerCase()).toContain("no aplicable");
+  });
+
+  it("evita encabezados en inglés y duplicados", () => {
+    expect(panelCopyText).not.toContain("Coverage");
+    expect(panelCopyText).not.toContain("Orphan");
+    expect(panelCopyText).not.toContain("Excess");
+
+    expect(countOccurrences(panelCopyText, SEMANTIC_OVERLAY_COPY.coverageLabel)).toBe(1);
+
+    [
+      SEMANTIC_OVERLAY_COPY.title,
+      SEMANTIC_OVERLAY_COPY.reasonsTitle,
+      SEMANTIC_OVERLAY_COPY.edgesTitle,
+      SEMANTIC_OVERLAY_COPY.orphanTitle,
+      SEMANTIC_OVERLAY_COPY.excessTitle,
+      SEMANTIC_OVERLAY_COPY.redundancyTitle,
+      SEMANTIC_OVERLAY_COPY.glossaryTitle,
+    ].forEach((heading) => {
+      expect(countOccurrences(panelCopyText, heading)).toBe(1);
+    });
   });
 });
 

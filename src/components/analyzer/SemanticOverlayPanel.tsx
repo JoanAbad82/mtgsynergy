@@ -5,7 +5,7 @@ export const SEMANTIC_OVERLAY_COPY = {
   title: "Superposición semántica (experimental)",
   intro:
     "Esto es experimental. Busca conexiones por “producido/consumido” a partir del texto de reglas.\nEl objetivo es detectar patrones entre cartas sin depender de roles manuales.",
-  coverageLabel: "Cobertura semántica",
+  coverageLabel: "Cobertura",
   resolvedLabel: "únicas resueltas",
   missingLabel: "únicas faltantes",
   entriesLabel: "entradas del mazo",
@@ -13,8 +13,7 @@ export const SEMANTIC_OVERLAY_COPY = {
   totalEdgeScoreLabel: "puntuación total de conexiones",
   signalFoundLabel: "✅ Señal encontrada (experimental)",
   signalMissingLabel: "⚠️ Sin señal (experimental)",
-  signalMissingHint:
-    "Es normal en mazos simples o en reglas aún no cubiertas.",
+  signalMissingHint: "Normal en mazos simples o reglas aún no cubiertas.",
   reasonsTitle: "Motivos (v1)",
   reasonsNone: "Sin incidencias destacables.",
   reasonMissingIndex: "No encontrada en índice o sin texto de reglas",
@@ -26,16 +25,16 @@ export const SEMANTIC_OVERLAY_COPY = {
   excessTitle: "Generas más de lo que usas",
   noneDetected: "No se detectaron.",
   redundancyTitle: "Efectos repetidos",
-  redundancyNotApplicable: "Efectos repetidos: no aplicable (sin señal).",
+  redundancyNotApplicable: "No aplicable (sin señal).",
   glossaryTitle: "Glosario rápido",
   glossaryItems: [
-    "Cobertura: porcentaje de cartas con alguna señal semántica.",
+    "Porcentaje de cartas con alguna señal semántica.",
     "SOS: magnitud logarítmica del total de conexiones detectadas.",
-    "Efectos sin pareja: evento/acción consumida sin productores en el mazo.",
-    "Generas más de lo que usas: evento/acción producida sin consumidores en el mazo.",
-    "Efectos repetidos: grupos con señales iguales.",
-    "Edge: conexión dirigida entre dos cartas por señal compartida.",
-    "Reason: explicación de la conexión (evento/acción/recurso).",
+    "Eventos consumidos sin productores en el mazo.",
+    "Señales producidas sin consumidores en el mazo.",
+    "Grupos con señales iguales.",
+    "Conexión: vínculo dirigido entre dos cartas por señal compartida.",
+    "Motivo: explicación de la conexión (evento/acción/recurso).",
   ],
 } as const;
 

@@ -60,6 +60,18 @@ export function buildSemanticCardProfile(
     for (const watch of frame.watch) {
       addToMap(consumed, keyOf(KeyKind.EVENT, watch.id), 1);
     }
+    const castsSpell = frame.watch.some((watch) => watch.id === EventId.CAST_SPELL);
+    if (castsSpell) {
+      let damageEffects = 0;
+      for (const eff of frame.do) {
+        if (eff.action === ActionId.DEAL_DAMAGE) {
+          damageEffects += 1;
+        }
+      }
+      if (damageEffects > 0) {
+        addToMap(consumed, keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE), damageEffects);
+      }
+    }
     if (frame.cost.some((cost) => cost.cost === CostId.SACRIFICE_AS_COST)) {
       addToMap(produced, keyOf(KeyKind.EVENT, EventId.SACRIFICE), 1);
     }

@@ -24,6 +24,30 @@ function isFoodSacrificeCost(text: string): boolean {
   return /^\s*Sacrifice a Food[: ,]/i.test(text);
 }
 
+function isTreasureSacrificeCost(text: string): boolean {
+  return /^\s*Sacrifice a Treasure[: ,]/i.test(text);
+}
+
+function isClueSacrificeCost(text: string): boolean {
+  return /^\s*Sacrifice a Clue[: ,]/i.test(text);
+}
+
+function isBloodSacrificeCost(text: string): boolean {
+  return /^\s*Sacrifice a Blood[: ,]/i.test(text);
+}
+
+function createsTreasureToken(text: string): boolean {
+  return /create\s+(?:a|two|three|x)?\s*treasure token/i.test(text);
+}
+
+function createsClueToken(text: string): boolean {
+  return /create\s+(?:a|two|three|x)?\s*clue token/i.test(text);
+}
+
+function createsBloodToken(text: string): boolean {
+  return /create\s+(?:a|two|three|x)?\s*blood token/i.test(text);
+}
+
 function tokenResourceFromKind(kind: TokenKindId): ResourceId {
   switch (kind) {
     case TokenKindId.TREASURE:
@@ -81,9 +105,33 @@ export function buildSemanticCardProfile(
   const text = typeof oracleText === "string" ? oracleText : "";
   const sacrificeOrigin = isSacrificeCost(text) ? "cost" : "effect";
   const foodSacrifice = isFoodSacrificeCost(text);
+  const treasureSacrifice = isTreasureSacrificeCost(text);
+  const clueSacrifice = isClueSacrificeCost(text);
+  const bloodSacrifice = isBloodSacrificeCost(text);
+  const treasureCreated = createsTreasureToken(text);
+  const clueCreated = createsClueToken(text);
+  const bloodCreated = createsBloodToken(text);
 
   if (foodSacrifice) {
     addToMap(consumed, keyOf(KeyKind.RESOURCE, ResourceId.FOOD), 1, "cost");
+  }
+  if (treasureSacrifice) {
+    addToMap(consumed, keyOf(KeyKind.RESOURCE, ResourceId.TREASURE), 1, "cost");
+  }
+  if (clueSacrifice) {
+    addToMap(consumed, keyOf(KeyKind.RESOURCE, ResourceId.CLUE), 1, "cost");
+  }
+  if (bloodSacrifice) {
+    addToMap(consumed, keyOf(KeyKind.RESOURCE, ResourceId.BLOOD), 1, "cost");
+  }
+  if (treasureCreated) {
+    addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.TREASURE), 1, "effect");
+  }
+  if (clueCreated) {
+    addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.CLUE), 1, "effect");
+  }
+  if (bloodCreated) {
+    addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.BLOOD), 1, "effect");
   }
 
   for (const frame of ir.frames) {

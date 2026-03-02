@@ -40,6 +40,9 @@ export const OVERLAY_RESOURCE_IDS = [
   ResourceId.TOKEN_SOLDIER,
   ResourceId.TOKEN_ZOMBIE,
   ResourceId.FOOD,
+  ResourceId.TREASURE,
+  ResourceId.CLUE,
+  ResourceId.BLOOD,
 ] as const satisfies readonly ResourceId[];
 
 export const OVERLAY_TEXT_TAG_IDS = [

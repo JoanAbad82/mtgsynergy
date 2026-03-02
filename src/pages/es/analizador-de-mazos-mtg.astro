@@ -1,7 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import AnalyzerApp from "../../components/analyzer/AnalyzerApp";
-import { gitShaFull, gitShaShort } from "../../lib/buildMeta";
+import { gitShaFull } from "../../lib/buildMeta";
 ---
 <BaseLayout
   title="Analizador de mazos MTG — Structural"
@@ -11,13 +11,13 @@ import { gitShaFull, gitShaShort } from "../../lib/buildMeta";
   <Fragment slot="head">
     <meta name="git-sha" content={gitShaFull} />
   </Fragment>
+  <Fragment set:html={`<!-- git: ${gitShaFull} -->`} />
   <h1>Analizador de mazos MTG</h1>
   <p class="muted">
     Herramienta estructural para MTG Arena. Sin servidor, sin cuentas, 100% local.
   </p>
 
   <AnalyzerApp client:load buildSha={gitShaFull} />
-  <!-- git: {gitShaShort} -->
 </BaseLayout>
 
 <style>

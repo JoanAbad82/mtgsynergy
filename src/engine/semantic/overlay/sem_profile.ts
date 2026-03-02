@@ -11,6 +11,15 @@ export function keyOf(kind: KeyKind, id: number): number {
   return (kind << 16) | id;
 }
 
+export type SemanticProfileEntry = {
+  count: number;
+  origin: "cost" | "effect";
+};
+
+function isSacrificeCost(text: string): boolean {
+  return /^\s*Sacrifice a creature[: ,]/i.test(text);
+}
+
 function tokenResourceFromKind(kind: TokenKindId): ResourceId {
   switch (kind) {
     case TokenKindId.TREASURE:
@@ -42,16 +51,31 @@ function tokenIsCreature(kind: TokenKindId): boolean {
   }
 }
 
-function addToMap(map: Map<number, number>, key: number, delta: number): void {
-  const next = (map.get(key) ?? 0) + delta;
-  map.set(key, next);
+function addToMap(
+  map: Map<number, SemanticProfileEntry>,
+  key: number,
+  delta: number,
+  origin: "cost" | "effect" = "effect",
+): void {
+  const current = map.get(key);
+  if (current) {
+    current.count += delta;
+    if (current.origin !== origin) {
+      current.origin = "effect";
+    }
+    return;
+  }
+  map.set(key, { count: delta, origin });
 }
 
 export function buildSemanticCardProfile(
-  ir: SemanticCardIR
-): { produced: Map<number, number>; consumed: Map<number, number> } {
-  const produced = new Map<number, number>();
-  const consumed = new Map<number, number>();
+  ir: SemanticCardIR,
+  oracleText?: string
+): { produced: Map<number, SemanticProfileEntry>; consumed: Map<number, SemanticProfileEntry> } {
+  const produced = new Map<number, SemanticProfileEntry>();
+  const consumed = new Map<number, SemanticProfileEntry>();
+  const text = typeof oracleText === "string" ? oracleText : "";
+  const sacrificeOrigin = isSacrificeCost(text) ? "cost" : "effect";
 
   for (const frame of ir.frames) {
     if (frame.kind === FrameKind.SPELL) {
@@ -73,7 +97,7 @@ export function buildSemanticCardProfile(
       }
     }
     if (frame.cost.some((cost) => cost.cost === CostId.SACRIFICE_AS_COST)) {
-      addToMap(produced, keyOf(KeyKind.EVENT, EventId.SACRIFICE), 1);
+      addToMap(produced, keyOf(KeyKind.EVENT, EventId.SACRIFICE), 1, sacrificeOrigin);
     }
     for (const cost of frame.cost) {
       if (cost.res !== undefined) {
@@ -116,16 +140,16 @@ export function buildSemanticCardProfile(
 }
 
 export function mergeProfiles(
-  profiles: Array<{ produced: Map<number, number>; consumed: Map<number, number> }>
-): { produced: Map<number, number>; consumed: Map<number, number> } {
-  const produced = new Map<number, number>();
-  const consumed = new Map<number, number>();
+  profiles: Array<{ produced: Map<number, SemanticProfileEntry>; consumed: Map<number, SemanticProfileEntry> }>
+): { produced: Map<number, SemanticProfileEntry>; consumed: Map<number, SemanticProfileEntry> } {
+  const produced = new Map<number, SemanticProfileEntry>();
+  const consumed = new Map<number, SemanticProfileEntry>();
   for (const profile of profiles) {
     for (const [key, value] of profile.produced.entries()) {
-      addToMap(produced, key, value);
+      addToMap(produced, key, value.count, value.origin);
     }
     for (const [key, value] of profile.consumed.entries()) {
-      addToMap(consumed, key, value);
+      addToMap(consumed, key, value.count, value.origin);
     }
   }
   return { produced, consumed };

@@ -16,7 +16,7 @@ export type SemanticOverlayMetrics = {
 };
 
 type MetricsInput = {
-  cards: Array<{ card_id: number; ir: SemanticCardIR }>;
+  cards: Array<{ card_id: number; ir: SemanticCardIR; oracle_text?: string }>;
   edges: Array<SemanticEdge>;
   topN?: number;
 };
@@ -33,7 +33,7 @@ export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlay
 
   const profiles = cards.map((card) => ({
     card_id: card.card_id,
-    profile: buildSemanticCardProfile(card.ir),
+    profile: buildSemanticCardProfile(card.ir, card.oracle_text ?? ""),
   }));
 
   const card_count = cards.length;
@@ -51,7 +51,7 @@ export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlay
 
   const orphan_listeners = Array.from(merged.consumed.entries())
     .filter(([key]) => !merged.produced.has(key))
-    .map(([key, consumed]) => ({ key, consumed, explain: explainKey(key) }))
+    .map(([key, consumed]) => ({ key, consumed: consumed.count, explain: explainKey(key) }))
     .sort((a, b) => {
       if (a.consumed !== b.consumed) return b.consumed - a.consumed;
       return a.key - b.key;
@@ -60,7 +60,7 @@ export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlay
 
   const excess_producers = Array.from(merged.produced.entries())
     .filter(([key]) => !merged.consumed.has(key))
-    .map(([key, produced]) => ({ key, produced, explain: explainKey(key) }))
+    .map(([key, produced]) => ({ key, produced: produced.count, explain: explainKey(key) }))
     .sort((a, b) => {
       if (a.produced !== b.produced) return b.produced - a.produced;
       return a.key - b.key;

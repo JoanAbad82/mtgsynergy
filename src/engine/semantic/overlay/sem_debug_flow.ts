@@ -78,7 +78,7 @@ export async function debugSemanticFlowForDeck(input: DebugFlowInput): Promise<D
     const card_id = index + 1;
     ir.card_id = card_id;
     idToName[card_id] = card.name;
-    return { card_id, name: card.name, ir };
+    return { card_id, name: card.name, ir, oracle_text: oracleText };
   });
 
   const producedByCard: Array<{ card: string; produced: string[] }> = [];
@@ -87,7 +87,7 @@ export async function debugSemanticFlowForDeck(input: DebugFlowInput): Promise<D
   const consumedAgg: DebugSignalAggregate = new Map();
 
   for (const card of cards) {
-    const profile = buildSemanticCardProfile(card.ir);
+    const profile = buildSemanticCardProfile(card.ir, card.oracle_text ?? "");
     const producedSignals = Array.from(profile.produced.keys())
       .map((key) => explainKey(key))
       .sort((a, b) => a.localeCompare(b));
@@ -98,11 +98,11 @@ export async function debugSemanticFlowForDeck(input: DebugFlowInput): Promise<D
     producedByCard.push({ card: card.name, produced: producedSignals });
     consumedByCard.push({ card: card.name, consumed: consumedSignals });
 
-    for (const [key, count] of profile.produced.entries()) {
-      addAggregate(producedAgg, explainKey(key), count, card.name);
+    for (const [key, entry] of profile.produced.entries()) {
+      addAggregate(producedAgg, explainKey(key), entry.count, card.name);
     }
-    for (const [key, count] of profile.consumed.entries()) {
-      addAggregate(consumedAgg, explainKey(key), count, card.name);
+    for (const [key, entry] of profile.consumed.entries()) {
+      addAggregate(consumedAgg, explainKey(key), entry.count, card.name);
     }
   }
 
@@ -117,7 +117,9 @@ export async function debugSemanticFlowForDeck(input: DebugFlowInput): Promise<D
     ),
   );
 
-  const edges = buildSemanticEdges(cards.map(({ card_id, ir }) => ({ card_id, ir })));
+  const edges = buildSemanticEdges(
+    cards.map(({ card_id, ir, oracle_text }) => ({ card_id, ir, oracle_text })),
+  );
   const matchedPairs = edges.flatMap((edge) => {
     const from = idToName[edge.from] ?? String(edge.from);
     const to = idToName[edge.to] ?? String(edge.to);

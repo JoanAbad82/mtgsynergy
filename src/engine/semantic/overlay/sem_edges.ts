@@ -16,12 +16,13 @@ export type SemanticEdge = {
 type CardInput = {
   card_id: number;
   ir: SemanticCardIR;
+  oracle_text?: string;
 };
 
 export function buildSemanticEdges(inputCards: CardInput[]): SemanticEdge[] {
   const cards = inputCards.map((card) => ({
     ...card,
-    profile: buildSemanticCardProfile(card.ir),
+    profile: buildSemanticCardProfile(card.ir, card.oracle_text ?? ""),
   }));
 
   const edges: SemanticEdge[] = [];
@@ -36,10 +37,11 @@ export function buildSemanticEdges(inputCards: CardInput[]): SemanticEdge[] {
       let score = 0;
       const reasons: SemanticEdgeReason[] = [];
       const producedEntries = Array.from(from.profile.produced.entries()).sort((a, b) => a[0] - b[0]);
-      for (const [key, prodWeight] of producedEntries) {
-        const consWeight = to.profile.consumed.get(key);
+      for (const [key, prodEntry] of producedEntries) {
+        const consEntry = to.profile.consumed.get(key);
+        const consWeight = consEntry?.count ?? 0;
         if (!consWeight) continue;
-        const weight = Math.min(prodWeight, consWeight);
+        const weight = Math.min(prodEntry.count, consWeight);
         if (weight <= 0) continue;
         score += weight;
         reasons.push({ key, weight });

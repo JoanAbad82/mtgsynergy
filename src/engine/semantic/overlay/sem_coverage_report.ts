@@ -109,7 +109,7 @@ export async function buildSemanticCoverageReport(
         oracle_text: trimmed,
         type_line: card.type_line ?? null,
       });
-      const profile = buildSemanticCardProfile(ir);
+      const profile = buildSemanticCardProfile(ir, trimmed);
       if (profile.produced.size > 0 || profile.consumed.size > 0) {
         coveredCards += 1;
       } else {

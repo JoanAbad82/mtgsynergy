@@ -59,7 +59,7 @@ export async function computeSemanticOverlayFromDeckEntries(
     const card_id = index + 1;
     ir.card_id = card_id;
     idToName[card_id] = card.name;
-    return { card_id, ir };
+    return { card_id, ir, oracle_text: oracleText };
   });
 
   const edges = buildSemanticEdges(cards);

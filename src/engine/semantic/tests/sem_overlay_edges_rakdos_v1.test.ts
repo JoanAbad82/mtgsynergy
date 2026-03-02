@@ -80,11 +80,15 @@ describe("semantic overlay edges: rakdos subset v1", () => {
         type_line: record.type_line ?? null,
       });
       ir.card_id = index + 1;
-      return { card, ir };
+      return { card, ir, oracleText };
     });
 
-    const edgesA = buildSemanticEdges(cards.map(({ ir }) => ({ card_id: ir.card_id, ir })));
-    const edgesB = buildSemanticEdges(cards.map(({ ir }) => ({ card_id: ir.card_id, ir })));
+    const edgesA = buildSemanticEdges(
+      cards.map(({ ir, oracleText }) => ({ card_id: ir.card_id, ir, oracle_text: oracleText })),
+    );
+    const edgesB = buildSemanticEdges(
+      cards.map(({ ir, oracleText }) => ({ card_id: ir.card_id, ir, oracle_text: oracleText })),
+    );
     expect(edgesA).toEqual(edgesB);
     for (const edge of edgesA) {
       expect(edge.from).not.toBe(edge.to);
@@ -96,12 +100,12 @@ describe("semantic overlay edges: rakdos subset v1", () => {
 
     const producers = new Set<number>();
     const listeners = new Set<number>();
-    for (const { ir } of cards) {
-      const profile = buildSemanticCardProfile(ir);
-      if ((profile.produced.get(sacrificeEventKey) ?? 0) > 0) {
+    for (const { ir, oracleText } of cards) {
+      const profile = buildSemanticCardProfile(ir, oracleText);
+      if ((profile.produced.get(sacrificeEventKey)?.count ?? 0) > 0) {
         producers.add(ir.card_id);
       }
-      if ((profile.consumed.get(sacrificeEventKey) ?? 0) > 0) {
+      if ((profile.consumed.get(sacrificeEventKey)?.count ?? 0) > 0) {
         listeners.add(ir.card_id);
       }
     }
@@ -123,19 +127,19 @@ describe("semantic overlay edges: rakdos subset v1", () => {
     const thoughtseize = cards.find((card) => card.card.name === "Thoughtseize");
     const kroxa = cards.find((card) => card.card.name.startsWith("Kroxa"));
     if (thoughtseize && kroxa) {
-      const profileThought = buildSemanticCardProfile(thoughtseize.ir);
-      const profileKroxa = buildSemanticCardProfile(kroxa.ir);
+      const profileThought = buildSemanticCardProfile(thoughtseize.ir, thoughtseize.oracleText);
+      const profileKroxa = buildSemanticCardProfile(kroxa.ir, kroxa.oracleText);
       const cardKey = keyOf(KeyKind.RESOURCE, ResourceId.CARD);
-      const thoughtProducesCard = (profileThought.produced.get(cardKey) ?? 0) > 0;
-      const kroxaConsumesCard = (profileKroxa.consumed.get(cardKey) ?? 0) > 0;
+      const thoughtProducesCard = (profileThought.produced.get(cardKey)?.count ?? 0) > 0;
+      const kroxaConsumesCard = (profileKroxa.consumed.get(cardKey)?.count ?? 0) > 0;
       if (kroxaConsumesCard) {
         const hasEdge = edgesA.some((edge) => edge.from === thoughtseize.ir.card_id && edge.to === kroxa.ir.card_id);
         expect(hasEdge).toBe(true);
       } else {
         expect(thoughtProducesCard).toBe(true);
-        const hasAnyConsumer = cards.some(({ ir }) => {
-          const profile = buildSemanticCardProfile(ir);
-          return (profile.consumed.get(cardKey) ?? 0) > 0;
+        const hasAnyConsumer = cards.some(({ ir, oracleText }) => {
+          const profile = buildSemanticCardProfile(ir, oracleText);
+          return (profile.consumed.get(cardKey)?.count ?? 0) > 0;
         });
         expect(hasAnyConsumer).toBe(true);
       }

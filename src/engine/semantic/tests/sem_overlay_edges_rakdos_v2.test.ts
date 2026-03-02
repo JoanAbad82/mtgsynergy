@@ -80,11 +80,15 @@ describe("semantic overlay edges: rakdos subset v2", () => {
         type_line: record.type_line ?? null,
       });
       ir.card_id = index + 1;
-      return { card, ir };
+      return { card, ir, oracleText };
     });
 
-    const edgesA = buildSemanticEdges(cards.map(({ ir }) => ({ card_id: ir.card_id, ir })));
-    const edgesB = buildSemanticEdges(cards.map(({ ir }) => ({ card_id: ir.card_id, ir })));
+    const edgesA = buildSemanticEdges(
+      cards.map(({ ir, oracleText }) => ({ card_id: ir.card_id, ir, oracle_text: oracleText })),
+    );
+    const edgesB = buildSemanticEdges(
+      cards.map(({ ir, oracleText }) => ({ card_id: ir.card_id, ir, oracle_text: oracleText })),
+    );
     expect(edgesA).toEqual(edgesB);
     expect(edgesA.length).toBeGreaterThan(0);
     for (const edge of edgesA) {

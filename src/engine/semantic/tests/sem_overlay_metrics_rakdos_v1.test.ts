@@ -91,7 +91,7 @@ describe("semantic overlay metrics: rakdos subset v1", () => {
         type_line: record.type_line ?? null,
       });
       ir.card_id = index + 1;
-      return { card_id: ir.card_id, ir };
+      return { card_id: ir.card_id, ir, oracle_text: oracleText };
     });
 
     const edges = buildSemanticEdges(cards);

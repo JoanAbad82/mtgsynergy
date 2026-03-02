@@ -22,7 +22,9 @@ type CardInput = {
 export function buildSemanticEdges(inputCards: CardInput[]): SemanticEdge[] {
   const cards = inputCards.map((card) => ({
     ...card,
-    profile: buildSemanticCardProfile(card.ir, card.oracle_text ?? ""),
+    profile:
+      (card as { profile?: ReturnType<typeof buildSemanticCardProfile> }).profile ??
+      buildSemanticCardProfile(card.ir, card.oracle_text ?? ""),
   }));
 
   const edges: SemanticEdge[] = [];
@@ -41,6 +43,7 @@ export function buildSemanticEdges(inputCards: CardInput[]): SemanticEdge[] {
         const consEntry = to.profile.consumed.get(key);
         const consWeight = consEntry?.count ?? 0;
         if (!consWeight) continue;
+        if (prodEntry.origin === "cost" && consEntry?.origin === "cost") continue;
         const weight = Math.min(prodEntry.count, consWeight);
         if (weight <= 0) continue;
         score += weight;

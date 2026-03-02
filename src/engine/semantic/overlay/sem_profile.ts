@@ -20,6 +20,10 @@ function isSacrificeCost(text: string): boolean {
   return /^\s*Sacrifice a creature[: ,]/i.test(text);
 }
 
+function isFoodSacrificeCost(text: string): boolean {
+  return /^\s*Sacrifice a Food[: ,]/i.test(text);
+}
+
 function tokenResourceFromKind(kind: TokenKindId): ResourceId {
   switch (kind) {
     case TokenKindId.TREASURE:
@@ -76,6 +80,11 @@ export function buildSemanticCardProfile(
   const consumed = new Map<number, SemanticProfileEntry>();
   const text = typeof oracleText === "string" ? oracleText : "";
   const sacrificeOrigin = isSacrificeCost(text) ? "cost" : "effect";
+  const foodSacrifice = isFoodSacrificeCost(text);
+
+  if (foodSacrifice) {
+    addToMap(consumed, keyOf(KeyKind.RESOURCE, ResourceId.FOOD), 1, "cost");
+  }
 
   for (const frame of ir.frames) {
     if (frame.kind === FrameKind.SPELL) {
@@ -110,6 +119,9 @@ export function buildSemanticCardProfile(
       if (eff.action === ActionId.CREATE_TOKEN && eff.tokenData) {
         const res = tokenResourceFromKind(eff.tokenData.kind);
         addToMap(produced, keyOf(KeyKind.RESOURCE, res), eff.tokenData.n ?? 1);
+        if (eff.tokenData.kind === TokenKindId.FOOD) {
+          addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.FOOD), eff.tokenData.n ?? 1);
+        }
         addToMap(produced, keyOf(KeyKind.EVENT, EventId.TOKEN_CREATED), 1);
         if (tokenIsCreature(eff.tokenData.kind)) {
           addToMap(produced, keyOf(KeyKind.EVENT, EventId.ENTERS_BATTLEFIELD), 1);

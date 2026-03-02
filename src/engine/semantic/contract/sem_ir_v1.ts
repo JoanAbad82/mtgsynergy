@@ -83,6 +83,7 @@ export enum ResourceId {
   TOKEN_BLOOD = 13,
   TOKEN_SOLDIER = 14,
   TOKEN_ZOMBIE = 15,
+  FOOD = 16,
 }
 
 export enum TokenKindId {

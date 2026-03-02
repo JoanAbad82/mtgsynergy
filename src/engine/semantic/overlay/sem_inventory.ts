@@ -54,6 +54,21 @@ export const OVERLAY_TEXT_TAG_IDS = [
   "TOKEN",
 ] as const satisfies readonly SemanticTextTagId[];
 
+export function normalizeResourceId(id: ResourceId): ResourceId {
+  switch (id) {
+    case ResourceId.TOKEN_TREASURE:
+      return ResourceId.TREASURE;
+    case ResourceId.TOKEN_CLUE:
+      return ResourceId.CLUE;
+    case ResourceId.TOKEN_BLOOD:
+      return ResourceId.BLOOD;
+    case ResourceId.TOKEN_FOOD:
+      return ResourceId.FOOD;
+    default:
+      return id;
+  }
+}
+
 export function isOverlayEventId(id: EventId): boolean {
   return (OVERLAY_EVENT_IDS as readonly EventId[]).includes(id);
 }

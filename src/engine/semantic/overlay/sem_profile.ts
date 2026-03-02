@@ -1,4 +1,5 @@
 import { ActionId, CostId, EventId, FrameKind, ResourceId, TokenKindId } from "../contract";
+import { normalizeResourceId } from "./sem_inventory";
 import type { SemanticCardIR } from "../contract";
 
 export enum KeyKind {
@@ -96,6 +97,16 @@ function addToMap(
   map.set(key, { count: delta, origin });
 }
 
+function addResource(
+  map: Map<number, SemanticProfileEntry>,
+  id: ResourceId,
+  delta: number,
+  origin: "cost" | "effect" = "effect",
+): void {
+  const normalized = normalizeResourceId(id);
+  addToMap(map, keyOf(KeyKind.RESOURCE, normalized), delta, origin);
+}
+
 export function buildSemanticCardProfile(
   ir: SemanticCardIR,
   oracleText?: string
@@ -111,27 +122,21 @@ export function buildSemanticCardProfile(
   const treasureCreated = createsTreasureToken(text);
   const clueCreated = createsClueToken(text);
   const bloodCreated = createsBloodToken(text);
+  let createdTreasure = false;
+  let createdClue = false;
+  let createdBlood = false;
 
   if (foodSacrifice) {
-    addToMap(consumed, keyOf(KeyKind.RESOURCE, ResourceId.FOOD), 1, "cost");
+    addResource(consumed, ResourceId.FOOD, 1, "cost");
   }
   if (treasureSacrifice) {
-    addToMap(consumed, keyOf(KeyKind.RESOURCE, ResourceId.TREASURE), 1, "cost");
+    addResource(consumed, ResourceId.TREASURE, 1, "cost");
   }
   if (clueSacrifice) {
-    addToMap(consumed, keyOf(KeyKind.RESOURCE, ResourceId.CLUE), 1, "cost");
+    addResource(consumed, ResourceId.CLUE, 1, "cost");
   }
   if (bloodSacrifice) {
-    addToMap(consumed, keyOf(KeyKind.RESOURCE, ResourceId.BLOOD), 1, "cost");
-  }
-  if (treasureCreated) {
-    addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.TREASURE), 1, "effect");
-  }
-  if (clueCreated) {
-    addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.CLUE), 1, "effect");
-  }
-  if (bloodCreated) {
-    addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.BLOOD), 1, "effect");
+    addResource(consumed, ResourceId.BLOOD, 1, "cost");
   }
 
   for (const frame of ir.frames) {
@@ -158,7 +163,12 @@ export function buildSemanticCardProfile(
     }
     for (const cost of frame.cost) {
       if (cost.res !== undefined) {
-        addToMap(consumed, keyOf(KeyKind.RESOURCE, cost.res), cost.n ?? 1);
+        const normalized = normalizeResourceId(cost.res);
+        if (foodSacrifice && normalized === ResourceId.FOOD) continue;
+        if (treasureSacrifice && normalized === ResourceId.TREASURE) continue;
+        if (clueSacrifice && normalized === ResourceId.CLUE) continue;
+        if (bloodSacrifice && normalized === ResourceId.BLOOD) continue;
+        addResource(consumed, cost.res, cost.n ?? 1);
       }
     }
 
@@ -166,9 +176,15 @@ export function buildSemanticCardProfile(
       addToMap(produced, keyOf(KeyKind.ACTION, eff.action), 1);
       if (eff.action === ActionId.CREATE_TOKEN && eff.tokenData) {
         const res = tokenResourceFromKind(eff.tokenData.kind);
-        addToMap(produced, keyOf(KeyKind.RESOURCE, res), eff.tokenData.n ?? 1);
-        if (eff.tokenData.kind === TokenKindId.FOOD) {
-          addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.FOOD), eff.tokenData.n ?? 1);
+        addResource(produced, res, eff.tokenData.n ?? 1);
+        if (eff.tokenData.kind === TokenKindId.TREASURE) {
+          createdTreasure = true;
+        }
+        if (eff.tokenData.kind === TokenKindId.CLUE) {
+          createdClue = true;
+        }
+        if (eff.tokenData.kind === TokenKindId.BLOOD) {
+          createdBlood = true;
         }
         addToMap(produced, keyOf(KeyKind.EVENT, EventId.TOKEN_CREATED), 1);
         if (tokenIsCreature(eff.tokenData.kind)) {
@@ -177,7 +193,7 @@ export function buildSemanticCardProfile(
       }
       if (eff.action === ActionId.DRAW_CARDS || eff.action === ActionId.DISCARD_CARDS) {
         const n = eff.args?.[0] ?? 1;
-        addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.CARD), n);
+        addResource(produced, ResourceId.CARD, n);
       }
       if (eff.action === ActionId.DRAW_CARDS) {
         addToMap(produced, keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN), 1);
@@ -188,12 +204,22 @@ export function buildSemanticCardProfile(
         eff.action === ActionId.DEAL_DAMAGE
       ) {
         const n = eff.args?.[0] ?? 1;
-        addToMap(produced, keyOf(KeyKind.RESOURCE, ResourceId.LIFE), n);
+        addResource(produced, ResourceId.LIFE, n);
       }
       if (eff.action === ActionId.GAIN_LIFE) {
         addToMap(produced, keyOf(KeyKind.EVENT, EventId.LIFE_GAIN), 1);
       }
     }
+  }
+
+  if (treasureCreated && !createdTreasure) {
+    addResource(produced, ResourceId.TREASURE, 1, "effect");
+  }
+  if (clueCreated && !createdClue) {
+    addResource(produced, ResourceId.CLUE, 1, "effect");
+  }
+  if (bloodCreated && !createdBlood) {
+    addResource(produced, ResourceId.BLOOD, 1, "effect");
   }
 
   return { produced, consumed };

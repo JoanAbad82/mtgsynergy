@@ -13,6 +13,7 @@ type WarningFlags = {
 export function parseMtgaExport(input: string): ParseResult {
   const issues: ParseIssue[] = [];
   const entriesByNorm = new Map<string, CardEntry>();
+  const seenCardLines = new Set<string>();
   const warnings: WarningFlags = {
     sideboardIgnored: false,
     duplicatesMerged: false,
@@ -23,6 +24,20 @@ export function parseMtgaExport(input: string): ParseResult {
 
   for (let i = 0; i < lines.length; i += 1) {
     const lineNo = i + 1;
+    const canonicalLine = lines[i].trim().replace(/\s+/g, " ");
+    if (canonicalLine.length === 0) continue;
+    const canonicalLower = canonicalLine.toLowerCase();
+    const isHeader =
+      canonicalLower === "deck" ||
+      canonicalLower === "sideboard" ||
+      canonicalLower === "companion";
+    const looksLikeCardLine = /^\d+\s+.+$/.test(canonicalLine);
+    if (!isHeader && looksLikeCardLine) {
+      const canonicalKey = canonicalLine.toLowerCase();
+      if (seenCardLines.has(canonicalKey)) continue;
+      seenCardLines.add(canonicalKey);
+    }
+
     let raw = lines[i].trim();
     raw = raw.replace(/\s+/g, " ");
     raw = raw.replace(/^[\-\*\u2022]+\s*/, "");

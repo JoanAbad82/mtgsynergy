@@ -82,3 +82,39 @@ test("EMPTY_DECK with sideboard only", () => {
   ).toBe(1);
   expect(result.issues.some((i) => i.code === "EMPTY_DECK")).toBe(true);
 });
+
+test("ignores duplicate card lines with same canonical text", () => {
+  const input = [
+    "Deck",
+    "4 Cauldron Familiar",
+    "4 Cauldron   Familiar",
+    "2 Witch's Oven",
+    "2 Witch's Oven",
+  ].join("\n");
+
+  const result = parseMtgaExport(input);
+  expect(result.deck.entries.length).toBe(2);
+  expect(result.deck.entries[0].name_norm).toBe("cauldron familiar");
+  expect(result.deck.entries[1].name_norm).toBe("witch's oven");
+  expect(result.deck.entries[0].count).toBe(4);
+  expect(result.deck.entries[1].count).toBe(2);
+  expect(
+    result.issues.filter((i) => i.code === "DUPLICATES_MERGED").length,
+  ).toBe(0);
+});
+
+test("dedupe ignores case for identical card lines", () => {
+  const input = [
+    "Deck",
+    "4 Cauldron Familiar",
+    "4 CAULDRON FAMILIAR",
+  ].join("\n");
+
+  const result = parseMtgaExport(input);
+  expect(result.deck.entries.length).toBe(1);
+  expect(result.deck.entries[0].name_norm).toBe("cauldron familiar");
+  expect(result.deck.entries[0].count).toBe(4);
+  expect(
+    result.issues.filter((i) => i.code === "DUPLICATES_MERGED").length,
+  ).toBe(0);
+});

@@ -1,0 +1,92 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { gunzipSync } from "node:zlib";
+import { describe, expect, it } from "vitest";
+import { normalizeCardName } from "../../cards/normalize";
+import type { CardRecordMin } from "../../cards/types";
+import { buildSemanticCoverageReport } from "../overlay/sem_coverage_report";
+
+type CardsIndexPayload = {
+  by_name?: Record<string, { oracle_text?: string | null; type_line?: string | null }>;
+  by_name_norm?: Record<string, string>;
+};
+
+const here = dirname(fileURLToPath(import.meta.url));
+const cardsIndexPath = join(here, "../../../../public/data/cards_index.json.gz");
+
+function loadCardsIndex(): CardsIndexPayload {
+  const gz = readFileSync(cardsIndexPath);
+  const json = gunzipSync(gz).toString("utf8");
+  return JSON.parse(json) as CardsIndexPayload;
+}
+
+function findCanonicalName(payload: CardsIndexPayload, name: string): string | null {
+  const byName = payload.by_name ?? {};
+  const byNameNorm = payload.by_name_norm ?? {};
+  if (byName[name]) return name;
+  const norm = normalizeCardName(name);
+  const canonical = byNameNorm[norm];
+  if (canonical && byName[canonical]) return canonical;
+  if (!name.includes("//")) {
+    const prefix = `${norm} //`;
+    const matches = Object.entries(byNameNorm)
+      .filter(([key]) => key.startsWith(prefix))
+      .map(([, value]) => value)
+      .filter((value) => value && byName[value]);
+    if (matches.length === 1) return matches[0];
+  }
+  return null;
+}
+
+function createLocalLookup(payload: CardsIndexPayload) {
+  return async (name: string): Promise<CardRecordMin | null> => {
+    const canonical = findCanonicalName(payload, name);
+    if (!canonical) return null;
+    const record = payload.by_name?.[canonical];
+    if (!record) return null;
+    return {
+      name: canonical,
+      name_norm: normalizeCardName(canonical),
+      type_line: record.type_line ?? null,
+      oracle_text: record.oracle_text ?? null,
+    };
+  };
+}
+
+async function runReport() {
+  const payload = loadCardsIndex();
+  const lookupLocal = createLocalLookup(payload);
+  const entries = [
+    { name: "Totally Fake Card" },
+    { name: "Serra Angel" },
+    { name: "Raise the Alarm" },
+  ];
+  return buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+}
+
+describe("semantic overlay coverage report", () => {
+  it("is deterministic and reports coverage gaps", async () => {
+    const reportA = await runReport();
+    const reportB = await runReport();
+    expect(reportA).toEqual(reportB);
+
+    expect(reportA.totalCardsWithOracle).toBe(2);
+    expect(reportA.coveredCards).toBe(1);
+    expect(reportA.coveragePct).toBe(50);
+
+    expect(reportA.reasons.length).toBeGreaterThan(0);
+    expect(reportA.reasons.map((r) => r.reasonId)).toEqual([
+      "NO_MATCH_V1_TEMPLATES",
+      "NO_ORACLE",
+    ]);
+
+    const noMatch = reportA.reasons.find((r) => r.reasonId === "NO_MATCH_V1_TEMPLATES");
+    expect(noMatch?.count).toBe(1);
+    expect(noMatch?.examples).toEqual(["Serra Angel"]);
+
+    const noOracle = reportA.reasons.find((r) => r.reasonId === "NO_ORACLE");
+    expect(noOracle?.count).toBe(1);
+    expect(noOracle?.examples).toEqual(["Totally Fake Card"]);
+  });
+});

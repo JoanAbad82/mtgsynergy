@@ -5,29 +5,35 @@ export const SEMANTIC_OVERLAY_COPY = {
   title: "Superposición semántica (experimental)",
   intro:
     "Esto es experimental. Busca conexiones por “producido/consumido” a partir del texto de reglas.\nEl objetivo es detectar patrones entre cartas sin depender de roles manuales.",
-  coverageLabel: "cobertura",
+  coverageLabel: "Cobertura semántica",
   resolvedLabel: "únicas resueltas",
   missingLabel: "únicas faltantes",
   entriesLabel: "entradas del mazo",
   sosLabel: "SOS",
   totalEdgeScoreLabel: "puntuación total de conexiones",
+  signalFoundLabel: "✅ Señal encontrada (experimental)",
+  signalMissingLabel: "⚠️ Sin señal (experimental)",
+  signalMissingHint:
+    "Es normal en mazos simples o en reglas aún no cubiertas.",
+  reasonsTitle: "Motivos (v1)",
+  reasonsNone: "Sin incidencias destacables.",
+  reasonMissingIndex: "No encontrada en índice o sin texto de reglas",
+  reasonUnrecognized: "Texto aún no reconocido (v1)",
   edgesTitle: "Conexiones semánticas principales",
   noEdges: "No hay conexiones semánticas.",
   edgeScoreLabel: "puntuación",
-  orphanTitle: "Escuchas huérfanas",
-  excessTitle: "Productores en exceso",
+  orphanTitle: "Efectos sin pareja",
+  excessTitle: "Generas más de lo que usas",
   noneDetected: "No se detectaron.",
-  redundancyTitle: "Grupos de redundancia",
-  redundancyNotApplicable: "Redundancias semánticas: no aplicable (sin señal).",
-  zeroScoreMessage:
-    "Aún no hay conexiones semánticas detectables con las reglas actuales (v1).",
-  zeroScoreCauses: "Posibles causas: mazo muy simple / parser aún cubre pocas plantillas.",
+  redundancyTitle: "Efectos repetidos",
+  redundancyNotApplicable: "Efectos repetidos: no aplicable (sin señal).",
   glossaryTitle: "Glosario rápido",
   glossaryItems: [
-    "Coverage: porcentaje de cartas con alguna señal semántica.",
+    "Cobertura: porcentaje de cartas con alguna señal semántica.",
     "SOS: magnitud logarítmica del total de conexiones detectadas.",
-    "Orphan: evento/acción consumida sin productores en el mazo.",
-    "Excess: evento/acción producida sin consumidores en el mazo.",
+    "Efectos sin pareja: evento/acción consumida sin productores en el mazo.",
+    "Generas más de lo que usas: evento/acción producida sin consumidores en el mazo.",
+    "Efectos repetidos: grupos con señales iguales.",
     "Edge: conexión dirigida entre dos cartas por señal compartida.",
     "Reason: explicación de la conexión (evento/acción/recurso).",
   ],
@@ -37,6 +43,62 @@ export function filterRedundancyGroups(
   groups: SemanticOverlayMetrics["redundancy_groups"],
 ): SemanticOverlayMetrics["redundancy_groups"] {
   return groups.filter((group) => group.signature !== "P: | C:");
+}
+
+type CoverageReason = { key: string; label: string; count: number; priority: number };
+
+export function buildCoverageSummary(
+  metrics: SemanticOverlayMetrics,
+  resolvedUnique: number,
+  missingUnique: number,
+): { covered: number; total: number; percent: number } {
+  const total = Math.max(0, resolvedUnique + missingUnique);
+  const covered = Math.max(0, metrics.covered_count);
+  const percent = total > 0 ? Math.round((covered / total) * 1000) / 10 : 0;
+  return { covered, total, percent };
+}
+
+export function buildCoverageReasons(
+  metrics: SemanticOverlayMetrics,
+  resolvedUnique: number,
+  missingUnique: number,
+): Array<{ key: string; label: string; count: number }> {
+  const missingIndex = Math.max(0, missingUnique);
+  const unrecognized = Math.max(0, metrics.card_count - metrics.covered_count);
+  const reasons: CoverageReason[] = [
+    {
+      key: "missing_index",
+      label: SEMANTIC_OVERLAY_COPY.reasonMissingIndex,
+      count: missingIndex,
+      priority: 1,
+    },
+    {
+      key: "unrecognized_text",
+      label: SEMANTIC_OVERLAY_COPY.reasonUnrecognized,
+      count: unrecognized,
+      priority: 2,
+    },
+  ];
+
+  return reasons
+    .filter((reason) => reason.count > 0)
+    .sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      if (a.count !== b.count) return b.count - a.count;
+      return a.key.localeCompare(b.key);
+    })
+    .slice(0, 5)
+    .map(({ key, label, count }) => ({ key, label, count }));
+}
+
+export function getSignalStatus(metrics: SemanticOverlayMetrics): { label: string; hint?: string } {
+  if (metrics.SOS > 0) {
+    return { label: SEMANTIC_OVERLAY_COPY.signalFoundLabel };
+  }
+  return {
+    label: SEMANTIC_OVERLAY_COPY.signalMissingLabel,
+    hint: SEMANTIC_OVERLAY_COPY.signalMissingHint,
+  };
 }
 
 type Props = {
@@ -60,7 +122,9 @@ export default function SemanticOverlayPanel({
   resolvedUnique,
   missingUnique,
 }: Props) {
-  const coveragePct = Math.round(metrics.semantic_coverage * 1000) / 10;
+  const coverage = buildCoverageSummary(metrics, resolvedUnique, missingUnique);
+  const reasons = buildCoverageReasons(metrics, resolvedUnique, missingUnique);
+  const status = getSignalStatus(metrics);
   const edgesTop = edges.slice(0, 10);
   const orphanTop = metrics.orphan_listeners.slice(0, 10);
   const excessTop = metrics.excess_producers.slice(0, 10);
@@ -72,9 +136,27 @@ export default function SemanticOverlayPanel({
       <p className="muted" style={{ whiteSpace: "pre-line" }}>
         {SEMANTIC_OVERLAY_COPY.intro}
       </p>
+      <p className="muted">{status.label}</p>
+      {status.hint && <p className="muted">{status.hint}</p>}
       <p>
-        {SEMANTIC_OVERLAY_COPY.coverageLabel}: {coveragePct}% ({metrics.covered_count}/{metrics.card_count})
+        {SEMANTIC_OVERLAY_COPY.coverageLabel}: {coverage.percent}% ({coverage.covered}/{coverage.total})
       </p>
+      {reasons.length === 0 ? (
+        <p className="muted">
+          {SEMANTIC_OVERLAY_COPY.reasonsTitle}: {SEMANTIC_OVERLAY_COPY.reasonsNone}
+        </p>
+      ) : (
+        <>
+          <p className="muted">{SEMANTIC_OVERLAY_COPY.reasonsTitle}:</p>
+          <ul>
+            {reasons.map((reason) => (
+              <li key={reason.key}>
+                {reason.label} · {reason.count}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
       <p>
         {SEMANTIC_OVERLAY_COPY.resolvedLabel}: {resolvedUnique} · {SEMANTIC_OVERLAY_COPY.missingLabel}: {missingUnique} ·{" "}
         {SEMANTIC_OVERLAY_COPY.entriesLabel}: {deckEntriesCount}
@@ -83,11 +165,6 @@ export default function SemanticOverlayPanel({
         {SEMANTIC_OVERLAY_COPY.sosLabel}: {metrics.SOS.toFixed(2)} · {SEMANTIC_OVERLAY_COPY.totalEdgeScoreLabel}:{" "}
         {metrics.total_edge_score}
       </p>
-      {metrics.total_edge_score === 0 && (
-        <p className="muted">
-          {SEMANTIC_OVERLAY_COPY.zeroScoreMessage} {SEMANTIC_OVERLAY_COPY.zeroScoreCauses}
-        </p>
-      )}
 
       <h3>{SEMANTIC_OVERLAY_COPY.edgesTitle}</h3>
       {edgesTop.length === 0 ? (

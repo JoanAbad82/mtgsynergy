@@ -163,6 +163,18 @@ export function buildSemanticCardProfile(
     }
     for (const cost of frame.cost) {
       if (cost.res !== undefined) {
+        if (cost.cost === CostId.SACRIFICE_AS_COST && cost.res === ResourceId.UNKNOWN_RESOURCE) {
+          if (foodSacrifice) {
+            addResource(consumed, ResourceId.FOOD, 1, "cost");
+          } else if (treasureSacrifice) {
+            addResource(consumed, ResourceId.TREASURE, 1, "cost");
+          } else if (clueSacrifice) {
+            addResource(consumed, ResourceId.CLUE, 1, "cost");
+          } else if (bloodSacrifice) {
+            addResource(consumed, ResourceId.BLOOD, 1, "cost");
+          }
+          continue;
+        }
         const normalized = normalizeResourceId(cost.res);
         if (foodSacrifice && normalized === ResourceId.FOOD) continue;
         if (treasureSacrifice && normalized === ResourceId.TREASURE) continue;

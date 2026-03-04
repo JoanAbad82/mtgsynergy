@@ -1,5 +1,6 @@
 import type { SemanticEdge } from "../../engine/semantic/overlay/sem_edges";
 import type { SemanticOverlayMetrics } from "../../engine/semantic/overlay/sem_metrics";
+import type { SemanticCoverageReport, SemanticCoverageReasonId } from "../../engine/semantic/overlay/sem_coverage_report";
 
 export const SEMANTIC_OVERLAY_COPY = {
   title: "Superposición semántica (experimental)",
@@ -45,6 +46,12 @@ export function filterRedundancyGroups(
 }
 
 type CoverageReason = { key: string; label: string; count: number; priority: number };
+type CoverageReasonView = {
+  key: string;
+  label: string;
+  count: number;
+  examples?: string[];
+};
 
 export function buildCoverageSummary(
   metrics: SemanticOverlayMetrics,
@@ -90,6 +97,35 @@ export function buildCoverageReasons(
     .map(({ key, label, count }) => ({ key, label, count }));
 }
 
+export function mapCoverageReasonId(reasonId: SemanticCoverageReasonId | string): string {
+  if (reasonId === "NO_ORACLE") return SEMANTIC_OVERLAY_COPY.reasonMissingIndex;
+  if (reasonId === "NO_MATCH_V1_TEMPLATES") return SEMANTIC_OVERLAY_COPY.reasonUnrecognized;
+  if (reasonId === "EMPTY_TEXT") return "Texto vacío tras normalización";
+  if (reasonId === "PARSE_ERROR") return "Error de parseo (v1)";
+  return `Motivo: ${reasonId}`;
+}
+
+export function buildCoverageReasonsFromReport(
+  coverageReport?: SemanticCoverageReport,
+): CoverageReasonView[] {
+  if (!coverageReport?.reasons?.length) return [];
+  return coverageReport.reasons
+    .filter((reason) => reason.count > 0)
+    .map((reason, index) => ({ ...reason, index }))
+    .sort((a, b) => {
+      if (a.count !== b.count) return b.count - a.count;
+      const byId = a.reasonId.localeCompare(b.reasonId);
+      if (byId !== 0) return byId;
+      return a.index - b.index;
+    })
+    .map((reason) => ({
+      key: reason.reasonId,
+      label: mapCoverageReasonId(reason.reasonId),
+      count: reason.count,
+      examples: reason.examples,
+    }));
+}
+
 export function getSignalStatus(metrics: SemanticOverlayMetrics): { label: string; hint?: string } {
   if (metrics.SOS > 0) {
     return { label: SEMANTIC_OVERLAY_COPY.signalFoundLabel };
@@ -109,6 +145,7 @@ type Props = {
   deckEntriesCount: number;
   resolvedUnique: number;
   missingUnique: number;
+  coverageReport?: SemanticCoverageReport;
 };
 
 export default function SemanticOverlayPanel({
@@ -120,9 +157,14 @@ export default function SemanticOverlayPanel({
   deckEntriesCount,
   resolvedUnique,
   missingUnique,
+  coverageReport,
 }: Props) {
   const coverage = buildCoverageSummary(metrics, resolvedUnique, missingUnique);
-  const reasons = buildCoverageReasons(metrics, resolvedUnique, missingUnique);
+  const reportReasons = buildCoverageReasonsFromReport(coverageReport);
+  const reasons: CoverageReasonView[] =
+    reportReasons.length > 0
+      ? reportReasons
+      : buildCoverageReasons(metrics, resolvedUnique, missingUnique);
   const status = getSignalStatus(metrics);
   const edgesTop = edges.slice(0, 10);
   const orphanTop = metrics.orphan_listeners.slice(0, 10);
@@ -151,6 +193,9 @@ export default function SemanticOverlayPanel({
             {reasons.map((reason) => (
               <li key={reason.key}>
                 {reason.label} · {reason.count}
+                {reason.examples && reason.examples.length > 0 && (
+                  <div className="muted">ej.: {reason.examples.join(", ")}</div>
+                )}
               </li>
             ))}
           </ul>

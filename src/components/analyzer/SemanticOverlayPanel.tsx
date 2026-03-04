@@ -100,6 +100,7 @@ export function buildCoverageReasons(
 export function mapCoverageReasonId(reasonId: SemanticCoverageReasonId | string): string {
   if (reasonId === "NO_ORACLE") return SEMANTIC_OVERLAY_COPY.reasonMissingIndex;
   if (reasonId === "NO_MATCH_V1_TEMPLATES") return SEMANTIC_OVERLAY_COPY.reasonUnrecognized;
+  if (reasonId === "LAND_RULES_UNMODELED_V1") return "Tierras con reglas no modeladas (v1)";
   if (reasonId === "EMPTY_TEXT") return "Texto vacío tras normalización";
   if (reasonId === "PARSE_ERROR") return "Error de parseo (v1)";
   return `Motivo: ${reasonId}`;

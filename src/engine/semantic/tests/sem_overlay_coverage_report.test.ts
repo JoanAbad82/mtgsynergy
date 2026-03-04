@@ -89,4 +89,27 @@ describe("semantic overlay coverage report", () => {
     expect(noOracle?.count).toBe(1);
     expect(noOracle?.examples).toEqual(["Totally Fake Card"]);
   });
+
+  it("buckets land no-match into land rules reason deterministically", async () => {
+    const payload: CardsIndexPayload = {
+      by_name: {
+        "Mystic Hollow": {
+          type_line: "Land",
+          oracle_text: "{T}: Add {G}.",
+        },
+      },
+      by_name_norm: {
+        "mystic hollow": "Mystic Hollow",
+      },
+    };
+    const lookupLocal = createLocalLookup(payload);
+    const entries = [{ name: "Mystic Hollow" }];
+    const reportA = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    const reportB = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    expect(reportA).toEqual(reportB);
+    expect(reportA.reasons.map((r) => r.reasonId)).toEqual(["LAND_RULES_UNMODELED_V1"]);
+    const landReason = reportA.reasons.find((r) => r.reasonId === "LAND_RULES_UNMODELED_V1");
+    expect(landReason?.count).toBe(1);
+    expect(landReason?.examples).toEqual(["Mystic Hollow"]);
+  });
 });

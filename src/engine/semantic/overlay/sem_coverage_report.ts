@@ -7,6 +7,7 @@ export type SemanticCoverageReasonId =
   | "NO_ORACLE"
   | "EMPTY_TEXT"
   | "NO_MATCH_V1_TEMPLATES"
+  | "LAND_RULES_UNMODELED_V1"
   | "PARSE_ERROR";
 
 export type SemanticTextTagId =
@@ -113,7 +114,8 @@ export async function buildSemanticCoverageReport(
       if (profile.produced.size > 0 || profile.consumed.size > 0) {
         coveredCards += 1;
       } else {
-        addReason("NO_MATCH_V1_TEMPLATES", card.name);
+        const isLand = /\bland\b/i.test(card.type_line ?? "");
+        addReason(isLand ? "LAND_RULES_UNMODELED_V1" : "NO_MATCH_V1_TEMPLATES", card.name);
       }
     } catch (err) {
       addReason("PARSE_ERROR", card.name);

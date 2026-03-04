@@ -227,6 +227,12 @@ export function parseSemanticIrV0(input: {
     addUnique(touch, { id: ResourceId.LIFE }, (a, b) => a.id === b.id);
   }
 
+  const searchLibraryMatch = /\bsearch\s+your\s+library\b/i.test(text);
+  if (searchLibraryMatch) {
+    // Template v1: search library effects (e.g., "Search your library for a card...")
+    doList.push({ action: ActionId.SEARCH_LIBRARY });
+  }
+
   const loseLifeMatch = /loses\s+(a|an|one|two|three|four|\d+)\s+life/i.exec(text);
   if (loseLifeMatch) {
     const n = parseCount(loseLifeMatch[1]) ?? 1;

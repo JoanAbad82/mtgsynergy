@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   SEMANTIC_OVERLAY_COPY,
   buildCoverageReasons,
+  buildCoverageReasonsFromReport,
   buildCoverageSummary,
   filterRedundancyGroups,
   getSignalStatus,
@@ -98,5 +99,32 @@ describe("SemanticOverlayPanel semantic summary helpers", () => {
     expect(reasons.map((r) => r.key)).toEqual(["missing_index", "unrecognized_text"]);
     expect(reasons[0].count).toBe(2);
     expect(reasons[1].count).toBe(2);
+  });
+
+  it("maps coverage report reasons to labels with counts and examples", () => {
+    const coverageReport = {
+      reasons: [
+        { reasonId: "PARSE_ERROR", count: 1, examples: ["Alpha"] },
+        { reasonId: "NO_ORACLE", count: 2, examples: ["Card A", "Card B"] },
+        { reasonId: "EMPTY_TEXT", count: 1, examples: ["Empty Card"] },
+        { reasonId: "NO_MATCH_V1_TEMPLATES", count: 0, examples: ["Ignored"] },
+      ],
+    } as any;
+
+    const reasons = buildCoverageReasonsFromReport(coverageReport);
+    expect(reasons.map((r) => r.key)).toEqual([
+      "NO_ORACLE",
+      "EMPTY_TEXT",
+      "PARSE_ERROR",
+    ]);
+    expect(reasons[0].label).toBe(SEMANTIC_OVERLAY_COPY.reasonMissingIndex);
+    expect(reasons[0].count).toBe(2);
+    expect(reasons[0].examples).toEqual(["Card A", "Card B"]);
+    expect(reasons[1].label).toBe("Texto vacío tras normalización");
+    expect(reasons[1].count).toBe(1);
+    expect(reasons[1].examples).toEqual(["Empty Card"]);
+    expect(reasons[2].label).toBe("Error de parseo (v1)");
+    expect(reasons[2].count).toBe(1);
+    expect(reasons[2].examples).toEqual(["Alpha"]);
   });
 });

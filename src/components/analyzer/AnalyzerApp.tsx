@@ -39,6 +39,8 @@ import {
 import { es } from "./i18n/es";
 import { explainKey, explainKeyHuman } from "../../engine/semantic/overlay/sem_profile";
 import { computeSemanticOverlayFromDeckEntries } from "../../engine/semantic/overlay/sem_overlay_compute";
+import { buildSemanticCoverageReport } from "../../engine/semantic/overlay/sem_coverage_report";
+import type { SemanticCoverageReport } from "../../engine/semantic/overlay/sem_coverage_report";
 
 type Props = {
   buildSha?: string;
@@ -80,6 +82,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
     resolvedUnique: number;
     missingUnique: number;
     deckEntriesCount: number;
+    coverageReport?: SemanticCoverageReport;
   }>(null);
   const [semanticOverlayError, setSemanticOverlayError] = useState<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -223,7 +226,17 @@ export default function AnalyzerApp({ buildSha }: Props) {
         setSemanticOverlayStatus("ready");
         return;
       }
-      setSemanticOverlay(result);
+      let coverageReport: SemanticCoverageReport | undefined;
+      try {
+        coverageReport = await buildSemanticCoverageReport({
+          entries: entries.map((entry) => ({ name: entry.name })),
+          lookup: lookupCard,
+        });
+      } catch {
+        coverageReport = undefined;
+      }
+      if (rid !== semanticRunId.current) return;
+      setSemanticOverlay({ ...result, coverageReport });
       setSemanticOverlayStatus("ready");
     };
 
@@ -490,6 +503,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
                 deckEntriesCount={semanticOverlay.deckEntriesCount}
                 resolvedUnique={semanticOverlay.resolvedUnique}
                 missingUnique={semanticOverlay.missingUnique}
+                coverageReport={semanticOverlay.coverageReport}
               />
             )}
           {mcParams.enabled && (

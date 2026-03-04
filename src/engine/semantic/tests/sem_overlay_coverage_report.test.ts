@@ -151,4 +151,25 @@ describe("semantic overlay coverage report", () => {
       { name: "Missing Card", reasonId: "NO_ORACLE" },
     ]);
   });
+
+  it("covers Archpriest of Iona via search library template", async () => {
+    const payload: CardsIndexPayload = {
+      by_name: {
+        "Archpriest of Iona": {
+          type_line: "Creature — Human Cleric",
+          oracle_text:
+            "Archpriest of Iona gets +1/+1 for each creature you control. {3}{W}{W}: Search your library for a Cleric card, put it onto the battlefield, then shuffle.",
+        },
+      },
+      by_name_norm: {
+        "archpriest of iona": "Archpriest of Iona",
+      },
+    };
+    const lookupLocal = createLocalLookup(payload);
+    const entries = [{ name: "Archpriest of Iona" }];
+    const report = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    expect(report.coveredCards).toBe(1);
+    expect(report.reasons.find((r) => r.reasonId === "NO_MATCH_V1_TEMPLATES")).toBeUndefined();
+    expect(report.uncoveredNonLand.find((r) => r.name === "Archpriest of Iona")).toBeUndefined();
+  });
 });

@@ -18,6 +18,11 @@ const payload = {
       oracle_text: "",
       cmc: 0,
     },
+    "Blightstep Pathway // Searstep Pathway": {
+      type_line: "Land",
+      oracle_text: "{T}: Add {B} or {R}.",
+      cmc: 0,
+    },
   },
   by_name_norm: {
     "llanowar elves": "Llanowar Elves",
@@ -46,7 +51,7 @@ describe("cards helpers", () => {
       expect(card?.name_norm).toBe("llanowar elves");
       expect(fetchMock).toHaveBeenCalledWith("/data/cards_index.json.gz");
       const count = await getCardsIndexCount();
-      expect(count).toBe(2);
+      expect(count).toBe(3);
     } finally {
       // @ts-expect-error restore
       globalThis.fetch = originalFetch;
@@ -71,8 +76,30 @@ describe("cards helpers", () => {
         lookupCard("Llanowar Elves"),
       ]);
       const count = await getCardsIndexCount();
-      expect(count).toBe(2);
+      expect(count).toBe(3);
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("lookupCard resolves left side pathway names via alias", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(payload));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+    }));
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+
+    try {
+      __testing.clearCache();
+      const card = await lookupCard("Blightstep Pathway");
+      expect(card).not.toBeNull();
+      expect(card?.name).toBe("Blightstep Pathway // Searstep Pathway");
+      expect(card?.name_norm).toBe("blightstep pathway // searstep pathway");
     } finally {
       // @ts-expect-error restore
       globalThis.fetch = originalFetch;

@@ -112,4 +112,43 @@ describe("semantic overlay coverage report", () => {
     expect(landReason?.count).toBe(1);
     expect(landReason?.examples).toEqual(["Mystic Hollow"]);
   });
+
+  it("exposes uncoveredNonLand deterministically", async () => {
+    const payload: CardsIndexPayload = {
+      by_name: {
+        "Mystic Rebel": {
+          type_line: "Creature — Rebel",
+          oracle_text: "Flavor only.",
+        },
+        "Dusty Basin": {
+          type_line: "Land",
+          oracle_text: "{T}: Add {G}.",
+        },
+        "Blank Spell": {
+          type_line: "Sorcery",
+          oracle_text: "",
+        },
+      },
+      by_name_norm: {
+        "mystic rebel": "Mystic Rebel",
+        "dusty basin": "Dusty Basin",
+        "blank spell": "Blank Spell",
+      },
+    };
+    const lookupLocal = createLocalLookup(payload);
+    const entries = [
+      { name: "Mystic Rebel" },
+      { name: "Dusty Basin" },
+      { name: "Blank Spell" },
+      { name: "Missing Card" },
+    ];
+    const reportA = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    const reportB = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    expect(reportA).toEqual(reportB);
+    expect(reportA.uncoveredNonLand).toEqual([
+      { name: "Blank Spell", reasonId: "EMPTY_TEXT" },
+      { name: "Mystic Rebel", reasonId: "NO_MATCH_V1_TEMPLATES" },
+      { name: "Missing Card", reasonId: "NO_ORACLE" },
+    ]);
+  });
 });

@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  SEMANTIC_OVERLAY_AUDIT_TITLE,
   SEMANTIC_OVERLAY_COPY,
   buildCoverageReasons,
   buildCoverageReasonsFromReport,
   buildCoverageSummary,
+  buildUncoveredNonLandAudit,
   filterRedundancyGroups,
   getSignalStatus,
 } from "../SemanticOverlayPanel";
@@ -131,5 +133,21 @@ describe("SemanticOverlayPanel semantic summary helpers", () => {
     expect(reasons[3].label).toBe("Error de parseo (v1)");
     expect(reasons[3].count).toBe(1);
     expect(reasons[3].examples).toEqual(["Alpha"]);
+  });
+
+  it("renders uncoveredNonLand audit list when present", () => {
+    const coverageReport = {
+      uncoveredNonLand: [
+        { name: "Magma Opus", reasonId: "NO_MATCH_V1_TEMPLATES" },
+        { name: "Unknown Tome", reasonId: "NO_ORACLE" },
+      ],
+    } as any;
+
+    const audit = buildUncoveredNonLandAudit(coverageReport);
+    expect(audit?.title).toBe(SEMANTIC_OVERLAY_AUDIT_TITLE);
+    expect(audit?.items).toEqual([
+      { name: "Magma Opus", reasonId: "NO_MATCH_V1_TEMPLATES", label: "No reconocido (v1)" },
+      { name: "Unknown Tome", reasonId: "NO_ORACLE", label: "No encontrada en índice o sin texto" },
+    ]);
   });
 });

@@ -52,6 +52,13 @@ type CoverageReasonView = {
   count: number;
   examples?: string[];
 };
+type UncoveredAuditItem = {
+  name: string;
+  reasonId: SemanticCoverageReasonId | string;
+  label: string;
+};
+
+export const SEMANTIC_OVERLAY_AUDIT_TITLE = "Audit (no-Land)";
 
 export function buildCoverageSummary(
   metrics: SemanticOverlayMetrics,
@@ -104,6 +111,27 @@ export function mapCoverageReasonId(reasonId: SemanticCoverageReasonId | string)
   if (reasonId === "EMPTY_TEXT") return "Texto vacío tras normalización";
   if (reasonId === "PARSE_ERROR") return "Error de parseo (v1)";
   return `Motivo: ${reasonId}`;
+}
+
+export function mapAuditReasonId(reasonId: SemanticCoverageReasonId | string): string {
+  if (reasonId === "NO_ORACLE") return "No encontrada en índice o sin texto";
+  if (reasonId === "EMPTY_TEXT") return "Texto vacío";
+  if (reasonId === "NO_MATCH_V1_TEMPLATES") return "No reconocido (v1)";
+  if (reasonId === "PARSE_ERROR") return "Error de parseo (v1)";
+  return mapCoverageReasonId(reasonId);
+}
+
+export function buildUncoveredNonLandAudit(
+  coverageReport?: SemanticCoverageReport,
+): { title: string; items: UncoveredAuditItem[] } | null {
+  const raw = coverageReport?.uncoveredNonLand ?? [];
+  if (raw.length === 0) return null;
+  const items = raw.map((entry) => ({
+    name: entry.name,
+    reasonId: entry.reasonId,
+    label: mapAuditReasonId(entry.reasonId),
+  }));
+  return { title: SEMANTIC_OVERLAY_AUDIT_TITLE, items };
 }
 
 export function buildCoverageReasonsFromReport(
@@ -171,6 +199,7 @@ export default function SemanticOverlayPanel({
   const orphanTop = metrics.orphan_listeners.slice(0, 10);
   const excessTop = metrics.excess_producers.slice(0, 10);
   const groups = filterRedundancyGroups(metrics.redundancy_groups);
+  const audit = buildUncoveredNonLandAudit(coverageReport);
 
   return (
     <div className="panel">
@@ -201,6 +230,18 @@ export default function SemanticOverlayPanel({
             ))}
           </ul>
         </>
+      )}
+      {audit && (
+        <details>
+          <summary>{audit.title}</summary>
+          <ul>
+            {audit.items.map((item) => (
+              <li key={`${item.name}-${item.reasonId}`}>
+                {item.name} · {item.label}
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
       <p>
         {SEMANTIC_OVERLAY_COPY.resolvedLabel}: {resolvedUnique} · {SEMANTIC_OVERLAY_COPY.missingLabel}: {missingUnique} ·{" "}

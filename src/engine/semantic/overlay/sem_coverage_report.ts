@@ -29,6 +29,7 @@ export type SemanticCoverageReport = {
   coveredCards: number;
   coveragePct: number;
   reasons: SemanticCoverageReason[];
+  uncoveredNonLand: Array<{ name: string; reasonId: SemanticCoverageReasonId }>;
   textTags: Array<{ tag: SemanticTextTagId; count: number }>;
 };
 
@@ -72,6 +73,22 @@ export async function buildSemanticCoverageReport(
 
   let totalCardsWithOracle = 0;
   let coveredCards = 0;
+  const uncoveredNonLandRaw: Array<{ name: string; reasonId: SemanticCoverageReasonId }> = [];
+  const uncoveredReasonIds = new Set<SemanticCoverageReasonId>([
+    "NO_ORACLE",
+    "EMPTY_TEXT",
+    "NO_MATCH_V1_TEMPLATES",
+    "PARSE_ERROR",
+  ]);
+  const recordUncoveredNonLand = (
+    reasonId: SemanticCoverageReasonId,
+    name: string,
+    typeLine?: string | null,
+  ) => {
+    if (!uncoveredReasonIds.has(reasonId)) return;
+    if (/\bland\b/i.test(typeLine ?? "")) return;
+    uncoveredNonLandRaw.push({ name, reasonId });
+  };
   const tagCounts: Record<SemanticTextTagId, number> = {
     ETB: 0,
     DIES: 0,
@@ -85,6 +102,7 @@ export async function buildSemanticCoverageReport(
     const card = await input.lookup(name);
     if (!card || card.oracle_text == null) {
       addReason("NO_ORACLE", name);
+      recordUncoveredNonLand("NO_ORACLE", name, card?.type_line ?? null);
       continue;
     }
 
@@ -94,6 +112,7 @@ export async function buildSemanticCoverageReport(
     const trimmed = normalized.trim();
     if (!trimmed) {
       addReason("EMPTY_TEXT", card.name);
+      recordUncoveredNonLand("EMPTY_TEXT", card.name, card.type_line ?? null);
       continue;
     }
 
@@ -115,10 +134,13 @@ export async function buildSemanticCoverageReport(
         coveredCards += 1;
       } else {
         const isLand = /\bland\b/i.test(card.type_line ?? "");
-        addReason(isLand ? "LAND_RULES_UNMODELED_V1" : "NO_MATCH_V1_TEMPLATES", card.name);
+        const reasonId = isLand ? "LAND_RULES_UNMODELED_V1" : "NO_MATCH_V1_TEMPLATES";
+        addReason(reasonId, card.name);
+        recordUncoveredNonLand(reasonId, card.name, card.type_line ?? null);
       }
     } catch (err) {
       addReason("PARSE_ERROR", card.name);
+      recordUncoveredNonLand("PARSE_ERROR", card.name, card.type_line ?? null);
     }
   }
 
@@ -143,11 +165,22 @@ export async function buildSemanticCoverageReport(
     count: tagCounts[tag],
   })).filter((entry) => entry.count > 0);
 
+  const uncoveredNonLand = Array.from(
+    new Map(uncoveredNonLandRaw.map((entry) => [entry.name, entry])).values(),
+  )
+    .sort((a, b) => {
+      const reasonCmp = a.reasonId.localeCompare(b.reasonId);
+      if (reasonCmp !== 0) return reasonCmp;
+      return a.name.localeCompare(b.name);
+    })
+    .slice(0, 10);
+
   return {
     totalCardsWithOracle,
     coveredCards,
     coveragePct,
     reasons: reasonsList,
+    uncoveredNonLand,
     textTags,
   };
 }

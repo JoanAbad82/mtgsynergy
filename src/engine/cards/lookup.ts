@@ -51,6 +51,15 @@ async function loadCardsIndex(baseUrl?: string): Promise<CardsIndexCache> {
         normalized[normalizeCardName(name)] = name;
       }
     }
+    for (const canonicalName of Object.keys(byName)) {
+      const separatorIndex = canonicalName.indexOf(" // ");
+      if (separatorIndex === -1) continue;
+      const left = canonicalName.slice(0, separatorIndex);
+      const leftNorm = normalizeCardName(left);
+      if (!normalized[leftNorm]) {
+        normalized[leftNorm] = canonicalName;
+      }
+    }
 
     const loaded: CardsIndexCache = {
       by_name: byName,

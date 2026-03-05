@@ -173,6 +173,12 @@ export function parseSemanticIrV0(input: {
     addUnique(touch, { id: ResourceId.CARD }, (a, b) => a.id === b.id);
   }
 
+  const scryMatch = /scry\s+(a|an|one|two|three|four|\d+)/i.exec(text);
+  if (scryMatch) {
+    const n = parseCount(scryMatch[1]) ?? 1;
+    doList.push({ action: ActionId.SCRY, args: [n] });
+  }
+
   const discardMatch =
     /discard\w*\s+(a|an|one|two|three|four|\d+|that)\s+cards?/i.exec(text);
   if (discardMatch && !additionalDiscardMatch) {

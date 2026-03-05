@@ -215,11 +215,42 @@ describe("semantic overlay coverage report", () => {
     );
   });
 
+  it("covers Crystal Ball via scry template without broadening matches", async () => {
+    const payload: CardsIndexPayload = {
+      by_name: {
+        "Crystal Ball": {
+          type_line: "Artifact",
+          oracle_text: "{1}, {T}: Scry 2.",
+        },
+        "Vanilla Adept": {
+          type_line: "Creature — Human",
+          oracle_text: "Flavor only.",
+        },
+      },
+      by_name_norm: {
+        "crystal ball": "Crystal Ball",
+        "vanilla adept": "Vanilla Adept",
+      },
+    };
+    const lookupLocal = createLocalLookup(payload);
+    const entries = [{ name: "Crystal Ball" }, { name: "Vanilla Adept" }];
+    const reportA = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    const reportB = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    expect(reportA).toEqual(reportB);
+    expect(reportA.coveredCards).toBe(1);
+    const noMatch = reportA.reasons.find((r) => r.reasonId === "NO_MATCH_V1_TEMPLATES");
+    expect(noMatch?.examples).toEqual(["Vanilla Adept"]);
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Crystal Ball")).toBeUndefined();
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Vanilla Adept")?.reasonId).toBe(
+      "NO_MATCH_V1_TEMPLATES",
+    );
+  });
+
   it("builds a deterministic priority shortlist for next v1 coverage uplifts", async () => {
     const payload = loadCardsIndex();
     const lookupLocal = createLocalLookup(payload);
     const candidateNames = [
-      "Crystal Ball",
+      "Darksteel Ingot",
       "Elvish Mystic",
       "Millstone",
     ];
@@ -259,7 +290,7 @@ describe("semantic overlay coverage report", () => {
       .map((row) => row.name);
 
     expect(shortlist).toEqual([
-      "Crystal Ball",
+      "Darksteel Ingot",
       "Elvish Mystic",
       "Millstone",
     ]);

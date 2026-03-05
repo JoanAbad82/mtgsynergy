@@ -152,7 +152,7 @@ describe("semantic overlay coverage report", () => {
     ]);
   });
 
-  it("covers Archpriest of Iona via search library template", async () => {
+  it("covers Archpriest of Iona via search library template without affecting nearby matching", async () => {
     const payload: CardsIndexPayload = {
       by_name: {
         "Archpriest of Iona": {
@@ -160,16 +160,27 @@ describe("semantic overlay coverage report", () => {
           oracle_text:
             "Archpriest of Iona gets +1/+1 for each creature you control. {3}{W}{W}: Search your library for a Cleric card, put it onto the battlefield, then shuffle.",
         },
+        "Simple Bear": {
+          type_line: "Creature — Bear",
+          oracle_text: "Flavor only.",
+        },
       },
       by_name_norm: {
         "archpriest of iona": "Archpriest of Iona",
+        "simple bear": "Simple Bear",
       },
     };
     const lookupLocal = createLocalLookup(payload);
-    const entries = [{ name: "Archpriest of Iona" }];
-    const report = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
-    expect(report.coveredCards).toBe(1);
-    expect(report.reasons.find((r) => r.reasonId === "NO_MATCH_V1_TEMPLATES")).toBeUndefined();
-    expect(report.uncoveredNonLand.find((r) => r.name === "Archpriest of Iona")).toBeUndefined();
+    const entries = [{ name: "Archpriest of Iona" }, { name: "Simple Bear" }];
+    const reportA = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    const reportB = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    expect(reportA).toEqual(reportB);
+    expect(reportA.coveredCards).toBe(1);
+    const noMatch = reportA.reasons.find((r) => r.reasonId === "NO_MATCH_V1_TEMPLATES");
+    expect(noMatch?.examples).toEqual(["Simple Bear"]);
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Archpriest of Iona")).toBeUndefined();
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Simple Bear")?.reasonId).toBe(
+      "NO_MATCH_V1_TEMPLATES",
+    );
   });
 });

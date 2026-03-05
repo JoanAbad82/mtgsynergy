@@ -183,4 +183,35 @@ describe("semantic overlay coverage report", () => {
       "NO_MATCH_V1_TEMPLATES",
     );
   });
+
+  it("covers Icy Manipulator via tap-target template without broadening matches", async () => {
+    const payload: CardsIndexPayload = {
+      by_name: {
+        "Icy Manipulator": {
+          type_line: "Artifact",
+          oracle_text: "{1}, {T}: Tap target artifact, creature, or land.",
+        },
+        "Vanilla Adept": {
+          type_line: "Creature — Human",
+          oracle_text: "Flavor only.",
+        },
+      },
+      by_name_norm: {
+        "icy manipulator": "Icy Manipulator",
+        "vanilla adept": "Vanilla Adept",
+      },
+    };
+    const lookupLocal = createLocalLookup(payload);
+    const entries = [{ name: "Icy Manipulator" }, { name: "Vanilla Adept" }];
+    const reportA = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    const reportB = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    expect(reportA).toEqual(reportB);
+    expect(reportA.coveredCards).toBe(1);
+    const noMatch = reportA.reasons.find((r) => r.reasonId === "NO_MATCH_V1_TEMPLATES");
+    expect(noMatch?.examples).toEqual(["Vanilla Adept"]);
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Icy Manipulator")).toBeUndefined();
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Vanilla Adept")?.reasonId).toBe(
+      "NO_MATCH_V1_TEMPLATES",
+    );
+  });
 });

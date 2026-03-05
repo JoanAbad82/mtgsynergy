@@ -214,4 +214,54 @@ describe("semantic overlay coverage report", () => {
       "NO_MATCH_V1_TEMPLATES",
     );
   });
+
+  it("builds a deterministic priority shortlist for next v1 coverage uplifts", async () => {
+    const payload = loadCardsIndex();
+    const lookupLocal = createLocalLookup(payload);
+    const candidateNames = [
+      "Crystal Ball",
+      "Elvish Mystic",
+      "Millstone",
+    ];
+
+    const entries = candidateNames.map((name) => ({ name }));
+    const reportA = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    const reportB = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    expect(reportA).toEqual(reportB);
+
+    const uncovered = reportA.uncoveredNonLand;
+    expect(uncovered.map((r) => r.name).sort()).toEqual([...candidateNames].sort());
+    uncovered.forEach((row) => {
+      expect(row.reasonId).toBe("NO_MATCH_V1_TEMPLATES");
+    });
+
+    // Selection rule: prefer activated abilities, then triggered, then static; tie-break by name.
+    const abilityRank = (text: string) => {
+      if (/\b(when|whenever|at the beginning)\b/i.test(text)) return 2;
+      if (/:/.test(text)) return 1;
+      return 3;
+    };
+
+    const shortlist = candidateNames
+      .map((name) => {
+        const card = payload.by_name?.[name];
+        expect(card).toBeTruthy();
+        expect(/\bland\b/i.test(card?.type_line ?? "")).toBe(false);
+        return {
+          name,
+          rank: abilityRank(card?.oracle_text ?? ""),
+        };
+      })
+      .sort((a, b) => {
+        if (a.rank !== b.rank) return a.rank - b.rank;
+        return a.name.localeCompare(b.name);
+      })
+      .map((row) => row.name);
+
+    expect(shortlist).toEqual([
+      "Crystal Ball",
+      "Elvish Mystic",
+      "Millstone",
+    ]);
+  });
 });

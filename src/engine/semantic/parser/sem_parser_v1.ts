@@ -227,6 +227,13 @@ export function parseSemanticIrV0(input: {
     addUnique(touch, { id: ResourceId.LIFE }, (a, b) => a.id === b.id);
   }
 
+  const tapTargetMatch = /\btap\s+target\b/i.test(text);
+  if (tapTargetMatch) {
+    // Template v1: tap target effects (e.g., "Tap target creature.")
+    doList.push({ action: ActionId.TAP });
+    addUnique(gates, { id: GateId.TARGET_REQUIRED }, (a, b) => a.id === b.id);
+  }
+
   const searchLibraryMatch = /\bsearch\s+your\s+library\b/i.test(text);
   if (searchLibraryMatch) {
     // Template v1: search library effects (e.g., "Search your library for a card...")

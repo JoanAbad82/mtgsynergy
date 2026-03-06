@@ -200,6 +200,14 @@ export function parseSemanticIrV0(input: {
     }
   }
 
+  const millMatch = /\btarget player mills\s+(a|an|one|two|three|four|\d+)\s+cards?\b/i.exec(text);
+  if (millMatch) {
+    // Template v1: mill target player (e.g., "Target player mills two cards.")
+    const n = parseCount(millMatch[1]) ?? 1;
+    doList.push({ action: ActionId.MILL_CARDS, args: [n] });
+    addUnique(gates, { id: GateId.TARGET_REQUIRED }, (a, b) => a.id === b.id);
+  }
+
   const tokenMatch = /create\s+(a|an|one|two|three|four|\d+|x)\s+(treasure|food|blood|clue)\s+tokens?/i.exec(text);
   const genericTokenMatch = /create\s+(a|an|one|two|three|four|\d+|x)\s+([^.]+?)\s+tokens?/i.exec(text);
   const tokenBareMatch = /create\s+(a|an|one|two|three|four|\d+|x)\s+tokens?\b/i.exec(text);

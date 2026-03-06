@@ -179,6 +179,12 @@ export function parseSemanticIrV0(input: {
     doList.push({ action: ActionId.PRODUCE_MANA });
   }
 
+  const addAnyColorManaMatch = /\{t\}:\s*add\s+one\s+mana\s+of\s+any\s+color/i.test(text);
+  if (addAnyColorManaMatch) {
+    // Template v1: add one mana of any color (e.g., "Darksteel Ingot")
+    doList.push({ action: ActionId.PRODUCE_MANA });
+  }
+
   const scryMatch = /scry\s+(a|an|one|two|three|four|\d+)/i.exec(text);
   if (scryMatch) {
     const n = parseCount(scryMatch[1]) ?? 1;

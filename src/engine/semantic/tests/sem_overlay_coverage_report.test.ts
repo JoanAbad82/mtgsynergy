@@ -277,6 +277,37 @@ describe("semantic overlay coverage report", () => {
     );
   });
 
+  it("covers Darksteel Ingot via any-color mana template without broadening matches", async () => {
+    const payload: CardsIndexPayload = {
+      by_name: {
+        "Darksteel Ingot": {
+          type_line: "Artifact",
+          oracle_text: "{T}: Add one mana of any color.",
+        },
+        "Vanilla Adept": {
+          type_line: "Creature — Human",
+          oracle_text: "Flavor only.",
+        },
+      },
+      by_name_norm: {
+        "darksteel ingot": "Darksteel Ingot",
+        "vanilla adept": "Vanilla Adept",
+      },
+    };
+    const lookupLocal = createLocalLookup(payload);
+    const entries = [{ name: "Darksteel Ingot" }, { name: "Vanilla Adept" }];
+    const reportA = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    const reportB = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    expect(reportA).toEqual(reportB);
+    expect(reportA.coveredCards).toBe(1);
+    const noMatch = reportA.reasons.find((r) => r.reasonId === "NO_MATCH_V1_TEMPLATES");
+    expect(noMatch?.examples).toEqual(["Vanilla Adept"]);
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Darksteel Ingot")).toBeUndefined();
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Vanilla Adept")?.reasonId).toBe(
+      "NO_MATCH_V1_TEMPLATES",
+    );
+  });
+
   it("covers Millstone via mill template without broadening matches", async () => {
     const payload: CardsIndexPayload = {
       by_name: {
@@ -312,8 +343,8 @@ describe("semantic overlay coverage report", () => {
     const payload = loadCardsIndex();
     const lookupLocal = createLocalLookup(payload);
     const candidateNames = [
-      "Darksteel Ingot",
       "Gilded Lotus",
+      "Howling Mine",
       "Worn Powerstone",
     ];
 
@@ -352,9 +383,9 @@ describe("semantic overlay coverage report", () => {
       .map((row) => row.name);
 
     expect(shortlist).toEqual([
-      "Darksteel Ingot",
       "Gilded Lotus",
       "Worn Powerstone",
+      "Howling Mine",
     ]);
   });
 });

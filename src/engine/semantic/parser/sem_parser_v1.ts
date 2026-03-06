@@ -173,6 +173,12 @@ export function parseSemanticIrV0(input: {
     addUnique(touch, { id: ResourceId.CARD }, (a, b) => a.id === b.id);
   }
 
+  const addGreenManaMatch = /\{t\}:\s*add\s+\{g\}/i.test(text);
+  if (addGreenManaMatch) {
+    // Template v1: add green mana from tap (e.g., "{T}: Add {G}.")
+    doList.push({ action: ActionId.PRODUCE_MANA });
+  }
+
   const scryMatch = /scry\s+(a|an|one|two|three|four|\d+)/i.exec(text);
   if (scryMatch) {
     const n = parseCount(scryMatch[1]) ?? 1;

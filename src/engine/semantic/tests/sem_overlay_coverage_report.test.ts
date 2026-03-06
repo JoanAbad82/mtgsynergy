@@ -370,6 +370,38 @@ describe("semantic overlay coverage report", () => {
     );
   });
 
+  it("covers Howling Mine via exact wording template without broadening matches", async () => {
+    const payload: CardsIndexPayload = {
+      by_name: {
+        "Howling Mine": {
+          type_line: "Artifact",
+          oracle_text:
+            "At the beginning of each player's draw step, if Howling Mine is untapped, that player draws an additional card.",
+        },
+        "Vanilla Adept": {
+          type_line: "Creature — Human",
+          oracle_text: "Flavor only.",
+        },
+      },
+      by_name_norm: {
+        "howling mine": "Howling Mine",
+        "vanilla adept": "Vanilla Adept",
+      },
+    };
+    const lookupLocal = createLocalLookup(payload);
+    const entries = [{ name: "Howling Mine" }, { name: "Vanilla Adept" }];
+    const reportA = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    const reportB = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    expect(reportA).toEqual(reportB);
+    expect(reportA.coveredCards).toBe(1);
+    const noMatch = reportA.reasons.find((r) => r.reasonId === "NO_MATCH_V1_TEMPLATES");
+    expect(noMatch?.examples).toEqual(["Vanilla Adept"]);
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Howling Mine")).toBeUndefined();
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Vanilla Adept")?.reasonId).toBe(
+      "NO_MATCH_V1_TEMPLATES",
+    );
+  });
+
   it("covers Millstone via mill template without broadening matches", async () => {
     const payload: CardsIndexPayload = {
       by_name: {
@@ -405,7 +437,6 @@ describe("semantic overlay coverage report", () => {
     const payload = loadCardsIndex();
     const lookupLocal = createLocalLookup(payload);
     const candidateNames = [
-      "Howling Mine",
     ];
 
     const entries = candidateNames.map((name) => ({ name }));
@@ -443,7 +474,6 @@ describe("semantic overlay coverage report", () => {
       .map((row) => row.name);
 
     expect(shortlist).toEqual([
-      "Howling Mine",
     ]);
   });
 });

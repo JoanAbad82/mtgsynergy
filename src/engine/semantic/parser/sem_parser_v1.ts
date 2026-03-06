@@ -173,6 +173,16 @@ export function parseSemanticIrV0(input: {
     addUnique(touch, { id: ResourceId.CARD }, (a, b) => a.id === b.id);
   }
 
+  const howlingMineMatch =
+    /^at the beginning of each player's draw step, if howling mine is untapped, that player draws an additional card\.?$/i.test(
+      text,
+    );
+  if (howlingMineMatch) {
+    // Template v1: Howling Mine exact wording.
+    doList.push({ action: ActionId.DRAW_CARDS, args: [1] });
+    addUnique(touch, { id: ResourceId.CARD }, (a, b) => a.id === b.id);
+  }
+
   const addGreenManaMatch = /\{t\}:\s*add\s+\{g\}/i.test(text);
   if (addGreenManaMatch) {
     // Template v1: add green mana from tap (e.g., "{T}: Add {G}.")

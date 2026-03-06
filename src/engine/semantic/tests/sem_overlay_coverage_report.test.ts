@@ -277,13 +277,44 @@ describe("semantic overlay coverage report", () => {
     );
   });
 
+  it("covers Millstone via mill template without broadening matches", async () => {
+    const payload: CardsIndexPayload = {
+      by_name: {
+        "Millstone": {
+          type_line: "Artifact",
+          oracle_text: "{2}, {T}: Target player mills two cards.",
+        },
+        "Vanilla Adept": {
+          type_line: "Creature — Human",
+          oracle_text: "Flavor only.",
+        },
+      },
+      by_name_norm: {
+        "millstone": "Millstone",
+        "vanilla adept": "Vanilla Adept",
+      },
+    };
+    const lookupLocal = createLocalLookup(payload);
+    const entries = [{ name: "Millstone" }, { name: "Vanilla Adept" }];
+    const reportA = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    const reportB = await buildSemanticCoverageReport({ entries, lookup: lookupLocal });
+    expect(reportA).toEqual(reportB);
+    expect(reportA.coveredCards).toBe(1);
+    const noMatch = reportA.reasons.find((r) => r.reasonId === "NO_MATCH_V1_TEMPLATES");
+    expect(noMatch?.examples).toEqual(["Vanilla Adept"]);
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Millstone")).toBeUndefined();
+    expect(reportA.uncoveredNonLand.find((r) => r.name === "Vanilla Adept")?.reasonId).toBe(
+      "NO_MATCH_V1_TEMPLATES",
+    );
+  });
+
   it("builds a deterministic priority shortlist for next v1 coverage uplifts", async () => {
     const payload = loadCardsIndex();
     const lookupLocal = createLocalLookup(payload);
     const candidateNames = [
       "Darksteel Ingot",
       "Gilded Lotus",
-      "Millstone",
+      "Worn Powerstone",
     ];
 
     const entries = candidateNames.map((name) => ({ name }));
@@ -323,7 +354,7 @@ describe("semantic overlay coverage report", () => {
     expect(shortlist).toEqual([
       "Darksteel Ingot",
       "Gilded Lotus",
-      "Millstone",
+      "Worn Powerstone",
     ]);
   });
 });

@@ -174,7 +174,7 @@ export function parseSemanticIrV0(input: {
   }
 
   const howlingMineMatch =
-    /^at the beginning of each player's draw step, if howling mine is untapped, that player draws an additional card\.?$/i.test(
+    /^at the beginning of each player's draw step, if (?:howling mine|this artifact) is untapped, that player draws an additional card\.?$/i.test(
       text,
     );
   if (howlingMineMatch) {

@@ -376,7 +376,7 @@ describe("semantic overlay coverage report", () => {
         "Howling Mine": {
           type_line: "Artifact",
           oracle_text:
-            "At the beginning of each player's draw step, if Howling Mine is untapped, that player draws an additional card.",
+            "At the beginning of each player's draw step, if this artifact is untapped, that player draws an additional card.",
         },
         "Vanilla Adept": {
           type_line: "Creature — Human",

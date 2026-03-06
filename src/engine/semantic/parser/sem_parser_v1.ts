@@ -179,6 +179,12 @@ export function parseSemanticIrV0(input: {
     doList.push({ action: ActionId.PRODUCE_MANA });
   }
 
+  const addColorlessTwoManaMatch = /(?:^|\s)\{t\}:\s*add\s+\{c\}\{c\}(?:\.|$)/i.test(text);
+  if (addColorlessTwoManaMatch) {
+    // Template v1: add two colorless mana (e.g., "Worn Powerstone")
+    doList.push({ action: ActionId.PRODUCE_MANA });
+  }
+
   const addAnyColorManaMatch = /\{t\}:\s*add\s+one\s+mana\s+of\s+any\s+color/i.test(text);
   if (addAnyColorManaMatch) {
     // Template v1: add one mana of any color (e.g., "Darksteel Ingot")

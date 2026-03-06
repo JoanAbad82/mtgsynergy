@@ -185,6 +185,13 @@ export function parseSemanticIrV0(input: {
     doList.push({ action: ActionId.PRODUCE_MANA });
   }
 
+  const addThreeAnyOneColorManaMatch =
+    /\{t\}:\s*add\s+three\s+mana\s+of\s+any\s+one\s+color/i.test(text);
+  if (addThreeAnyOneColorManaMatch) {
+    // Template v1: add three mana of any one color (e.g., "Gilded Lotus")
+    doList.push({ action: ActionId.PRODUCE_MANA });
+  }
+
   const scryMatch = /scry\s+(a|an|one|two|three|four|\d+)/i.exec(text);
   if (scryMatch) {
     const n = parseCount(scryMatch[1]) ?? 1;

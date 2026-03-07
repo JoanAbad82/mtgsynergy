@@ -1,0 +1,144 @@
+{
+  "metadata": {
+    "document_id": "sem_ontology_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "A2.8.1",
+    "source_note": "Derived strictly from sem_anchor_corpus_matrix_v1 base corpus (validated-runtime rows only)."
+  },
+  "scope_rules": {
+    "base_corpus_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "deterministic_contract": true,
+    "runtime_wording_priority": true,
+    "allows_future_extension": true
+  },
+  "derived_from": {
+    "source_matrix_file": "src/engine/semantic/contract/sem_anchor_corpus_matrix_v1.json",
+    "source_corpus_group": "base",
+    "source_cards": [
+      "Elvish Mystic",
+      "Darksteel Ingot",
+      "Gilded Lotus",
+      "Worn Powerstone",
+      "Crystal Ball",
+      "Millstone",
+      "Howling Mine"
+    ]
+  },
+  "ontology": {
+    "abilityKinds": [
+      {
+        "id": "Activated",
+        "label": "Activated",
+        "justified_by_cards": [
+          "Elvish Mystic",
+          "Darksteel Ingot",
+          "Gilded Lotus",
+          "Worn Powerstone",
+          "Crystal Ball",
+          "Millstone"
+        ]
+      },
+      {
+        "id": "ConditionalTriggered",
+        "label": "ConditionalTriggered",
+        "justified_by_cards": ["Howling Mine"]
+      }
+    ],
+    "relationKinds": [
+      {
+        "id": "produce",
+        "label": "produce",
+        "justified_by_cards": [
+          "Elvish Mystic",
+          "Darksteel Ingot",
+          "Gilded Lotus",
+          "Worn Powerstone",
+          "Crystal Ball",
+          "Millstone"
+        ]
+      },
+      {
+        "id": "trigger",
+        "label": "trigger",
+        "justified_by_cards": ["Howling Mine"]
+      },
+      {
+        "id": "depend",
+        "label": "depend",
+        "justified_by_cards": ["Howling Mine"]
+      }
+    ],
+    "eventTypes": [
+      {
+        "id": "AT_BEGINNING_OF_EACH_PLAYERS_DRAW_STEP",
+        "label": "AT_BEGINNING_OF_EACH_PLAYERS_DRAW_STEP",
+        "justified_by_cards": ["Howling Mine"]
+      }
+    ],
+    "effectTypes": [
+      {
+        "id": "ADD_MANA",
+        "label": "ADD_MANA",
+        "justified_by_cards": [
+          "Elvish Mystic",
+          "Darksteel Ingot",
+          "Gilded Lotus",
+          "Worn Powerstone"
+        ]
+      },
+      {
+        "id": "SCRY",
+        "label": "SCRY",
+        "justified_by_cards": ["Crystal Ball"]
+      },
+      {
+        "id": "MILL_CARDS",
+        "label": "MILL_CARDS",
+        "justified_by_cards": ["Millstone"]
+      },
+      {
+        "id": "DRAW_CARDS",
+        "label": "DRAW_CARDS",
+        "justified_by_cards": ["Howling Mine"]
+      }
+    ],
+    "resourceTypes": [
+      {
+        "id": "MANA",
+        "label": "MANA",
+        "justified_by_cards": [
+          "Elvish Mystic",
+          "Darksteel Ingot",
+          "Gilded Lotus",
+          "Worn Powerstone"
+        ]
+      },
+      {
+        "id": "LIBRARY",
+        "label": "LIBRARY",
+        "justified_by_cards": ["Crystal Ball", "Millstone"]
+      },
+      {
+        "id": "CARD",
+        "label": "CARD",
+        "justified_by_cards": ["Howling Mine"]
+      }
+    ],
+    "conditionKinds": [
+      {
+        "id": "SELF_UNTAPPED",
+        "label": "SELF_UNTAPPED",
+        "justified_by_cards": ["Howling Mine"]
+      }
+    ]
+  },
+  "excluded_for_now": {
+    "relationKinds": ["consume", "guardedFollowUp"],
+    "eventTypes": ["CREATURE_ENTERS_BATTLEFIELD", "CREATURE_DIES", "CAST_CREATURE_SPELL"],
+    "effectTypes": ["DEAL_DAMAGE", "GAIN_LIFE", "CREATE_TREASURE"],
+    "conditionKinds": ["OPTIONAL_PAYMENT", "SACRIFICE_REQUIRED"]
+  }
+}

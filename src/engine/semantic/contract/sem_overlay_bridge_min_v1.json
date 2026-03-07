@@ -1,0 +1,101 @@
+{
+  "metadata": {
+    "document_id": "sem_overlay_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-A2.8-overlay-bridge-v1",
+    "source_note": "Derived strictly from A2.8 contracts and Rakdos overlay diagnosis; single local bridge only."
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "lowering_compatible": true,
+    "overlay_runtime_unchanged": true,
+    "deterministic_contract": true,
+    "no_global_scoring_changes": true,
+    "textual_evidence_first": true,
+    "no_cross_card_inference": true,
+    "allows_local_bridge_only": true
+  },
+  "derived_from": {
+    "source_relation_rules_file": "src/engine/semantic/contract/sem_relation_rules_min_v1.json",
+    "source_metrics_file": "src/engine/semantic/contract/sem_deck_relation_metrics_min_v1.json",
+    "source_validation_policy_file": "src/engine/semantic/contract/sem_validation_policy_min_v1.json",
+    "source_ability_ir_file": "src/engine/semantic/contract/sem_ability_ir_min_v1.json",
+    "source_diagnostic_test": "src/engine/semantic/tests/sem_overlay_rakdos_signal_diagnose.test.ts",
+    "diagnosed_problem_summary": "SACRIFICE appears as excess producer while CREATURE_DIES appears as orphan listener; ENTERS_BATTLEFIELD dominates top edges."
+  },
+  "bridge_kind": {
+    "id": "sacrifice_creature_enables_creature_dies",
+    "label": "sacrifice_creature -> creature_dies",
+    "purpose": "Close local SACRIFICE to CREATURE_DIES pairing without altering global scoring.",
+    "bridge_from": "SACRIFICE",
+    "bridge_to": "CREATURE_DIES",
+    "allowed_evidence": [
+      "ability_ir.cost",
+      "ability_ir.effects",
+      "card_local_semantic_signals",
+      "relation_rules.consume",
+      "relation_rules.depend"
+    ],
+    "explicitly_not": [
+      "cross_card_inference",
+      "scoring_boost",
+      "leaves_battlefield_expansion",
+      "draw_life_gain_bridging"
+    ]
+  },
+  "bridge_rules": [
+    {
+      "rule_id": "bridge_only_when_sacrifice_is_creature_specific",
+      "applies_when": "SACRIFICE signal is explicitly tied to creature text (not generic sacrifice).",
+      "emits": "local_bridge_hint(SACRIFICE -> CREATURE_DIES)",
+      "guardrails": "Do not emit for ambiguous or non-creature sacrifice.",
+      "notes": "Textual specificity required."
+    },
+    {
+      "rule_id": "bridge_emits_local_creature_dies_support",
+      "applies_when": "Local bridge hint is present.",
+      "emits": "support_only(CREATURE_DIES listener pairing)",
+      "guardrails": "Does not emit final edge; only enables local pairing.",
+      "notes": "No edge scoring changes."
+    },
+    {
+      "rule_id": "bridge_does_not_modify_global_ranking",
+      "applies_when": "Bridge rules are applied.",
+      "emits": "no-op on global ranking/weights",
+      "guardrails": "No changes to scoring, ordering, or SOS.",
+      "notes": "Bridge is strictly local."
+    }
+  ],
+  "diagnostic_alignment": {
+    "observed_top_edge_family": "ENTERS_BATTLEFIELD dominates top edges in Rakdos diagnostic.",
+    "observed_orphan_family": "CREATURE_DIES appears as orphan listener.",
+    "observed_excess_family": "SACRIFICE, DRAW, LIFE_GAIN appear as excess producers.",
+    "expected_effect_of_bridge": "Reduce SACRIFICE -> CREATURE_DIES fracture by enabling local pairing only.",
+    "non_goals": [
+      "Improve DRAW directly",
+      "Improve LIFE_GAIN directly",
+      "Modify global ranking",
+      "Resolve full leaves_battlefield family"
+    ]
+  },
+  "excluded_for_now": {
+    "bridge_candidates": [
+      "draw_enables_life_gain",
+      "leaves_battlefield_enables_token_value",
+      "artifact_sacrifice_enables_generic_value"
+    ],
+    "constructs": [
+      "multi_step_bridge_chain",
+      "global_pairing_rewrite",
+      "ranking_reweight"
+    ],
+    "reasons": [
+      "Not supported by base corpus",
+      "Avoids heuristic inflation",
+      "Deferred to later phases"
+    ]
+  }
+}

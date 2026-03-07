@@ -1,0 +1,142 @@
+{
+  "metadata": {
+    "document_id": "sem_deck_relation_metrics_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "A2.8.5",
+    "source_note": "Derived strictly from A2.8 contracts and base corpus only; no expansion or general MTG semantics."
+  },
+  "scope_rules": {
+    "base_corpus_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "ability_ir_compatible": true,
+    "relation_rules_compatible": true,
+    "deterministic_contract": true,
+    "explanatory_metrics_only": true,
+    "no_structural_engine_changes": true,
+    "no_ui_contract_changes": true
+  },
+  "derived_from": {
+    "source_matrix_file": "src/engine/semantic/contract/sem_anchor_corpus_matrix_v1.json",
+    "source_ontology_file": "src/engine/semantic/contract/sem_ontology_min_v1.json",
+    "source_ability_ir_file": "src/engine/semantic/contract/sem_ability_ir_min_v1.json",
+    "source_relation_rules_file": "src/engine/semantic/contract/sem_relation_rules_min_v1.json",
+    "source_corpus_group": "base",
+    "source_cards": [
+      "Elvish Mystic",
+      "Darksteel Ingot",
+      "Gilded Lotus",
+      "Worn Powerstone",
+      "Crystal Ball",
+      "Millstone",
+      "Howling Mine"
+    ]
+  },
+  "metric_kinds": {
+    "basicEnablement": {
+      "id": "basicEnablement",
+      "label": "basicEnablement",
+      "definition": "Checks whether recognized abilities present the minimal causal structure expected by the contract.",
+      "consumes": [
+        "ability_ir.kind",
+        "ability_ir.cost",
+        "ability_ir.trigger_event",
+        "ability_ir.condition",
+        "ability_ir.effects",
+        "relation_rules.trigger",
+        "relation_rules.depend"
+      ],
+      "explicitly_not": ["deck_power", "win_rate", "combat_math", "deck_consistency"]
+    },
+    "basicProduceConsumeClosure": {
+      "id": "basicProduceConsumeClosure",
+      "label": "basicProduceConsumeClosure",
+      "definition": "Checks for explicit producer/consumer or dependency signals within the deck slice.",
+      "consumes": [
+        "ability_ir.effects",
+        "ability_ir.cost",
+        "relation_rules.produce",
+        "relation_rules.consume",
+        "relation_rules.depend"
+      ],
+      "explicitly_not": ["cross_card_engine_strength", "combo_detection", "sps_score"]
+    }
+  },
+  "metric_rules": [
+    {
+      "rule_id": "MR_ENABLEMENT_MIN_STRUCTURE",
+      "applies_to": "basicEnablement",
+      "computes": "Qualitative enablement reading for covered anchors.",
+      "using_only": ["ability_ir.kind", "ability_ir.cost", "ability_ir.trigger_event", "ability_ir.condition", "ability_ir.effects"],
+      "notes": "Checks minimal structure without deeper parsing."
+    },
+    {
+      "rule_id": "MR_ENABLEMENT_TRIGGER_DEPEND",
+      "applies_to": "basicEnablement",
+      "computes": "Trigger/condition legibility for triggered abilities.",
+      "using_only": ["ability_ir.trigger_event", "ability_ir.condition", "relation_rules.trigger", "relation_rules.depend"],
+      "notes": "Separates trigger vs condition."
+    },
+    {
+      "rule_id": "MR_CLOSURE_PRODUCE_CONSUME",
+      "applies_to": "basicProduceConsumeClosure",
+      "computes": "Presence of explicit produce/consume signals in the deck slice.",
+      "using_only": ["ability_ir.effects", "ability_ir.cost", "relation_rules.produce", "relation_rules.consume"],
+      "notes": "Consume is expected to be sparse in current base corpus."
+    },
+    {
+      "rule_id": "MR_CLOSURE_DEPEND_ONLY",
+      "applies_to": "basicProduceConsumeClosure",
+      "computes": "Dependency signals when consume is absent.",
+      "using_only": ["ability_ir.condition", "relation_rules.depend"],
+      "notes": "Keeps closure reading modest when consume is missing."
+    }
+  ],
+  "base_deck_level_examples": [
+    {
+      "example_id": "minimal_mana_slice",
+      "included_cards": ["Elvish Mystic", "Darksteel Ingot", "Gilded Lotus", "Worn Powerstone"],
+      "expected_metric_reading": {
+        "basicEnablement": "high for covered anchors",
+        "basicProduceConsumeClosure": "limited by absence of consume examples",
+        "explanation": "Explicit ADD_MANA effects are present; no explicit consume signals yet."
+      }
+    },
+    {
+      "example_id": "utility_artifact_slice",
+      "included_cards": ["Crystal Ball", "Millstone"],
+      "expected_metric_reading": {
+        "basicEnablement": "mixed due to partial opaque remainder",
+        "basicProduceConsumeClosure": "weak in current base corpus",
+        "explanation": "Effects are explicit (SCRY/MILL) but costs/targets are omitted in IR."
+      }
+    },
+    {
+      "example_id": "howling_mine_slice",
+      "included_cards": ["Howling Mine"],
+      "expected_metric_reading": {
+        "basicEnablement": "trigger-condition legible",
+        "basicProduceConsumeClosure": "not enough explicit closure yet",
+        "explanation": "Trigger and condition are explicit; no consume or cross-card closure."
+      }
+    }
+  ],
+  "excluded_for_now": {
+    "metric_cases": [
+      "global_semantic_score",
+      "cross_card_engine_strength",
+      "competitive_power_estimate"
+    ],
+    "constructs": [
+      "deck_relation_graph",
+      "probabilistic_line_simulation",
+      "heuristic_combo_score"
+    ],
+    "reasons": [
+      "Not present in base corpus",
+      "Requires richer parsing",
+      "Deferred to A2.8.6+"
+    ]
+  }
+}

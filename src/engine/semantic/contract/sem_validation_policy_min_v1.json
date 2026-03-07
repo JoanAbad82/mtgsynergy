@@ -1,0 +1,150 @@
+{
+  "metadata": {
+    "document_id": "sem_validation_policy_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "A2.8.6",
+    "source_note": "Derived strictly from A2.8 contracts and base corpus only; no expansion or general MTG semantics."
+  },
+  "scope_rules": {
+    "base_corpus_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "lowering_compatible": true,
+    "deterministic_contract": true,
+    "runtime_wording_priority": true,
+    "lightweight_policy": true,
+    "no_structural_engine_changes": true,
+    "no_ci_changes_in_this_contract": true
+  },
+  "derived_from": {
+    "source_matrix_file": "src/engine/semantic/contract/sem_anchor_corpus_matrix_v1.json",
+    "source_ontology_file": "src/engine/semantic/contract/sem_ontology_min_v1.json",
+    "source_ability_ir_file": "src/engine/semantic/contract/sem_ability_ir_min_v1.json",
+    "source_relation_rules_file": "src/engine/semantic/contract/sem_relation_rules_min_v1.json",
+    "source_metrics_file": "src/engine/semantic/contract/sem_deck_relation_metrics_min_v1.json",
+    "source_corpus_group": "base",
+    "source_cards": [
+      "Elvish Mystic",
+      "Darksteel Ingot",
+      "Gilded Lotus",
+      "Worn Powerstone",
+      "Crystal Ball",
+      "Millstone",
+      "Howling Mine"
+    ],
+    "runtime_priority_case": "Howling Mine wording must align with runtime cards_index."
+  },
+  "validation_layers": {
+    "focused_unit_validation": {
+      "id": "focused_unit_validation",
+      "label": "Focused unit validation",
+      "goal": "Protect canonical AbilityIR outputs for the base corpus.",
+      "required_when": "Any change to lowering or AbilityIR contracts.",
+      "checks": [
+        "Lowering outputs match base skeletons",
+        "Opaque remainder preserved when specified",
+        "Null on unsupported cards"
+      ]
+    },
+    "snapshot_or_gold_validation": {
+      "id": "snapshot_or_gold_validation",
+      "label": "Snapshot / gold validation",
+      "goal": "Detect drift in canonical JSON contracts and expected outputs.",
+      "required_when": "Any change to A2.8 contract files or canonical skeletons.",
+      "checks": [
+        "Contract JSON remains stable",
+        "Skeletons unchanged unless explicitly approved"
+      ]
+    },
+    "runtime_oracle_validation": {
+      "id": "runtime_oracle_validation",
+      "label": "Runtime oracle validation",
+      "goal": "Ensure wording-sensitive anchors match runtime cards_index.",
+      "required_when": "Any change touching wording-dependent anchors or oracle text sources.",
+      "checks": [
+        "Runtime wording match for Howling Mine",
+        "No fallback to synthetic wording when runtime differs"
+      ]
+    },
+    "visible_postdeploy_validation": {
+      "id": "visible_postdeploy_validation",
+      "label": "Visible postdeploy validation",
+      "goal": "Prevent visible regressions in coverage, audit, or ordering.",
+      "required_when": "Any change that could alter visible semantic outputs.",
+      "checks": [
+        "Coverage/audit outputs stable",
+        "Ordering and labels stable"
+      ]
+    }
+  },
+  "regression_rules": [
+    {
+      "rule_id": "RR_IR_CANONICAL_STABILITY",
+      "protects": "AbilityIR skeletons and derived outputs",
+      "detects": "Silent drift in lowering or contract fields",
+      "minimum_evidence": "Focused unit validation or gold snapshot update",
+      "notes": "No silent changes to canonical IR."
+    },
+    {
+      "rule_id": "RR_RUNTIME_WORDING_PRIORITY",
+      "protects": "Wording-sensitive anchors",
+      "detects": "Mismatch between runtime cards_index and fixtures",
+      "minimum_evidence": "Runtime oracle validation for affected cards",
+      "notes": "Runtime oracle text is authoritative."
+    },
+    {
+      "rule_id": "RR_VISIBLE_OUTPUT_STABILITY",
+      "protects": "Coverage/audit/ordering visibility",
+      "detects": "Any visible change in outputs",
+      "minimum_evidence": "Visible postdeploy validation when triggered",
+      "notes": "Do not regress visible diagnostics."
+    },
+    {
+      "rule_id": "RR_DETERMINISM_REQUIRED",
+      "protects": "Deterministic behavior",
+      "detects": "Non-deterministic outputs across runs",
+      "minimum_evidence": "Repeatable unit checks",
+      "notes": "Determinism is a hard requirement."
+    }
+  ],
+  "trigger_conditions_for_postdeploy_validation": [
+    {
+      "trigger": "Change alters runtime semantic outputs for base corpus",
+      "requires_postdeploy": true,
+      "rationale": "Visible changes must be validated postdeploy."
+    },
+    {
+      "trigger": "Change touches cards_index wording dependence",
+      "requires_postdeploy": true,
+      "rationale": "Runtime oracle wording can drift independently."
+    },
+    {
+      "trigger": "Change affects coverage/audit/ordering visibility",
+      "requires_postdeploy": true,
+      "rationale": "Protect visible diagnostics and ordering."
+    },
+    {
+      "trigger": "Pure contract/doc change with no runtime impact",
+      "requires_postdeploy": false,
+      "rationale": "No need for postdeploy validation."
+    }
+  ],
+  "excluded_for_now": {
+    "policy_cases": [
+      "full_bulk_semantic_audit",
+      "always_on_prod_probe",
+      "exhaustive_dataset_diff"
+    ],
+    "constructs": [
+      "telemetry_dashboard",
+      "continuous_runtime_monitor",
+      "global_oracle_drift_scanner"
+    ],
+    "reasons": [
+      "Not required for base corpus",
+      "Avoids heavy process",
+      "Deferred to future phases"
+    ]
+  }
+}

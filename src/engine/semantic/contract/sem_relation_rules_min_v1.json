@@ -1,0 +1,215 @@
+{
+  "metadata": {
+    "document_id": "sem_relation_rules_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "A2.8.4",
+    "source_note": "Derived strictly from A2.8 contracts and base corpus only; no expansion or general MTG semantics."
+  },
+  "scope_rules": {
+    "base_corpus_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "ability_ir_compatible": true,
+    "deterministic_contract": true,
+    "runtime_wording_priority": true,
+    "heuristic_boundary_explicit": true
+  },
+  "derived_from": {
+    "source_matrix_file": "src/engine/semantic/contract/sem_anchor_corpus_matrix_v1.json",
+    "source_ontology_file": "src/engine/semantic/contract/sem_ontology_min_v1.json",
+    "source_ability_ir_file": "src/engine/semantic/contract/sem_ability_ir_min_v1.json",
+    "source_corpus_group": "base",
+    "source_cards": [
+      "Elvish Mystic",
+      "Darksteel Ingot",
+      "Gilded Lotus",
+      "Worn Powerstone",
+      "Crystal Ball",
+      "Millstone",
+      "Howling Mine"
+    ]
+  },
+  "relation_kinds": {
+    "produce": {
+      "id": "produce",
+      "label": "produce",
+      "definition": "An effect explicitly yields a recognized action/resource.",
+      "allowed_sources": ["effect"],
+      "not_allowed_as": ["consume", "depend", "trigger", "guardedFollowUp", "contextOnly"]
+    },
+    "consume": {
+      "id": "consume",
+      "label": "consume",
+      "definition": "A cost explicitly pays or gives up something to enable the effect.",
+      "allowed_sources": ["cost"],
+      "not_allowed_as": ["produce", "depend", "trigger", "guardedFollowUp", "contextOnly"]
+    },
+    "depend": {
+      "id": "depend",
+      "label": "depend",
+      "definition": "A condition gates an effect without being a cost.",
+      "allowed_sources": ["condition"],
+      "not_allowed_as": ["produce", "consume", "trigger", "guardedFollowUp", "contextOnly"]
+    },
+    "trigger": {
+      "id": "trigger",
+      "label": "trigger",
+      "definition": "A trigger_event activates the ability.",
+      "allowed_sources": ["trigger_event"],
+      "not_allowed_as": ["produce", "consume", "depend", "guardedFollowUp", "contextOnly"]
+    },
+    "guardedFollowUp": {
+      "id": "guardedFollowUp",
+      "label": "guardedFollowUp",
+      "definition": "A follow-up effect happens only if a prior step succeeds.",
+      "allowed_sources": ["guarded_follow_up"],
+      "not_allowed_as": ["produce", "consume", "depend", "trigger", "contextOnly"]
+    },
+    "contextOnly": {
+      "id": "contextOnly",
+      "label": "contextOnly",
+      "definition": "Contextual hint not supported by recognized text signals.",
+      "allowed_sources": ["effect", "cost", "trigger_event", "condition", "guarded_follow_up"],
+      "not_allowed_as": ["produce", "consume", "depend", "trigger", "guardedFollowUp"]
+    }
+  },
+  "classification_rules": [
+    {
+      "rule_id": "RR_PRODUCE_FROM_EFFECT",
+      "applies_when": "An effect explicitly yields a recognized action/resource in AbilityIR.",
+      "classify_as": "produce",
+      "notes": "Textual effect is the anchor; no inference."
+    },
+    {
+      "rule_id": "RR_CONSUME_FROM_COST",
+      "applies_when": "A cost precedes and enables an effect in AbilityIR.",
+      "classify_as": "consume",
+      "notes": "Only when cost is explicitly present."
+    },
+    {
+      "rule_id": "RR_DEPEND_FROM_CONDITION",
+      "applies_when": "A condition gates an effect without being a cost.",
+      "classify_as": "depend",
+      "notes": "Condition is textual and explicit."
+    },
+    {
+      "rule_id": "RR_TRIGGER_FROM_EVENT",
+      "applies_when": "A trigger_event activates the ability frame.",
+      "classify_as": "trigger",
+      "notes": "Trigger is an explicit event, not a condition."
+    },
+    {
+      "rule_id": "RR_GUARDED_FOLLOW_UP",
+      "applies_when": "guarded_follow_up exists and depends on a prior step.",
+      "classify_as": "guardedFollowUp",
+      "notes": "Reserved for later; null in base corpus."
+    },
+    {
+      "rule_id": "RR_CONTEXT_ONLY_FALLBACK",
+      "applies_when": "No explicit signal supports a relation.",
+      "classify_as": "contextOnly",
+      "notes": "Heuristic boundary; not a hard relation."
+    }
+  ],
+  "base_corpus_examples": [
+    {
+      "source_card": "Elvish Mystic",
+      "relation_examples": [
+        {
+          "from": "effect.ADD_MANA",
+          "to": "resource.MANA",
+          "classify_as": "produce",
+          "confidence_note": "Explicit ADD_MANA effect."
+        }
+      ]
+    },
+    {
+      "source_card": "Darksteel Ingot",
+      "relation_examples": [
+        {
+          "from": "effect.ADD_MANA",
+          "to": "resource.MANA",
+          "classify_as": "produce",
+          "confidence_note": "Explicit ADD_MANA effect; static clause excluded."
+        }
+      ]
+    },
+    {
+      "source_card": "Gilded Lotus",
+      "relation_examples": [
+        {
+          "from": "effect.ADD_MANA",
+          "to": "resource.MANA",
+          "classify_as": "produce",
+          "confidence_note": "Explicit ADD_MANA effect."
+        }
+      ]
+    },
+    {
+      "source_card": "Worn Powerstone",
+      "relation_examples": [
+        {
+          "from": "effect.ADD_MANA",
+          "to": "resource.MANA",
+          "classify_as": "produce",
+          "confidence_note": "Explicit ADD_MANA effect; ETB tapped excluded."
+        }
+      ]
+    },
+    {
+      "source_card": "Crystal Ball",
+      "relation_examples": [
+        {
+          "from": "effect.SCRY",
+          "to": "resource.LIBRARY",
+          "classify_as": "produce",
+          "confidence_note": "Explicit SCRY effect."
+        }
+      ]
+    },
+    {
+      "source_card": "Millstone",
+      "relation_examples": [
+        {
+          "from": "effect.MILL_CARDS",
+          "to": "resource.LIBRARY",
+          "classify_as": "produce",
+          "confidence_note": "Explicit MILL_CARDS effect."
+        }
+      ]
+    },
+    {
+      "source_card": "Howling Mine",
+      "relation_examples": [
+        {
+          "from": "trigger_event.AT_BEGINNING_OF_EACH_PLAYERS_DRAW_STEP",
+          "to": "ability",
+          "classify_as": "trigger",
+          "confidence_note": "Explicit trigger_event."
+        },
+        {
+          "from": "condition.SELF_UNTAPPED",
+          "to": "effect.DRAW_CARDS",
+          "classify_as": "depend",
+          "confidence_note": "Explicit condition gates effect."
+        },
+        {
+          "from": "unmodeled_context",
+          "to": "relation",
+          "classify_as": "contextOnly",
+          "confidence_note": "Boundary marker; no inferred relation."
+        }
+      ]
+    }
+  ],
+  "excluded_for_now": {
+    "relation_cases": ["cross_card_inference", "soft_synergy", "produce_consume_closure"],
+    "constructs": ["DeckRelationGraph", "TargetResolution", "ValueRefChains", "ModalBranches"],
+    "reasons": [
+      "Not present in base corpus",
+      "Requires richer parsing",
+      "Deferred to A2.8.5+"
+    ]
+  }
+}

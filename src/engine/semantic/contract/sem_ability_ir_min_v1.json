@@ -1,0 +1,235 @@
+{
+  "metadata": {
+    "document_id": "sem_ability_ir_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "A2.8.2",
+    "source_note": "Derived strictly from sem_anchor_corpus_matrix_v1 base corpus and sem_ontology_min_v1."
+  },
+  "scope_rules": {
+    "base_corpus_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "deterministic_contract": true,
+    "runtime_wording_priority": true,
+    "allows_partial_lowering": true,
+    "allows_opaque_remainder": true,
+    "no_clause_tree_yet": true
+  },
+  "derived_from": {
+    "source_matrix_file": "src/engine/semantic/contract/sem_anchor_corpus_matrix_v1.json",
+    "source_ontology_file": "src/engine/semantic/contract/sem_ontology_min_v1.json",
+    "source_corpus_group": "base",
+    "source_cards": [
+      "Elvish Mystic",
+      "Darksteel Ingot",
+      "Gilded Lotus",
+      "Worn Powerstone",
+      "Crystal Ball",
+      "Millstone",
+      "Howling Mine"
+    ]
+  },
+  "ability_ir_contract": {
+    "fields_order": [
+      "kind",
+      "cost",
+      "trigger_event",
+      "condition",
+      "effects",
+      "guarded_follow_up",
+      "opaque_remainder",
+      "metadata"
+    ],
+    "rules": [
+      "kind: required",
+      "cost: optional, null or array",
+      "trigger_event: optional, null or string",
+      "condition: optional, null or string",
+      "effects: required, ordered array",
+      "guarded_follow_up: optional, null or minimal object",
+      "opaque_remainder: optional, null or string",
+      "metadata: required, minimal stable object"
+    ]
+  },
+  "field_rules": [
+    {
+      "field": "kind",
+      "required": true,
+      "shape": "string (abilityKinds)",
+      "notes": "Only kinds present in sem_ontology_min_v1.json."
+    },
+    {
+      "field": "cost",
+      "required": false,
+      "shape": "null | string[]",
+      "notes": "Base corpus uses TAP or null; no rich cost model yet."
+    },
+    {
+      "field": "trigger_event",
+      "required": false,
+      "shape": "null | string",
+      "notes": "Only eventTypes present in sem_ontology_min_v1.json."
+    },
+    {
+      "field": "condition",
+      "required": false,
+      "shape": "null | string",
+      "notes": "Only conditionKinds present in sem_ontology_min_v1.json."
+    },
+    {
+      "field": "effects",
+      "required": true,
+      "shape": "array of {type, detail}",
+      "notes": "type must exist in sem_ontology_min_v1.json; order preserved."
+    },
+    {
+      "field": "guarded_follow_up",
+      "required": false,
+      "shape": "null | object",
+      "notes": "Reserved; null for all base cards in A2.8.2."
+    },
+    {
+      "field": "opaque_remainder",
+      "required": false,
+      "shape": "null | string",
+      "notes": "Short note for deliberate partial coverage."
+    },
+    {
+      "field": "metadata",
+      "required": true,
+      "shape": "object {source_card, corpus_group, ability_slot}",
+      "notes": "Minimal stable provenance only."
+    }
+  ],
+  "base_card_skeletons": [
+    {
+      "source_row_ref": "sem_anchor_corpus_matrix_v1.json#Elvish Mystic",
+      "ability_ir_min": {
+        "kind": "Activated",
+        "cost": ["TAP"],
+        "trigger_event": null,
+        "condition": null,
+        "effects": [{ "type": "ADD_MANA", "detail": "{G}" }],
+        "guarded_follow_up": null,
+        "opaque_remainder": null,
+        "metadata": {
+          "source_card": "Elvish Mystic",
+          "corpus_group": "base",
+          "ability_slot": 1
+        }
+      }
+    },
+    {
+      "source_row_ref": "sem_anchor_corpus_matrix_v1.json#Darksteel Ingot",
+      "ability_ir_min": {
+        "kind": "Activated",
+        "cost": ["TAP"],
+        "trigger_event": null,
+        "condition": null,
+        "effects": [{ "type": "ADD_MANA", "detail": "any color" }],
+        "guarded_follow_up": null,
+        "opaque_remainder": "Indestructible static clause intentionally left out of current v1 anchor coverage",
+        "metadata": {
+          "source_card": "Darksteel Ingot",
+          "corpus_group": "base",
+          "ability_slot": 1
+        }
+      }
+    },
+    {
+      "source_row_ref": "sem_anchor_corpus_matrix_v1.json#Gilded Lotus",
+      "ability_ir_min": {
+        "kind": "Activated",
+        "cost": ["TAP"],
+        "trigger_event": null,
+        "condition": null,
+        "effects": [{ "type": "ADD_MANA", "detail": "three mana of any one color" }],
+        "guarded_follow_up": null,
+        "opaque_remainder": null,
+        "metadata": {
+          "source_card": "Gilded Lotus",
+          "corpus_group": "base",
+          "ability_slot": 1
+        }
+      }
+    },
+    {
+      "source_row_ref": "sem_anchor_corpus_matrix_v1.json#Worn Powerstone",
+      "ability_ir_min": {
+        "kind": "Activated",
+        "cost": ["TAP"],
+        "trigger_event": null,
+        "condition": null,
+        "effects": [{ "type": "ADD_MANA", "detail": "{C}{C}" }],
+        "guarded_follow_up": null,
+        "opaque_remainder": "ETB tapped clause intentionally left out of current v1 anchor coverage",
+        "metadata": {
+          "source_card": "Worn Powerstone",
+          "corpus_group": "base",
+          "ability_slot": 1
+        }
+      }
+    },
+    {
+      "source_row_ref": "sem_anchor_corpus_matrix_v1.json#Crystal Ball",
+      "ability_ir_min": {
+        "kind": "Activated",
+        "cost": ["TAP"],
+        "trigger_event": null,
+        "condition": null,
+        "effects": [{ "type": "SCRY", "detail": "2" }],
+        "guarded_follow_up": null,
+        "opaque_remainder": "Mana cost intentionally left out of current v1 anchor coverage",
+        "metadata": {
+          "source_card": "Crystal Ball",
+          "corpus_group": "base",
+          "ability_slot": 1
+        }
+      }
+    },
+    {
+      "source_row_ref": "sem_anchor_corpus_matrix_v1.json#Millstone",
+      "ability_ir_min": {
+        "kind": "Activated",
+        "cost": ["TAP"],
+        "trigger_event": null,
+        "condition": null,
+        "effects": [{ "type": "MILL_CARDS", "detail": "2" }],
+        "guarded_follow_up": null,
+        "opaque_remainder": "Mana cost and target player clause intentionally left out of current v1 anchor coverage",
+        "metadata": {
+          "source_card": "Millstone",
+          "corpus_group": "base",
+          "ability_slot": 1
+        }
+      }
+    },
+    {
+      "source_row_ref": "sem_anchor_corpus_matrix_v1.json#Howling Mine",
+      "ability_ir_min": {
+        "kind": "ConditionalTriggered",
+        "cost": null,
+        "trigger_event": "AT_BEGINNING_OF_EACH_PLAYERS_DRAW_STEP",
+        "condition": "SELF_UNTAPPED",
+        "effects": [{ "type": "DRAW_CARDS", "detail": "additional card" }],
+        "guarded_follow_up": null,
+        "opaque_remainder": null,
+        "metadata": {
+          "source_card": "Howling Mine",
+          "corpus_group": "base",
+          "ability_slot": 1
+        }
+      }
+    }
+  ],
+  "excluded_for_now": {
+    "fields": ["targets", "modes", "duration", "references"],
+    "constructs": ["ClauseTree", "Replacement", "Prevention", "ModalChoice", "KeywordDerived"],
+    "reasons": [
+      "Not present in base corpus",
+      "Requires richer parsing",
+      "Deferred to A2.8.3+"
+    ]
+  }
+}

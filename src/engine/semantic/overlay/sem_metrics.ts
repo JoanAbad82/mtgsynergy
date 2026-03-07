@@ -1,6 +1,8 @@
 import type { SemanticCardIR } from "../contract";
+import { EventId } from "../contract";
 import type { SemanticEdge } from "./sem_edges";
-import { buildSemanticCardProfile, explainKey, mergeProfiles } from "./sem_profile";
+import { isExplicitSacrificeCreatureText } from "./sem_bridge_evidence";
+import { buildSemanticCardProfile, explainKey, KeyKind, keyOf, mergeProfiles, type SemanticProfileEntry } from "./sem_profile";
 
 export type SemanticOverlayMetrics = {
   card_count: number;
@@ -27,12 +29,27 @@ function signatureOf(profile: { produced: Map<number, number>; consumed: Map<num
   return `P:${producedKeys.join(",")} | C:${consumedKeys.join(",")}`;
 }
 
+function addSupport(
+  map: Map<number, SemanticProfileEntry>,
+  key: number,
+  origin: "cost" | "effect" = "effect",
+): void {
+  const current = map.get(key);
+  if (current) {
+    current.count += 1;
+    if (current.origin !== origin) current.origin = "effect";
+    return;
+  }
+  map.set(key, { count: 1, origin });
+}
+
 export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlayMetrics {
   const { cards, edges } = args;
   const topN = args.topN ?? 10;
 
   const profiles = cards.map((card) => ({
     card_id: card.card_id,
+    oracle_text: card.oracle_text ?? "",
     profile: buildSemanticCardProfile(card.ir, card.oracle_text ?? ""),
   }));
 
@@ -44,6 +61,16 @@ export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlay
     }
   }
   const semantic_coverage = card_count > 0 ? covered_count / card_count : 0;
+
+  const sacrificeKey = keyOf(KeyKind.EVENT, EventId.SACRIFICE);
+  const diesKey = keyOf(KeyKind.EVENT, EventId.CREATURE_DIES);
+
+  for (const entry of profiles) {
+    if (!isExplicitSacrificeCreatureText(entry.oracle_text)) continue;
+    if (!entry.profile.produced.has(sacrificeKey)) continue;
+    addSupport(entry.profile.produced, diesKey, "effect");
+    addSupport(entry.profile.consumed, sacrificeKey, "effect");
+  }
 
   const merged = mergeProfiles(profiles.map((entry) => entry.profile));
   const produced_total_keys = merged.produced.size;

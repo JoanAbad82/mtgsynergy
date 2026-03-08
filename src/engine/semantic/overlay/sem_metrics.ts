@@ -64,7 +64,6 @@ export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlay
 
   const sacrificeKey = keyOf(KeyKind.EVENT, EventId.SACRIFICE);
   const diesKey = keyOf(KeyKind.EVENT, EventId.CREATURE_DIES);
-
   for (const entry of profiles) {
     if (!isExplicitSacrificeCreatureText(entry.oracle_text)) continue;
     if (!entry.profile.produced.has(sacrificeKey)) continue;

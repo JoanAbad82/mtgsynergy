@@ -173,8 +173,8 @@ describe("semantic overlay rakdos signal diagnose", () => {
 
     expect(etbInTop).toBe(true);
     expect(sacrificeInTop).toBe(false);
-    expect(diesInTop).toBe(false);
+    expect(diesInTop).toBe(true);
     expect(drawInTop).toBe(false);
-    expect(lifeGainInTop).toBe(false);
+    expect(lifeGainInTop).toBe(true);
   });
 });

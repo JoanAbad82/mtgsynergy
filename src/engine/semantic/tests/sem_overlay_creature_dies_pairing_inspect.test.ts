@@ -217,6 +217,6 @@ describe("semantic overlay creature dies pairing inspect", () => {
     expect(diesConsumers.length).toBeGreaterThan(0);
     expect(Object.values(payoffProducers).some((list) => list.length > 0)).toBe(true);
     expect(pairedByKey.length).toBe(0);
-    expect(hasDiesEdge).toBe(false);
+    expect(hasDiesEdge).toBe(true);
   });
 });

@@ -1,5 +1,6 @@
 import type { SemanticCardIR } from "../contract";
-import { buildSemanticCardProfile } from "./sem_profile";
+import { ActionId, EventId } from "../contract";
+import { buildSemanticCardProfile, KeyKind, keyOf } from "./sem_profile";
 
 export type SemanticEdgeReason = {
   key: number;
@@ -11,6 +12,7 @@ export type SemanticEdge = {
   to: number;
   score: number;
   reasons: SemanticEdgeReason[];
+  local_only?: boolean;
 };
 
 type CardInput = {
@@ -19,6 +21,18 @@ type CardInput = {
   oracle_text?: string;
 };
 
+function applyCreatureDiesPayoffBridge(profile: ReturnType<typeof buildSemanticCardProfile>): number[] {
+  const diesKey = keyOf(KeyKind.EVENT, EventId.CREATURE_DIES);
+  if (!profile.consumed.has(diesKey)) return [];
+  const payoffActionKeys = [
+    keyOf(KeyKind.ACTION, ActionId.LOSE_LIFE),
+    keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE),
+    keyOf(KeyKind.ACTION, ActionId.GAIN_LIFE),
+  ];
+  const matched = payoffActionKeys.filter((key) => profile.produced.has(key));
+  return matched.length > 0 ? matched : [];
+}
+
 export function buildSemanticEdges(inputCards: CardInput[]): SemanticEdge[] {
   const cards = inputCards.map((card) => ({
     ...card,
@@ -26,7 +40,6 @@ export function buildSemanticEdges(inputCards: CardInput[]): SemanticEdge[] {
       (card as { profile?: ReturnType<typeof buildSemanticCardProfile> }).profile ??
       buildSemanticCardProfile(card.ir, card.oracle_text ?? ""),
   }));
-
   const edges: SemanticEdge[] = [];
 
   for (let i = 0; i < cards.length; i += 1) {
@@ -55,6 +68,24 @@ export function buildSemanticEdges(inputCards: CardInput[]): SemanticEdge[] {
         edges.push({ from: from.card_id, to: to.card_id, score, reasons });
       }
     }
+  }
+
+  const diesKey = keyOf(KeyKind.EVENT, EventId.CREATURE_DIES);
+  for (const card of cards) {
+    const matchedPayoffs = applyCreatureDiesPayoffBridge(card.profile);
+    if (matchedPayoffs.length === 0) continue;
+    const reasons: SemanticEdgeReason[] = [{ key: diesKey, weight: 1 }];
+    for (const key of matchedPayoffs) {
+      reasons.push({ key, weight: 1 });
+    }
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
   }
 
   edges.sort((a, b) => {

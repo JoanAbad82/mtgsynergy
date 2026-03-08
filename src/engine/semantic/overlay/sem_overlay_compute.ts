@@ -1,9 +1,11 @@
 import type { CardRecordMin } from "../../cards/types";
 import { normalizeCardName } from "../../cards/normalize";
 import { normalizeOracleTextV1 } from "../normalize";
+import { EventId } from "../contract";
 import { parseSemanticIrV0 } from "../parser/sem_parser_v1";
-import { buildSemanticEdges } from "./sem_edges";
+import { buildSemanticEdges, type SemanticEdge } from "./sem_edges";
 import { buildSemanticOverlayMetrics } from "./sem_metrics";
+import { KeyKind, keyOf } from "./sem_profile";
 
 type OverlayComputeResult = {
   metrics: ReturnType<typeof buildSemanticOverlayMetrics>;
@@ -13,6 +15,57 @@ type OverlayComputeResult = {
   missingUnique: number;
   deckEntriesCount: number;
 };
+
+function selectEdgesTop(edges: SemanticEdge[], topN: number): SemanticEdge[] {
+  const top = edges.slice(0, topN);
+  if (topN <= 0 || edges.length === 0) return top;
+
+  const diesKey = keyOf(KeyKind.EVENT, EventId.CREATURE_DIES);
+  const isLocalDiesEdge = (edge: SemanticEdge) =>
+    !!edge.local_only && edge.reasons.some((reason) => reason.key === diesKey);
+
+  if (top.some(isLocalDiesEdge)) return top;
+
+  const candidates = edges.filter(
+    (edge) => isLocalDiesEdge(edge) && !top.includes(edge),
+  );
+  const nonDiesReasonCount = (edge: SemanticEdge) =>
+    edge.reasons.filter((reason) => reason.key !== diesKey).length;
+  const isSelfEdge = (edge: SemanticEdge) => edge.from === edge.to;
+  const isBetterCandidate = (next: SemanticEdge, best: SemanticEdge) => {
+    if (next.reasons.length !== best.reasons.length) {
+      return next.reasons.length > best.reasons.length;
+    }
+    const nextNonDies = nonDiesReasonCount(next);
+    const bestNonDies = nonDiesReasonCount(best);
+    if (nextNonDies !== bestNonDies) {
+      return nextNonDies > bestNonDies;
+    }
+    const nextSelf = isSelfEdge(next);
+    const bestSelf = isSelfEdge(best);
+    if (nextSelf !== bestSelf) {
+      return nextSelf;
+    }
+    if (next.from !== best.from) return next.from < best.from;
+    return next.to < best.to;
+  };
+
+  let candidate: SemanticEdge | null = null;
+  for (const edge of candidates) {
+    if (!candidate || isBetterCandidate(edge, candidate)) {
+      candidate = edge;
+    }
+  }
+  if (!candidate) return top;
+
+  if (top.length < topN) {
+    return [...top, candidate];
+  }
+
+  const next = [...top];
+  next[next.length - 1] = candidate;
+  return next;
+}
 
 export async function computeSemanticOverlayFromDeckEntries(
   entries: Array<{ name: string }>,
@@ -64,10 +117,11 @@ export async function computeSemanticOverlayFromDeckEntries(
 
   const edges = buildSemanticEdges(cards);
   const metrics = buildSemanticOverlayMetrics({ cards, edges, topN: 10 });
+  const edgesTop = selectEdgesTop(edges, 10);
 
   return {
     metrics,
-    edgesTop: edges.slice(0, 10),
+    edgesTop,
     idToName,
     resolvedUnique,
     missingUnique,

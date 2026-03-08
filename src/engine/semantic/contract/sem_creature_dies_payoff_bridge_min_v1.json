@@ -1,0 +1,128 @@
+{
+  "metadata": {
+    "document_id": "sem_creature_dies_payoff_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-A2.8-creature-dies-payoff-bridge-v1",
+    "source_note": "Minimal contract to bridge local EVENT:CREATURE_DIES to payoff ACTIONs without changing scoring or parser." 
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "overlay_runtime_unchanged": true,
+    "deterministic_contract": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true,
+    "local_pairing_only": true
+  },
+  "derived_from": {
+    "source_overlay_bridge_contract": "src/engine/semantic/contract/sem_overlay_bridge_min_v1.json",
+    "source_diagnostic_tests": [
+      "src/engine/semantic/tests/sem_overlay_rakdos_dies_payoff_diagnose.test.ts",
+      "src/engine/semantic/tests/sem_overlay_creature_dies_wiring_inspect.test.ts",
+      "src/engine/semantic/tests/sem_overlay_creature_dies_pairing_inspect.test.ts"
+    ],
+    "source_pairing_impl_file": "src/engine/semantic/overlay/sem_edges.ts"
+  },
+  "bridge_kind": {
+    "id": "creature_dies_enables_payoff_actions",
+    "label": "creature_dies -> payoff_actions",
+    "event_origin": "EVENT:CREATURE_DIES",
+    "action_targets": [
+      "ACTION:LOSE_LIFE",
+      "ACTION:DEAL_DAMAGE",
+      "ACTION:GAIN_LIFE"
+    ],
+    "compatibility_type": "local_causal_explicit",
+    "purpose": "Enable local pairing between CREATURE_DIES listeners and payoff ACTION producers without changing global scoring.",
+    "explicitly_not": [
+      "cross_card_inference",
+      "global_scoring_adjustment",
+      "open-ended event/action remapping",
+      "leaves_battlefield_expansion",
+      "life_change_from_non-dies_sources"
+    ]
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile that already contains both the CREATURE_DIES listener and the payoff action producer.",
+    "cross_card_pairing": false
+  },
+  "causal_mode": {
+    "mode": "local_causal_explicit",
+    "description": "Bridge encodes a narrow causal compatibility for local pairing only; it does not infer new global causes or effects."
+  },
+  "non_goals": [
+    "Cross-card CREATURE_DIES payoff closure",
+    "Multi-hop causal chains",
+    "Stack ordering or priority rules",
+    "Replacement or prevention effects",
+    "Global or fuzzy matching of payoff families"
+  ],
+  "future_extension_points": [
+    "Explicit cross-card pairing rules (v2+)",
+    "Additional payoff actions with explicit evidence",
+    "Multi-hop causal modeling with separate contract",
+    "Replacement/prevention handling in a dedicated phase"
+  ],
+  "bridge_rules": [
+    {
+      "rule_id": "bridge_only_when_dies_listener_and_payoff_producer_coexist_locally",
+      "applies_when": "Same local card/profile has consumed EVENT:CREATURE_DIES and produced one of the payoff ACTION targets.",
+      "emits": "local_pairing_support(EVENT:CREATURE_DIES -> payoff_action)",
+      "guardrails": "No activation when CREATURE_DIES is absent or payoff action is absent in that local profile.",
+      "notes": "Bridge is strictly local to the profile that already contains both signals."
+    },
+    {
+      "rule_id": "bridge_does_not_rewrite_keys",
+      "applies_when": "Bridge is active for a local profile.",
+      "emits": "pairing_support_only (no key remap outside declared targets)",
+      "guardrails": "Do not convert ACTION keys into EVENT keys globally.",
+      "notes": "Avoids broad key coercion or heuristic expansion."
+    },
+    {
+      "rule_id": "bridge_has_no_scoring_side_effects",
+      "applies_when": "Bridge support is emitted.",
+      "emits": "no-op on global scoring/ordering",
+      "guardrails": "No changes to weights, SOS, or edge ranking.",
+      "notes": "Purely enables local pairing eligibility."
+    }
+  ],
+  "activation_evidence": {
+    "textual_or_semantic_requirements": [
+      "Parser emits watch for EVENT:CREATURE_DIES",
+      "Profile consumes EVENT:CREATURE_DIES",
+      "Profile produces at least one of ACTION:LOSE_LIFE / ACTION:DEAL_DAMAGE / ACTION:GAIN_LIFE"
+    ],
+    "acceptable_scope": "single card/profile only",
+    "unacceptable_scope": [
+      "deck-wide inference",
+      "cross-card matching",
+      "heuristic life-change inference"
+    ]
+  },
+  "excluded_for_now": {
+    "events": [
+      "EVENT:LEAVES_BATTLEFIELD",
+      "EVENT:CREATURE_DIES (as producer)",
+      "EVENT:PLAYER_DIES"
+    ],
+    "actions": [
+      "ACTION:DRAW_CARDS",
+      "ACTION:CREATE_TOKEN",
+      "ACTION:SACRIFICE"
+    ],
+    "constructs": [
+      "multi-step bridges",
+      "global key remapping",
+      "heuristic payoff inference"
+    ],
+    "reasons": [
+      "Avoids broad semantic expansion",
+      "Keeps pairing local and explicit",
+      "Defers richer ontology to later phases"
+    ]
+  }
+}

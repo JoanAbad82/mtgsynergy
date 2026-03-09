@@ -1,7 +1,6 @@
 import type { SemanticCardIR } from "../contract";
 import { EventId } from "../contract";
 import type { SemanticEdge } from "./sem_edges";
-import { isExplicitSacrificeCreatureText } from "./sem_bridge_evidence";
 import { buildSemanticCardProfile, explainKey, KeyKind, keyOf, mergeProfiles, type SemanticProfileEntry } from "./sem_profile";
 
 export type SemanticOverlayMetrics = {
@@ -64,11 +63,9 @@ export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlay
 
   const sacrificeKey = keyOf(KeyKind.EVENT, EventId.SACRIFICE);
   const diesKey = keyOf(KeyKind.EVENT, EventId.CREATURE_DIES);
-  let hasStrictCreatureSacrificeBridgeEvidence = false;
   for (const entry of profiles) {
-    if (!isExplicitSacrificeCreatureText(entry.oracle_text)) continue;
+    if (!/^\s*Sacrifice a creature[: ,]/i.test(entry.oracle_text)) continue;
     if (!entry.profile.produced.has(sacrificeKey)) continue;
-    hasStrictCreatureSacrificeBridgeEvidence = true;
     addSupport(entry.profile.produced, diesKey, "effect");
     addSupport(entry.profile.consumed, sacrificeKey, "effect");
   }
@@ -77,19 +74,17 @@ export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlay
   const produced_total_keys = merged.produced.size;
   const consumed_total_keys = merged.consumed.size;
 
-  const localDiesAbsorbed = hasStrictCreatureSacrificeBridgeEvidence
-    ? edges
-        .filter(
-          (edge) =>
-            edge.local_only &&
-            edge.reasons.some((reason) => reason.key === diesKey) &&
-            edge.reasons.some((reason) => reason.key !== diesKey),
-        )
-        .reduce((sum, edge) => {
-          const dieReason = edge.reasons.find((reason) => reason.key === diesKey);
-          return sum + (dieReason?.weight ?? 0);
-        }, 0)
-    : 0;
+  const localDiesAbsorbed = edges
+    .filter(
+      (edge) =>
+        edge.local_only &&
+        edge.reasons.some((reason) => reason.key === diesKey) &&
+        edge.reasons.some((reason) => reason.key !== diesKey),
+    )
+    .reduce((sum, edge) => {
+      const dieReason = edge.reasons.find((reason) => reason.key === diesKey);
+      return sum + (dieReason?.weight ?? 0);
+    }, 0);
 
   const orphan_listeners = Array.from(merged.consumed.entries())
     .filter(([key]) => !merged.produced.has(key))

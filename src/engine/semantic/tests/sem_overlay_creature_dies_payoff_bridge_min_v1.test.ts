@@ -41,7 +41,7 @@ describe("semantic overlay creature dies payoff bridge min v1", () => {
         oracle_text: "Whenever a creature dies, target player loses 1 life.",
       },
     ]);
-    const localEdges = buildSemanticEdges(localPayoffCards);
+    const localEdges = buildSemanticEdges(localPayoffCards, { includeLocalOnly: true });
     const localBridgeEdge = findLocalBridgeEdge(localEdges, 1);
 
     expect(localBridgeEdge).toBeTruthy();
@@ -56,7 +56,7 @@ describe("semantic overlay creature dies payoff bridge min v1", () => {
       { name: "Dies Listener", oracle_text: "Whenever a creature dies, draw a card." },
       { name: "Payoff Only", oracle_text: "Target player loses 1 life." },
     ]);
-    const crossEdges = buildSemanticEdges(crossCardCards);
+    const crossEdges = buildSemanticEdges(crossCardCards, { includeLocalOnly: true });
     const crossBridgeEdge1 = findLocalBridgeEdge(crossEdges, 1);
     const crossBridgeEdge2 = findLocalBridgeEdge(crossEdges, 2);
 
@@ -66,7 +66,7 @@ describe("semantic overlay creature dies payoff bridge min v1", () => {
     const nonTargetCards = buildCardsFromLiterals([
       { name: "Non Target", oracle_text: "Whenever a creature dies, draw a card." },
     ]);
-    const nonTargetEdges = buildSemanticEdges(nonTargetCards);
+    const nonTargetEdges = buildSemanticEdges(nonTargetCards, { includeLocalOnly: true });
     const nonTargetBridgeEdge = findLocalBridgeEdge(nonTargetEdges, 1);
 
     expect(nonTargetBridgeEdge).toBeUndefined();

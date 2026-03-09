@@ -198,7 +198,7 @@ describe("semantic overlay bridge min v1", () => {
     const lookup = createLocalLookup(payload);
     const entries = buildDeckEntries();
     const cards = await buildCardsFromDeck(entries, lookup);
-    const edges = buildSemanticEdges(cards);
+    const edges = buildSemanticEdges(cards, { includeLocalOnly: true });
 
     const before = computeOrphanExcessWithoutBridge(cards);
     const expected = computeOrphanExcessWithLocalBridge(cards);
@@ -224,7 +224,7 @@ describe("semantic overlay bridge min v1", () => {
       { name: "Fake Sacrifice", oracle_text: "Sacrifice a permanent: Draw a card." },
       { name: "Fake Dies Listener", oracle_text: "Whenever a creature dies, you gain 1 life." },
     ]);
-    const edges = buildSemanticEdges(cards);
+    const edges = buildSemanticEdges(cards, { includeLocalOnly: true });
 
     const before = computeOrphanExcessWithoutBridge(cards);
     const expected = computeOrphanExcessWithLocalBridge(cards);

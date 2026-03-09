@@ -1,0 +1,46 @@
+{
+  "version": "sem_zone_identity_lki_min_v1",
+  "scope": "Minimal normative contract for zone, identity, and LKI semantics.",
+  "eventKinds": [
+    "ZONE_CHANGE",
+    "LEAVES_BATTLEFIELD",
+    "CREATURE_DIES"
+  ],
+  "identityRules": {
+    "zoneChangeCreatesNewObjectByDefault": true,
+    "sameObjectAcrossZoneChange": false,
+    "exceptionCatalogImplemented": false
+  },
+  "tokenRules": {
+    "tokenCanTriggerLeaveEvents": true,
+    "tokenCeasesToExistAfterZoneChangeSba": true
+  },
+  "lkiRules": {
+    "allowLastKnownInformation": true,
+    "captureBeforeRelevantZoneChange": true,
+    "minimalUseCases": [
+      "source_left_expected_zone",
+      "zone_change_lookback",
+      "leaves_battlefield_reasoning"
+    ]
+  },
+  "derivationRules": {
+    "leavesBattlefieldRequiresFromZoneBattlefield": true,
+    "creatureDiesRequiresBattlefieldToGraveyard": true,
+    "creatureDiesRequiresCreatureImmediatelyBeforeChange": true,
+    "diesIsNotSynonymForDestroy": true
+  },
+  "noGoals": [
+    "replacement_prevention",
+    "layers_dependency",
+    "linked_abilities_general",
+    "full_game_simulation",
+    "cross_card_closure",
+    "ui_or_scoring_changes"
+  ],
+  "notes": [
+    "This contract is intentionally minimal.",
+    "It supports a narrow normative service layer.",
+    "It must not reopen the already-closed Rakdos sacrifice -> creature_dies -> payoff chain."
+  ]
+}

@@ -13,6 +13,11 @@ type AbilityIrMin = {
   guarded_follow_up: null;
   opaque_remainder: string | null;
   metadata: { source_card: string; corpus_group: string; ability_slot: number };
+  semantic_hints?: {
+    possible_zone_change?: boolean;
+    possible_lki_required?: boolean;
+    possible_creature_dies_derivation?: boolean;
+  };
 };
 
 type AbilityContract = {
@@ -74,6 +79,9 @@ describe("lowerToAbilityIrMinV1", () => {
       expect(lowered?.effects).toEqual(expected.effects);
       expect(lowered?.opaque_remainder).toEqual(expected.opaque_remainder);
       expect(lowered?.metadata).toEqual(expected.metadata);
+      if (expected.semantic_hints) {
+        expect(lowered?.semantic_hints).toEqual(expected.semantic_hints);
+      }
     }
   });
 

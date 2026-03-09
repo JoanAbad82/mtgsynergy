@@ -75,9 +75,29 @@ export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlay
   const produced_total_keys = merged.produced.size;
   const consumed_total_keys = merged.consumed.size;
 
+  const localDiesAbsorbed = edges
+    .filter(
+      (edge) =>
+        edge.local_only &&
+        edge.reasons.some((reason) => reason.key === diesKey) &&
+        edge.reasons.some((reason) => reason.key !== diesKey),
+    )
+    .reduce((sum, edge) => {
+      const dieReason = edge.reasons.find((reason) => reason.key === diesKey);
+      return sum + (dieReason?.weight ?? 0);
+    }, 0);
+
   const orphan_listeners = Array.from(merged.consumed.entries())
     .filter(([key]) => !merged.produced.has(key))
-    .map(([key, consumed]) => ({ key, consumed: consumed.count, explain: explainKey(key) }))
+    .map(([key, consumed]) => {
+      let count = consumed.count;
+      if (key === diesKey && localDiesAbsorbed > 0) {
+        count = Math.max(0, count - localDiesAbsorbed);
+      }
+      if (count <= 0) return null;
+      return { key, consumed: count, explain: explainKey(key) };
+    })
+    .filter((row): row is { key: number; consumed: number; explain: string } => !!row)
     .sort((a, b) => {
       if (a.consumed !== b.consumed) return b.consumed - a.consumed;
       return a.key - b.key;

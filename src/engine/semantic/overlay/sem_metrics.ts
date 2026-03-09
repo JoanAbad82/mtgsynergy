@@ -64,9 +64,11 @@ export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlay
 
   const sacrificeKey = keyOf(KeyKind.EVENT, EventId.SACRIFICE);
   const diesKey = keyOf(KeyKind.EVENT, EventId.CREATURE_DIES);
+  let hasStrictCreatureSacrificeBridgeEvidence = false;
   for (const entry of profiles) {
     if (!isExplicitSacrificeCreatureText(entry.oracle_text)) continue;
     if (!entry.profile.produced.has(sacrificeKey)) continue;
+    hasStrictCreatureSacrificeBridgeEvidence = true;
     addSupport(entry.profile.produced, diesKey, "effect");
     addSupport(entry.profile.consumed, sacrificeKey, "effect");
   }
@@ -75,17 +77,19 @@ export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlay
   const produced_total_keys = merged.produced.size;
   const consumed_total_keys = merged.consumed.size;
 
-  const localDiesAbsorbed = edges
-    .filter(
-      (edge) =>
-        edge.local_only &&
-        edge.reasons.some((reason) => reason.key === diesKey) &&
-        edge.reasons.some((reason) => reason.key !== diesKey),
-    )
-    .reduce((sum, edge) => {
-      const dieReason = edge.reasons.find((reason) => reason.key === diesKey);
-      return sum + (dieReason?.weight ?? 0);
-    }, 0);
+  const localDiesAbsorbed = hasStrictCreatureSacrificeBridgeEvidence
+    ? edges
+        .filter(
+          (edge) =>
+            edge.local_only &&
+            edge.reasons.some((reason) => reason.key === diesKey) &&
+            edge.reasons.some((reason) => reason.key !== diesKey),
+        )
+        .reduce((sum, edge) => {
+          const dieReason = edge.reasons.find((reason) => reason.key === diesKey);
+          return sum + (dieReason?.weight ?? 0);
+        }, 0)
+    : 0;
 
   const orphan_listeners = Array.from(merged.consumed.entries())
     .filter(([key]) => !merged.produced.has(key))

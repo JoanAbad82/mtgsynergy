@@ -47,7 +47,7 @@ function explicitDiesTextEvidence(text: string): boolean {
 }
 
 export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSemanticEdgesOptions): SemanticEdge[] {
-  const includeLocalOnly = options?.includeLocalOnly ?? false;
+  const includeLocalOnly = options?.includeLocalOnly ?? true;
   const cards = inputCards.map((card) => ({
     ...card,
     profile:

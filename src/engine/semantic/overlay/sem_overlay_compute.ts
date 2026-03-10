@@ -27,7 +27,7 @@ function selectEdgesTop(edges: SemanticEdge[], topN: number): SemanticEdge[] {
   if (top.some(isLocalDiesEdge)) return top;
 
   const candidates = edges.filter(
-    (edge) => isLocalDiesEdge(edge) && !top.includes(edge) && edge.from !== edge.to,
+    (edge) => isLocalDiesEdge(edge) && !top.includes(edge),
   );
   const nonDiesReasonCount = (edge: SemanticEdge) =>
     edge.reasons.filter((reason) => reason.key !== diesKey).length;

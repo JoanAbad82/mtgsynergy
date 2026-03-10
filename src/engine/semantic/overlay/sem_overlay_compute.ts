@@ -31,7 +31,6 @@ function selectEdgesTop(edges: SemanticEdge[], topN: number): SemanticEdge[] {
   );
   const nonDiesReasonCount = (edge: SemanticEdge) =>
     edge.reasons.filter((reason) => reason.key !== diesKey).length;
-  const isSelfEdge = (edge: SemanticEdge) => edge.from === edge.to;
   const isBetterCandidate = (next: SemanticEdge, best: SemanticEdge) => {
     if (next.reasons.length !== best.reasons.length) {
       return next.reasons.length > best.reasons.length;
@@ -40,11 +39,6 @@ function selectEdgesTop(edges: SemanticEdge[], topN: number): SemanticEdge[] {
     const bestNonDies = nonDiesReasonCount(best);
     if (nextNonDies !== bestNonDies) {
       return nextNonDies > bestNonDies;
-    }
-    const nextSelf = isSelfEdge(next);
-    const bestSelf = isSelfEdge(best);
-    if (nextSelf !== bestSelf) {
-      return nextSelf;
     }
     if (next.from !== best.from) return next.from < best.from;
     return next.to < best.to;

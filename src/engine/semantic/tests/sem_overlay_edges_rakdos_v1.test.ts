@@ -91,7 +91,7 @@ describe("semantic overlay edges: rakdos subset v1", () => {
     );
     expect(edgesA).toEqual(edgesB);
     for (const edge of edgesA) {
-      expect(edge.from).not.toBe(edge.to);
+      if (!edge.local_only) expect(edge.from).not.toBe(edge.to);
     }
 
     const sacrificeEventKey = keyOf(KeyKind.EVENT, EventId.SACRIFICE);

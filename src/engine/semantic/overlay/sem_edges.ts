@@ -21,6 +21,10 @@ type CardInput = {
   oracle_text?: string;
 };
 
+type BuildSemanticEdgesOptions = {
+  includeLocalOnly?: boolean;
+};
+
 function applyCreatureDiesPayoffBridge(profile: ReturnType<typeof buildSemanticCardProfile>): number[] {
   const diesKey = keyOf(KeyKind.EVENT, EventId.CREATURE_DIES);
   if (!profile.consumed.has(diesKey)) return [];
@@ -33,7 +37,17 @@ function applyCreatureDiesPayoffBridge(profile: ReturnType<typeof buildSemanticC
   return matched.length > 0 ? matched : [];
 }
 
-export function buildSemanticEdges(inputCards: CardInput[]): SemanticEdge[] {
+function explicitDiesTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    /\bdies\b/.test(normalized) ||
+    normalized.includes("creature dies") ||
+    normalized.includes("another creature dies")
+  );
+}
+
+export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSemanticEdgesOptions): SemanticEdge[] {
+  const includeLocalOnly = options?.includeLocalOnly ?? true;
   const cards = inputCards.map((card) => ({
     ...card,
     profile:
@@ -74,6 +88,7 @@ export function buildSemanticEdges(inputCards: CardInput[]): SemanticEdge[] {
   for (const card of cards) {
     const matchedPayoffs = applyCreatureDiesPayoffBridge(card.profile);
     if (matchedPayoffs.length === 0) continue;
+    if (!explicitDiesTextEvidence(card.oracle_text ?? "")) continue;
     const reasons: SemanticEdgeReason[] = [{ key: diesKey, weight: 1 }];
     for (const key of matchedPayoffs) {
       reasons.push({ key, weight: 1 });
@@ -88,11 +103,13 @@ export function buildSemanticEdges(inputCards: CardInput[]): SemanticEdge[] {
     });
   }
 
-  edges.sort((a, b) => {
+  const outputEdges = includeLocalOnly ? edges : edges.filter((edge) => !edge.local_only);
+
+  outputEdges.sort((a, b) => {
     if (a.score !== b.score) return b.score - a.score;
     if (a.from !== b.from) return a.from - b.from;
     return a.to - b.to;
   });
 
-  return edges;
+  return outputEdges;
 }

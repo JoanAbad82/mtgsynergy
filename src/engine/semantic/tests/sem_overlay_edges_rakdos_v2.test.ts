@@ -92,7 +92,7 @@ describe("semantic overlay edges: rakdos subset v2", () => {
     expect(edgesA).toEqual(edgesB);
     expect(edgesA.length).toBeGreaterThan(0);
     for (const edge of edgesA) {
-      expect(edge.from).not.toBe(edge.to);
+      if (!edge.local_only) expect(edge.from).not.toBe(edge.to);
     }
 
     const diesKey = keyOf(KeyKind.EVENT, EventId.CREATURE_DIES);

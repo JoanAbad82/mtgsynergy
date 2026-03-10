@@ -19,6 +19,11 @@ export type AbilityIrMin = {
     corpus_group: "base";
     ability_slot: 1;
   };
+  semantic_hints?: {
+    possible_zone_change?: boolean;
+    possible_lki_required?: boolean;
+    possible_creature_dies_derivation?: boolean;
+  };
 };
 
 type LowerInput = {
@@ -121,6 +126,45 @@ function hasExpectedAction(cardName: string, actions: ReadonlyArray<{ action: Ac
   return actions.some((entry) => entry.action === expected);
 }
 
+function buildSemanticHints(
+  oracleText: string,
+): AbilityIrMin["semantic_hints"] | undefined {
+  const normalized = oracleText.toLowerCase();
+  const hasDiesWord = /\bdies\b/.test(normalized);
+
+  const possibleCreatureDiesDerivation = hasDiesWord;
+  const possibleZoneChange =
+    hasDiesWord ||
+    normalized.includes("leaves the battlefield") ||
+    normalized.includes("return target") ||
+    normalized.includes("exile target") ||
+    normalized.includes("from your graveyard") ||
+    normalized.includes("from a graveyard");
+  const possibleLkiRequired =
+    normalized.includes("that card") &&
+    (normalized.includes("graveyard") ||
+      normalized.includes("exile") ||
+      normalized.includes("leaves the battlefield"));
+
+  const hints: NonNullable<AbilityIrMin["semantic_hints"]> = {};
+
+  if (possibleZoneChange) {
+    hints.possible_zone_change = true;
+  }
+  if (possibleLkiRequired) {
+    hints.possible_lki_required = true;
+  }
+  if (possibleCreatureDiesDerivation) {
+    hints.possible_creature_dies_derivation = true;
+  }
+
+  if (Object.keys(hints).length === 0) {
+    return undefined;
+  }
+
+  return hints;
+}
+
 export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
   const template = BASE_ABILITY_TEMPLATES[input.name];
   if (!template) return null;
@@ -143,7 +187,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
     return null;
   }
 
-  return {
+  const lowered: AbilityIrMin = {
     ...template,
     metadata: {
       source_card: input.name,
@@ -151,4 +195,14 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
       ability_slot: 1,
     },
   };
+
+  const semanticHints = buildSemanticHints(input.oracle_text);
+  if (semanticHints) {
+    return {
+      ...lowered,
+      semantic_hints: semanticHints,
+    };
+  }
+
+  return lowered;
 }

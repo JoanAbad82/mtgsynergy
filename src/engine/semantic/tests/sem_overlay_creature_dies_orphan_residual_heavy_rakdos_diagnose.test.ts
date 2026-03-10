@@ -150,7 +150,7 @@ describe("semantic overlay creature dies orphan residual heavy rakdos diagnose",
       payoffKeys.every((key) => !entry.profile.produced.has(key)),
     );
 
-    const edges = buildSemanticEdges(cards);
+    const edges = buildSemanticEdges(cards, { includeLocalOnly: true });
     const localDiesEdges = edges.filter(
       (edge) => edge.local_only && edgeHasReason(edge, "EVENT:CREATURE_DIES"),
     );

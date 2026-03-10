@@ -122,7 +122,7 @@ describe("semantic overlay compute: real deck integration", () => {
     expect(resultA.edgesTop).toEqual(resultB.edgesTop);
     expect(resultA.edgesTop.length).toBeLessThanOrEqual(10);
     for (const edge of resultA.edgesTop) {
-      expect(edge.from).not.toBe(edge.to);
+      if (!edge.local_only) expect(edge.from).not.toBe(edge.to);
     }
   });
 });

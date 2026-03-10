@@ -39,7 +39,8 @@
       "effects",
       "guarded_follow_up",
       "opaque_remainder",
-      "metadata"
+      "metadata",
+      "semantic_hints"
     ],
     "rules": [
       "kind: required",
@@ -49,7 +50,8 @@
       "effects: required, ordered array",
       "guarded_follow_up: optional, null or minimal object",
       "opaque_remainder: optional, null or string",
-      "metadata: required, minimal stable object"
+      "metadata: required, minimal stable object",
+      "semantic_hints: optional, minimal object with optional boolean flags"
     ]
   },
   "field_rules": [
@@ -100,6 +102,12 @@
       "required": true,
       "shape": "object {source_card, corpus_group, ability_slot}",
       "notes": "Minimal stable provenance only."
+    },
+    {
+      "field": "semantic_hints",
+      "required": false,
+      "shape": "object {possible_zone_change?, possible_lki_required?, possible_creature_dies_derivation?}",
+      "notes": "Optional narrowing-only wiring metadata for A2.9; does not replace metadata provenance; not full game semantics."
     }
   ],
   "base_card_skeletons": [

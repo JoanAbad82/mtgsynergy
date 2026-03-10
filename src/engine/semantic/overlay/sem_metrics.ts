@@ -1,7 +1,6 @@
 import type { SemanticCardIR } from "../contract";
 import { EventId } from "../contract";
 import type { SemanticEdge } from "./sem_edges";
-import { isExplicitSacrificeCreatureText } from "./sem_bridge_evidence";
 import { buildSemanticCardProfile, explainKey, KeyKind, keyOf, mergeProfiles, type SemanticProfileEntry } from "./sem_profile";
 
 export type SemanticOverlayMetrics = {
@@ -65,7 +64,7 @@ export function buildSemanticOverlayMetrics(args: MetricsInput): SemanticOverlay
   const sacrificeKey = keyOf(KeyKind.EVENT, EventId.SACRIFICE);
   const diesKey = keyOf(KeyKind.EVENT, EventId.CREATURE_DIES);
   for (const entry of profiles) {
-    if (!isExplicitSacrificeCreatureText(entry.oracle_text)) continue;
+    if (!/^\s*Sacrifice a creature[: ,]/i.test(entry.oracle_text)) continue;
     if (!entry.profile.produced.has(sacrificeKey)) continue;
     addSupport(entry.profile.produced, diesKey, "effect");
     addSupport(entry.profile.consumed, sacrificeKey, "effect");

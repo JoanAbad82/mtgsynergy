@@ -1,0 +1,76 @@
+{
+  "metadata": {
+    "document_id": "sem_cost_target_legality_focal_corpus_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "A2.10",
+    "scope": "Focused A2.10 anchor corpus for minimal cost/target/legality semantics."
+  },
+  "invariants": [
+    "focus_text is the scoped input for this phase",
+    "deterministic rows and expectations",
+    "no full-card runtime decomposition in this artifact"
+  ],
+  "matrix_columns": [
+    "card_name",
+    "corpus_group",
+    "status",
+    "focus_text",
+    "expected_cost_kinds",
+    "expected_target_kinds",
+    "expected_legality_kinds",
+    "expected_target_count",
+    "expected_legality_count",
+    "notes_scope"
+  ],
+  "anchor_cards": [
+    {
+      "card_name": "Village Rites",
+      "corpus_group": "a2_10_focal",
+      "status": "validated-focus-text",
+      "focus_text": "As an additional cost to cast this spell, sacrifice a creature. Draw two cards.",
+      "expected_cost_kinds": ["SACRIFICE"],
+      "expected_target_kinds": [],
+      "expected_legality_kinds": [],
+      "expected_target_count": 0,
+      "expected_legality_count": 0,
+      "notes_scope": "Focus text only; verifies additional cost extraction without formal targets or legality gates."
+    },
+    {
+      "card_name": "Bone Splinters",
+      "corpus_group": "a2_10_focal",
+      "status": "validated-focus-text",
+      "focus_text": "As an additional cost to cast this spell, sacrifice a creature. Destroy target creature.",
+      "expected_cost_kinds": ["SACRIFICE"],
+      "expected_target_kinds": ["CREATURE"],
+      "expected_legality_kinds": [],
+      "expected_target_count": 1,
+      "expected_legality_count": 0,
+      "notes_scope": "Focus text only; verifies additional cost plus one explicit formal target."
+    },
+    {
+      "card_name": "Icy Manipulator",
+      "corpus_group": "a2_10_focal",
+      "status": "validated-focus-text",
+      "focus_text": "{1}, {T}: Tap target artifact, creature, or land.",
+      "expected_cost_kinds": ["MANA", "TAP"],
+      "expected_target_kinds": ["ARTIFACT", "CREATURE", "LAND"],
+      "expected_legality_kinds": [],
+      "expected_target_count": 1,
+      "expected_legality_count": 0,
+      "notes_scope": "Focus text only; verifies activated cost parsing plus explicit multi-kind target clause."
+    },
+    {
+      "card_name": "Castle Vantress",
+      "corpus_group": "a2_10_focal",
+      "status": "validated-focus-text",
+      "focus_text": "{2}{U}{U}, {T}: Scry 2. Activate only if you control an Island.",
+      "expected_cost_kinds": ["MANA", "TAP"],
+      "expected_target_kinds": [],
+      "expected_legality_kinds": ["CONTROLS_PERMANENT_TYPE"],
+      "expected_target_count": 0,
+      "expected_legality_count": 1,
+      "notes_scope": "Focus text only; verifies activated costs and a minimal explicit legality gate."
+    }
+  ]
+}

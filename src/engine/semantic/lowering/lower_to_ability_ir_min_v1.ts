@@ -1,5 +1,6 @@
 import { ActionId, FrameKind } from "../contract";
 import { parseSemanticIrV0 } from "../parser/sem_parser_v1";
+import { analyzeCostTargetLegalityMinV1 } from "../services/sem_cost_target_legality_min_v1";
 
 type AbilityIrEffect = {
   type: "ADD_MANA" | "SCRY" | "MILL_CARDS" | "DRAW_CARDS";
@@ -23,6 +24,13 @@ export type AbilityIrMin = {
     possible_zone_change?: boolean;
     possible_lki_required?: boolean;
     possible_creature_dies_derivation?: boolean;
+    cost_target_legality_min?: {
+      cost_kinds: string[];
+      target_kinds: string[];
+      legality_kinds: string[];
+      target_count: number;
+      legality_count: number;
+    };
   };
 };
 
@@ -126,6 +134,37 @@ function hasExpectedAction(cardName: string, actions: ReadonlyArray<{ action: Ac
   return actions.some((entry) => entry.action === expected);
 }
 
+function sortedUnique(items: string[]): string[] {
+  return Array.from(new Set(items)).sort();
+}
+
+function buildCostTargetLegalityHint(oracleText: string): NonNullable<AbilityIrMin["semantic_hints"]>["cost_target_legality_min"] | undefined {
+  const analyzed = analyzeCostTargetLegalityMinV1(oracleText);
+  const costKinds = sortedUnique(analyzed.costIr.items.map((item) => item.kind));
+  const targetKinds = sortedUnique(analyzed.targetSpecs.flatMap((spec) => spec.targetKinds));
+  const legalityKinds = sortedUnique(analyzed.legalityGates.map((gate) => gate.kind));
+  const targetCount = analyzed.targetSpecs.length;
+  const legalityCount = analyzed.legalityGates.length;
+
+  if (
+    costKinds.length === 0 &&
+    targetKinds.length === 0 &&
+    legalityKinds.length === 0 &&
+    targetCount === 0 &&
+    legalityCount === 0
+  ) {
+    return undefined;
+  }
+
+  return {
+    cost_kinds: costKinds,
+    target_kinds: targetKinds,
+    legality_kinds: legalityKinds,
+    target_count: targetCount,
+    legality_count: legalityCount
+  };
+}
+
 function buildSemanticHints(
   oracleText: string,
 ): AbilityIrMin["semantic_hints"] | undefined {
@@ -156,6 +195,11 @@ function buildSemanticHints(
   }
   if (possibleCreatureDiesDerivation) {
     hints.possible_creature_dies_derivation = true;
+  }
+
+  const costTargetLegalityHint = buildCostTargetLegalityHint(oracleText);
+  if (costTargetLegalityHint) {
+    hints.cost_target_legality_min = costTargetLegalityHint;
   }
 
   if (Object.keys(hints).length === 0) {

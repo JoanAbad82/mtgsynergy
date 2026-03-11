@@ -1,0 +1,99 @@
+{
+  "version": "sem_cost_target_legality_min_v1",
+  "scope": "Minimal normative contract for cost, target, and legality semantics.",
+  "announcementWindows": [
+    "ANNOUNCE_OR_ACTIVATE",
+    "CHOOSE_MODES_IF_ANY",
+    "DECLARE_TARGETS",
+    "CHECK_INITIAL_LEGALITY",
+    "PAY_COSTS",
+    "RESOLUTION_RECHECK_RESERVED"
+  ],
+  "costRules": {
+    "costIsDistinctFromEffect": true,
+    "activationCostBeforeColonBelongsToCostIr": true,
+    "additionalSpellCostBelongsToCostIr": true,
+    "costPaymentIsNotEffectResolution": true,
+    "supportedCostKinds": [
+      "MANA",
+      "TAP",
+      "UNTAP",
+      "SACRIFICE",
+      "PAY_LIFE",
+      "DISCARD",
+      "REMOVE_COUNTER",
+      "OTHER_COST_TEXT"
+    ]
+  },
+  "targetRules": {
+    "formalTargetMustBeExplicitTarget": true,
+    "anaphoraIsNotAutomaticallyTarget": true,
+    "targetDeclarationOccursAtAnnouncementOrActivation": true,
+    "targetRecheckAtResolutionReserved": true,
+    "supportedTargetKinds": [
+      "PLAYER",
+      "OPPONENT",
+      "ANY_TARGET",
+      "CREATURE",
+      "ARTIFACT",
+      "ENCHANTMENT",
+      "LAND",
+      "PLANESWALKER",
+      "SPELL",
+      "CARD",
+      "PERMANENT",
+      "UNKNOWN_TARGET_KIND"
+    ]
+  },
+  "legalityRules": {
+    "legalityIsDistinctFromEffect": true,
+    "legalityGateIsDistinctFromTargetSpec": true,
+    "initialLegalityCheckOccursBeforePaymentCompletion": true,
+    "resolutionLegalityRecheckReserved": true,
+    "supportedLegalityKinds": [
+      "ACTIVATE_ONLY_AS_SORCERY",
+      "CONTROLS_PERMANENT_TYPE",
+      "ATTACKED_THIS_TURN",
+      "ONCE_EACH_TURN",
+      "SUMMONING_SICKNESS_TAP_RESTRICTION",
+      "OTHER_LEGALITY_TEXT"
+    ]
+  },
+  "modeRules": {
+    "modeSelectionIsDistinctFromTargetSpec": true,
+    "modeDependentTargetsAllowed": true,
+    "modalExhaustiveSupportImplemented": false
+  },
+  "anchorCards": [
+    {
+      "cardName": "Village Rites",
+      "purpose": "additional_cost_without_target"
+    },
+    {
+      "cardName": "Bone Splinters",
+      "purpose": "additional_cost_plus_formal_target"
+    },
+    {
+      "cardName": "Icy Manipulator",
+      "purpose": "activated_ability_cost_plus_target"
+    },
+    {
+      "cardName": "Castle Vantress",
+      "purpose": "activated_ability_with_legality_gate"
+    }
+  ],
+  "noGoals": [
+    "replacement_prevention",
+    "layers_dependency",
+    "full_stack_priority_simulation",
+    "cross_card_closure",
+    "ui_or_scoring_changes",
+    "modal_exhaustive_support",
+    "full_resolution_engine"
+  ],
+  "notes": [
+    "This contract is intentionally minimal.",
+    "It separates CostIR, TargetSpec, and LegalityGate before any broader parser expansion.",
+    "It reserves but does not yet implement full resolution legality handling."
+  ]
+}

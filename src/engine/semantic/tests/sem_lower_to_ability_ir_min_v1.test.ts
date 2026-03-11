@@ -17,6 +17,13 @@ type AbilityIrMin = {
     possible_zone_change?: boolean;
     possible_lki_required?: boolean;
     possible_creature_dies_derivation?: boolean;
+    cost_target_legality_min?: {
+      cost_kinds: string[];
+      target_kinds: string[];
+      legality_kinds: string[];
+      target_count: number;
+      legality_count: number;
+    };
   };
 };
 
@@ -133,5 +140,37 @@ describe("lowerToAbilityIrMinV1", () => {
     });
 
     expect(lowered).toBeNull();
+  });
+
+  it("emits cost_target_legality_min for Crystal Ball", () => {
+    const matrix = loadJson<AnchorMatrix>(anchorPath);
+    const oracleByName = buildOracleLookup(matrix);
+    const oracleText = oracleByName.get("Crystal Ball") ?? "";
+
+    const lowered = lowerToAbilityIrMinV1({
+      name: "Crystal Ball",
+      oracle_text: oracleText,
+    });
+
+    expect(lowered?.semantic_hints?.cost_target_legality_min).toEqual({
+      cost_kinds: ["MANA", "TAP"],
+      target_kinds: [],
+      legality_kinds: [],
+      target_count: 0,
+      legality_count: 0,
+    });
+  });
+
+  it("does not emit cost_target_legality_min for Howling Mine", () => {
+    const matrix = loadJson<AnchorMatrix>(anchorPath);
+    const oracleByName = buildOracleLookup(matrix);
+    const oracleText = oracleByName.get("Howling Mine") ?? "";
+
+    const lowered = lowerToAbilityIrMinV1({
+      name: "Howling Mine",
+      oracle_text: oracleText,
+    });
+
+    expect(lowered?.semantic_hints?.cost_target_legality_min).toBeUndefined();
   });
 });

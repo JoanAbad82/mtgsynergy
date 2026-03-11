@@ -1,0 +1,167 @@
+{
+  "metadata": {
+    "document_id": "sem_deal_damage_lose_life_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-diagnose-damage-to-player-life-lost-gap-v1",
+    "source_note": "Minimal contract to open a local-only DEAL_DAMAGE -> LOSE_LIFE bridge without parser, lowering, scoring, or cross-card changes."
+  },
+  "family": "DEAL_DAMAGE -> LOSE_LIFE",
+  "bridge_name": "deal_damage_to_lose_life_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false,
+    "description": "Only local/intra-profile compatibility. No deck-wide closure."
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "overlay_runtime_unchanged": true,
+    "deterministic_contract": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true,
+    "local_pairing_only": true
+  },
+  "derived_from": {
+    "source_overlay_bridge_contract": "src/engine/semantic/contract/sem_overlay_bridge_min_v1.json",
+    "source_contract_pattern": "src/engine/semantic/contract/sem_creature_dies_payoff_bridge_min_v1.json",
+    "source_diagnostic_tests": [
+      "src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_diagnose.test.ts",
+      "src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_pairing_inspect.test.ts"
+    ],
+    "source_pairing_impl_file": "src/engine/semantic/overlay/sem_edges.ts"
+  },
+  "semantic_basis": {
+    "already_emitted_keys": [
+      "ACTION:DEAL_DAMAGE",
+      "ACTION:LOSE_LIFE"
+    ],
+    "current_gap": "No explicit local closure exists today between ACTION:DEAL_DAMAGE and ACTION:LOSE_LIFE.",
+    "evidence_status": "Pairing inspect freezes the real gap with producers on both sides and zero local pairing by key."
+  },
+  "bridge_kind": {
+    "id": "deal_damage_can_enable_lose_life_local_pairing",
+    "label": "deal_damage -> lose_life",
+    "event_origin": "ACTION:DEAL_DAMAGE",
+    "action_targets": [
+      "ACTION:LOSE_LIFE"
+    ],
+    "compatibility_type": "local_causal_explicit",
+    "purpose": "Enable explicit local pairing support for DEAL_DAMAGE to LOSE_LIFE without global remap.",
+    "explicitly_not": [
+      "cross_card_inference",
+      "global_scoring_adjustment",
+      "open-ended damage semantics",
+      "broad target-agnostic damage-implies-life-loss coercion"
+    ]
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile.",
+    "cross_card_pairing": false
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile produces ACTION:DEAL_DAMAGE"
+    ],
+    "text_evidence_policy": "Use only explicit player/opponent wording available in current parser-visible text; do not infer target ontology from missing model fields.",
+    "honesty_constraints": [
+      "No rich target-player ontology is assumed in v1.",
+      "No implicit promotion from generic target gates to player life-loss semantics.",
+      "\"Any target\" is not treated as always-player in this microphase unless explicitly expanded in a future contract."
+    ]
+  },
+  "causal_mode": {
+    "mode": "local_causal_explicit",
+    "description": "Bridge encodes a narrow compatibility for local pairing only; no global causal closure."
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "helper_style": "Dedicated local helper, separate from generic overlap loop.",
+    "insertion_point": "Post generic i/j loop, matching the CREATURE_DIES bridge insertion pattern.",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "ACTION:DEAL_DAMAGE",
+        "ACTION:LOSE_LIFE"
+      ]
+    }
+  },
+  "invariants": [
+    "No global scoring changes",
+    "No cross-card inference",
+    "No parser changes",
+    "No lowering changes",
+    "No fuzzy heuristics",
+    "No broad damage-implies-life-loss rule across unspecified targets"
+  ],
+  "non_goals": [
+    "New target-player ontology in this microphase",
+    "General support that treats \"any target\" as always-player",
+    "Creature/planeswalker damage semantics",
+    "Prevention, replacement, or lifelink modeling",
+    "Chaining with GAIN_LIFE or other bridge families"
+  ],
+  "deferred": [
+    "Target ontology expansion with explicit parser/runtime support",
+    "Cross-card DEAL_DAMAGE -> LOSE_LIFE closure",
+    "Broader damage target taxonomy",
+    "Replacement/prevention/lifelink integration"
+  ],
+  "acceptance_evidence": {
+    "diagnose_observation": {
+      "test": "src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_diagnose.test.ts",
+      "observed": [
+        "ACTION:DEAL_DAMAGE appears in excess_producers",
+        "ACTION:LOSE_LIFE appears in excess_producers"
+      ]
+    },
+    "pairing_inspect_observation": {
+      "test": "src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_pairing_inspect.test.ts",
+      "observed": [
+        "deal_damage producers are non-empty",
+        "lose_life producers are non-empty",
+        "paired_by_key_count = 0"
+      ],
+      "example_snapshot": {
+        "deal_damage_producer_cards": [
+          "Lightning Strike",
+          "Play with Fire",
+          "Shock"
+        ],
+        "lose_life_producer_cards": [
+          "Epicure of Blood",
+          "Marauding Blight-Priest",
+          "Vampire's Kiss"
+        ],
+        "pairing_candidates_count": 9,
+        "paired_by_key_count": 0
+      }
+    }
+  },
+  "excluded_for_now": {
+    "targets": [
+      "creature",
+      "planeswalker",
+      "battle"
+    ],
+    "constructs": [
+      "multi-step bridges",
+      "global key remapping",
+      "heuristic target coercion"
+    ],
+    "reasons": [
+      "Keep v1 explicit and narrow",
+      "Avoid accidental semantic broadening",
+      "Preserve current parser/runtime boundaries"
+    ]
+  }
+}

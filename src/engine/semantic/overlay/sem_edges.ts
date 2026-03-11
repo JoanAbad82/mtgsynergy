@@ -46,6 +46,21 @@ function explicitDiesTextEvidence(text: string): boolean {
   );
 }
 
+function applyDealDamageLoseLifeBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const dealDamageKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  return profile.produced.has(dealDamageKey);
+}
+
+function explicitDamageToPlayerTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    /\bdeal\w*\s+\d+\s+damage\s+to\s+target\s+player\b/.test(normalized) ||
+    /\bdeal\w*\s+\d+\s+damage\s+to\s+an?\s+opponent\b/.test(normalized) ||
+    /\bdeal\w*\s+\d+\s+damage\s+to\s+each\s+opponent\b/.test(normalized) ||
+    /\bdeal\w*\s+\d+\s+damage\s+to\s+each\s+player\b/.test(normalized)
+  );
+}
+
 export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSemanticEdgesOptions): SemanticEdge[] {
   const includeLocalOnly = options?.includeLocalOnly ?? true;
   const cards = inputCards.map((card) => ({
@@ -93,6 +108,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     for (const key of matchedPayoffs) {
       reasons.push({ key, weight: 1 });
     }
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const dealDamageKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  const loseLifeKey = keyOf(KeyKind.ACTION, ActionId.LOSE_LIFE);
+  for (const card of cards) {
+    if (!applyDealDamageLoseLifeBridge(card.profile)) continue;
+    if (!explicitDamageToPlayerTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: dealDamageKey, weight: 1 },
+      { key: loseLifeKey, weight: 1 },
+    ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({
       from: card.card_id,

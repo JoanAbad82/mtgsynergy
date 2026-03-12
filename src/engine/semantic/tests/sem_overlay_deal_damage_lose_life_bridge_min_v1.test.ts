@@ -26,7 +26,13 @@ type CardInput = {
 const here = dirname(fileURLToPath(import.meta.url));
 const cardsIndexPath = join(here, "../../../../public/data/cards_index.json.gz");
 
-const deckList: Array<{ name: string; count: number }> = [{ name: "Boltwave", count: 4 }];
+const deckList: Array<{ name: string; count: number }> = [
+  { name: "Scorching Missile", count: 1 }, // target player
+  { name: "Zaffai, Thunder Conductor", count: 1 }, // an opponent
+  { name: "Creeping Bloodsucker", count: 1 }, // each opponent
+  { name: "Flame Rift", count: 1 }, // each player
+  { name: "Chain of Plasma", count: 1 }, // any target (negative)
+];
 
 function loadCardsIndex(): CardsIndexPayload {
   const gz = readFileSync(cardsIndexPath);
@@ -118,8 +124,22 @@ async function buildCardsFromDeck(
   });
 }
 
+function findLocalBridgeEdge(
+  edges: ReturnType<typeof buildSemanticEdges>,
+  cardId: number,
+  requiredKeys: number[],
+) {
+  return edges.find(
+    (edge) =>
+      edge.local_only &&
+      edge.from === cardId &&
+      edge.to === cardId &&
+      requiredKeys.every((key) => edge.reasons.some((reason) => reason.key === key)),
+  );
+}
+
 describe("semantic overlay deal damage lose life bridge min v1", () => {
-  it("emits local self-edge with DEAL_DAMAGE and LOSE_LIFE reasons for explicit player-damage text", async () => {
+  it("emits local bridge only for explicit player/opponent damage text and excludes any target", async () => {
     const payload = loadCardsIndex();
     const lookup = createLocalLookup(payload);
     const entries = buildDeckEntries();
@@ -128,19 +148,33 @@ describe("semantic overlay deal damage lose life bridge min v1", () => {
 
     const dealDamageKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
     const loseLifeKey = keyOf(KeyKind.ACTION, ActionId.LOSE_LIFE);
+    const requiredKeys = [dealDamageKey, loseLifeKey];
 
-    const candidate = cards.find(
-      (card) => normalizeCardName(card.name) === normalizeCardName("Boltwave"),
+    const positiveCases = [
+      "Scorching Missile",
+      "Zaffai, Thunder Conductor",
+      "Creeping Bloodsucker",
+      "Flame Rift",
+    ];
+
+    for (const name of positiveCases) {
+      const candidate = cards.find(
+        (card) => normalizeCardName(card.name) === normalizeCardName(name),
+      );
+      expect(candidate).toBeTruthy();
+      const localBridgeEdge = findLocalBridgeEdge(edges, candidate!.card_id, requiredKeys);
+      expect(localBridgeEdge).toBeTruthy();
+      expect(localBridgeEdge?.local_only).toBe(true);
+      expect(localBridgeEdge?.score).toBe(0);
+      expect(localBridgeEdge?.reasons.some((reason) => reason.key === dealDamageKey)).toBe(true);
+      expect(localBridgeEdge?.reasons.some((reason) => reason.key === loseLifeKey)).toBe(true);
+    }
+
+    const anyTargetCard = cards.find(
+      (card) => normalizeCardName(card.name) === normalizeCardName("Chain of Plasma"),
     );
-    expect(candidate).toBeTruthy();
-
-    const localBridgeEdge = edges.find(
-      (edge) => edge.local_only && edge.from === candidate!.card_id && edge.to === candidate!.card_id,
-    );
-
-    expect(localBridgeEdge).toBeTruthy();
-    expect(localBridgeEdge?.score).toBe(0);
-    expect(localBridgeEdge?.reasons.some((reason) => reason.key === dealDamageKey)).toBe(true);
-    expect(localBridgeEdge?.reasons.some((reason) => reason.key === loseLifeKey)).toBe(true);
+    expect(anyTargetCard).toBeTruthy();
+    const anyTargetBridgeEdge = findLocalBridgeEdge(edges, anyTargetCard!.card_id, requiredKeys);
+    expect(anyTargetBridgeEdge).toBeUndefined();
   });
 });

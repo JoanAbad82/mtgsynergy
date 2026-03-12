@@ -1,0 +1,161 @@
+{
+  "metadata": {
+    "document_id": "sem_damage_with_lifelink_life_gain_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-diagnose-damage-with-lifelink-life-gain-gap-v1",
+    "source_note": "Minimal contract to open a local-only DAMAGE_WITH_LIFELINK -> LIFE_GAIN bridge without parser, lowering, scoring, or cross-card changes."
+  },
+  "family": "DAMAGE_WITH_LIFELINK -> LIFE_GAIN",
+  "bridge_name": "damage_with_lifelink_to_life_gain_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false,
+    "description": "Only local/intra-profile compatibility. No deck-wide closure."
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "overlay_runtime_unchanged": true,
+    "deterministic_contract": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true,
+    "local_pairing_only": true
+  },
+  "derived_from": {
+    "source_overlay_bridge_contract": "src/engine/semantic/contract/sem_overlay_bridge_min_v1.json",
+    "source_contract_patterns": [
+      "src/engine/semantic/contract/sem_deal_damage_lose_life_bridge_min_v1.json",
+      "src/engine/semantic/contract/sem_life_gain_add_counters_bridge_min_v1.json"
+    ],
+    "source_diagnostic_tests": [
+      "src/engine/semantic/tests/sem_overlay_damage_with_lifelink_life_gain_pairing_inspect.test.ts"
+    ],
+    "source_pairing_impl_file": "src/engine/semantic/overlay/sem_edges.ts"
+  },
+  "semantic_basis": {
+    "already_emitted_keys": [
+      "ACTION:DEAL_DAMAGE",
+      "ACTION:GAIN_LIFE",
+      "EVENT:LIFE_GAIN"
+    ],
+    "current_gap": "No explicit local closure exists today for the combined condition where the same local source deals damage and has explicit lifelink evidence.",
+    "rules_basis": [
+      "Lifelink is a static ability where damage from that source causes life gain by its controller (Comprehensive Rules, lifelink section)."
+    ],
+    "notes": [
+      "The gap is not damage alone or life gain alone.",
+      "The missing piece is a local explicit bridge for damage-with-lifelink to life-gain signal closure."
+    ]
+  },
+  "bridge_kind": {
+    "id": "damage_with_lifelink_enables_life_gain_local_pairing",
+    "label": "damage_with_lifelink -> life_gain",
+    "event_origin": "ACTION:DEAL_DAMAGE + explicit lifelink evidence",
+    "action_targets": [
+      "EVENT:LIFE_GAIN"
+    ],
+    "compatibility_type": "local_causal_explicit",
+    "purpose": "Enable explicit local pairing support for damage sources with explicit lifelink evidence to LIFE_GAIN without global remap.",
+    "explicitly_not": [
+      "cross_card_inference",
+      "global_scoring_adjustment",
+      "general damage-implies-life-gain coercion",
+      "broad combat-damage ontology expansion",
+      "replacement/prevention system modeling"
+    ]
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile.",
+    "cross_card_pairing": false
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile produces ACTION:DEAL_DAMAGE",
+      "Oracle text contains explicit lifelink evidence"
+    ],
+    "honesty_constraints": [
+      "Do not assume global combat-damage ontology.",
+      "Do not generalize from generic damage to LIFE_GAIN without explicit lifelink evidence.",
+      "Do not introduce parser rework or broad text reparsing in this microphase."
+    ]
+  },
+  "causal_mode": {
+    "mode": "local_causal_explicit",
+    "description": "Bridge encodes a narrow compatibility for local pairing only; no global causal closure."
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "helper_style": "Dedicated local helper, separate from generic overlap loop.",
+    "insertion_point": "Post generic i/j loop, matching existing local bridge insertion pattern.",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "ACTION:DEAL_DAMAGE",
+        "EVENT:LIFE_GAIN"
+      ]
+    }
+  },
+  "invariants": [
+    "No parser changes",
+    "No lowering changes",
+    "No global scoring changes",
+    "No cross-card inference",
+    "No fuzzy heuristics",
+    "No broad text reparse pass"
+  ],
+  "non_goals": [
+    "Replacement effect handling",
+    "Prevention effect handling",
+    "Multiple simultaneous source reconciliation",
+    "Global combat-damage ontology",
+    "Cross-card life-gain payoff closure",
+    "Generalization of all damage into life gain"
+  ],
+  "deferred": [
+    "Lifelink interaction infrastructure beyond local explicit bridge",
+    "Replacement/prevention integrations",
+    "Cross-card DAMAGE_WITH_LIFELINK -> LIFE_GAIN closure",
+    "Combat/noncombat source taxonomy expansion",
+    "Multi-hop chain modeling"
+  ],
+  "acceptance_evidence": {
+    "pairing_inspect_observation": {
+      "test": "src/engine/semantic/tests/sem_overlay_damage_with_lifelink_life_gain_pairing_inspect.test.ts",
+      "observed": [
+        "deal_damage_producer_cards are non-empty",
+        "lifelink_damage_source_cards are non-empty",
+        "gain_life_action_producer_cards are non-empty",
+        "life_gain_event_producer_cards are non-empty",
+        "paired_by_key_count = 0"
+      ],
+      "example_snapshot": {
+        "pairing_candidates_count": 1,
+        "paired_by_key_count": 0
+      }
+    }
+  },
+  "excluded_for_now": {
+    "constructs": [
+      "global lifelink inference",
+      "replacement/prevention pipelines",
+      "cross-card payoff propagation",
+      "combat engine coupling",
+      "multi-step bridge composition"
+    ],
+    "reasons": [
+      "Keep v1 explicit and narrow",
+      "Avoid accidental semantic broadening",
+      "Preserve current parser/runtime boundaries"
+    ]
+  }
+}

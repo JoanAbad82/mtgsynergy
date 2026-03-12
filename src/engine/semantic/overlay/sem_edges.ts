@@ -67,6 +67,15 @@ function applyLifeGainAddCountersBridge(profile: ReturnType<typeof buildSemantic
   return profile.consumed.has(lifeGainEventKey) && profile.produced.has(addCountersKey);
 }
 
+function applyDamageWithLifelinkLifeGainBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const dealDamageKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  return profile.produced.has(dealDamageKey);
+}
+
+function explicitLifelinkTextEvidence(text: string): boolean {
+  return /\blifelink\b/.test(text.toLowerCase());
+}
+
 export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSemanticEdgesOptions): SemanticEdge[] {
   const includeLocalOnly = options?.includeLocalOnly ?? true;
   const cards = inputCards.map((card) => ({
@@ -150,6 +159,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: lifeGainEventKey, weight: 1 },
       { key: addCountersKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const dealDamageLifelinkKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  const lifeGainLifelinkKey = keyOf(KeyKind.EVENT, EventId.LIFE_GAIN);
+  for (const card of cards) {
+    if (!applyDamageWithLifelinkLifeGainBridge(card.profile)) continue;
+    if (!explicitLifelinkTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: dealDamageLifelinkKey, weight: 1 },
+      { key: lifeGainLifelinkKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

@@ -83,11 +83,15 @@ describe("SemanticOverlayPanel redundancy filtering", () => {
 
 describe("SemanticOverlayPanel semantic summary helpers", () => {
   it("formats signal status lines", () => {
-    const ok = getSignalStatus({ SOS: 0.5 } as any);
-    expect(ok.label).toContain("Señal encontrada");
-    const missing = getSignalStatus({ SOS: 0 } as any);
+    const withVisibleEdges = getSignalStatus({ SOS: 0 } as any, 2);
+    expect(withVisibleEdges.label).toContain("Señal encontrada");
+
+    const missing = getSignalStatus({ SOS: 0 } as any, 0);
     expect(missing.label).toContain("Sin señal");
     expect(missing.hint).toBeTruthy();
+
+    const withPositiveSos = getSignalStatus({ SOS: 0.5 } as any, 0);
+    expect(withPositiveSos.label).toContain("Señal encontrada");
   });
 
   it("computes coverage summary and reasons deterministically", () => {

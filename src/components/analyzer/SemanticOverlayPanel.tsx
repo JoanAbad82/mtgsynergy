@@ -155,8 +155,11 @@ export function buildCoverageReasonsFromReport(
     }));
 }
 
-export function getSignalStatus(metrics: SemanticOverlayMetrics): { label: string; hint?: string } {
-  if (metrics.SOS > 0) {
+export function getSignalStatus(
+  metrics: SemanticOverlayMetrics,
+  visibleEdgesCount = 0,
+): { label: string; hint?: string } {
+  if (metrics.SOS > 0 || visibleEdgesCount > 0) {
     return { label: SEMANTIC_OVERLAY_COPY.signalFoundLabel };
   }
   return {
@@ -194,8 +197,8 @@ export default function SemanticOverlayPanel({
     reportReasons.length > 0
       ? reportReasons
       : buildCoverageReasons(metrics, resolvedUnique, missingUnique);
-  const status = getSignalStatus(metrics);
   const edgesTop = edges.slice(0, 10);
+  const status = getSignalStatus(metrics, edgesTop.length);
   const orphanTop = metrics.orphan_listeners.slice(0, 10);
   const excessTop = metrics.excess_producers.slice(0, 10);
   const groups = filterRedundancyGroups(metrics.redundancy_groups);

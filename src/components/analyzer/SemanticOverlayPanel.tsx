@@ -26,7 +26,7 @@ export const SEMANTIC_OVERLAY_COPY = {
   excessTitle: "Generas más de lo que usas",
   noneDetected: "No se detectaron.",
   redundancyTitle: "Efectos repetidos",
-  redundancyNotApplicable: "No aplicable (sin señal).",
+  redundancyNotApplicable: "No se detectaron efectos repetidos relevantes.",
   glossaryTitle: "Glosario rápido",
   glossaryItems: [
     "Porcentaje de cartas con alguna señal semántica.",

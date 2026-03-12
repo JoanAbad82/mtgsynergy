@@ -46,7 +46,8 @@ describe("SemanticOverlayPanel copy", () => {
     expect(SEMANTIC_OVERLAY_COPY.title).toContain("Superposición semántica");
     expect(SEMANTIC_OVERLAY_COPY.edgesTitle).toContain("Conexiones");
     expect(SEMANTIC_OVERLAY_COPY.noEdges).toContain("No hay conexiones");
-    expect(SEMANTIC_OVERLAY_COPY.redundancyNotApplicable.toLowerCase()).toContain("no aplicable");
+    expect(SEMANTIC_OVERLAY_COPY.redundancyNotApplicable).toContain("efectos repetidos");
+    expect(SEMANTIC_OVERLAY_COPY.redundancyNotApplicable.toLowerCase()).not.toContain("sin señal");
   });
 
   it("evita encabezados en inglés y duplicados", () => {

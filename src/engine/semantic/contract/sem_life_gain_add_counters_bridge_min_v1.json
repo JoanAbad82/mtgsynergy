@@ -1,0 +1,169 @@
+{
+  "metadata": {
+    "document_id": "sem_life_gain_add_counters_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-diagnose-life-gain-add-counters-gap-v1",
+    "source_note": "Minimal contract to open a local-only LIFE_GAIN -> ADD_COUNTERS bridge without parser, lowering, scoring, or cross-card changes."
+  },
+  "family": "LIFE_GAIN -> ADD_COUNTERS",
+  "bridge_name": "life_gain_to_add_counters_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false,
+    "description": "Only local/intra-profile compatibility. No deck-wide closure."
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "overlay_runtime_unchanged": true,
+    "deterministic_contract": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true,
+    "local_pairing_only": true
+  },
+  "derived_from": {
+    "source_overlay_bridge_contract": "src/engine/semantic/contract/sem_overlay_bridge_min_v1.json",
+    "source_contract_patterns": [
+      "src/engine/semantic/contract/sem_creature_dies_payoff_bridge_min_v1.json",
+      "src/engine/semantic/contract/sem_deal_damage_lose_life_bridge_min_v1.json"
+    ],
+    "source_diagnostic_tests": [
+      "src/engine/semantic/tests/sem_overlay_life_gain_add_counters_diagnose.test.ts",
+      "src/engine/semantic/tests/sem_overlay_life_gain_add_counters_pairing_inspect.test.ts"
+    ],
+    "source_pairing_impl_file": "src/engine/semantic/overlay/sem_edges.ts"
+  },
+  "semantic_basis": {
+    "already_emitted_keys": [
+      "ACTION:GAIN_LIFE",
+      "EVENT:LIFE_GAIN",
+      "ACTION:ADD_COUNTERS"
+    ],
+    "current_gap": "No explicit local closure exists today between LIFE_GAIN and ADD_COUNTERS keys.",
+    "notes": [
+      "Parser emits gain life actions when explicit 'you gain N life' wording is present.",
+      "sem_profile emits EVENT:LIFE_GAIN from ACTION:GAIN_LIFE.",
+      "Parser recognizes +1/+1 counter additions as ACTION:ADD_COUNTERS."
+    ]
+  },
+  "bridge_kind": {
+    "id": "life_gain_enables_add_counters_local_pairing",
+    "label": "life_gain -> add_counters",
+    "event_origin": "EVENT:LIFE_GAIN",
+    "action_targets": [
+      "ACTION:ADD_COUNTERS"
+    ],
+    "compatibility_type": "local_causal_explicit",
+    "purpose": "Enable explicit local pairing support for LIFE_GAIN listeners and ADD_COUNTERS producers without global remap.",
+    "explicitly_not": [
+      "cross_card_inference",
+      "global_scoring_adjustment",
+      "global counters-matter expansion",
+      "all-counters taxonomy expansion",
+      "open-ended life-gain ontology expansion"
+    ]
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile.",
+    "cross_card_pairing": false
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile consumes EVENT:LIFE_GAIN",
+      "Profile produces ACTION:ADD_COUNTERS"
+    ],
+    "honesty_constraints": [
+      "Do not assume richer ontology beyond current parser/profile signals.",
+      "Do not generalize to global counters-matter families.",
+      "Do not expand to arbitrary counter types while parser v1 recognizes +1/+1 counters only."
+    ]
+  },
+  "causal_mode": {
+    "mode": "local_causal_explicit",
+    "description": "Bridge encodes a narrow compatibility for local pairing only; no global causal closure."
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "helper_style": "Dedicated local helper, separate from generic overlap loop.",
+    "insertion_point": "Post generic i/j loop, matching existing local bridge insertion pattern.",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "EVENT:LIFE_GAIN",
+        "ACTION:ADD_COUNTERS"
+      ]
+    }
+  },
+  "invariants": [
+    "No parser changes",
+    "No lowering changes",
+    "No global scoring changes",
+    "No cross-card inference",
+    "No fuzzy heuristics"
+  ],
+  "non_goals": [
+    "Lifelink semantics",
+    "Replacement or prevention effect handling",
+    "Global counters-matter family closure",
+    "All-counters taxonomy support",
+    "Multi-hop chain modeling"
+  ],
+  "deferred": [
+    "Richer life-gain ontology",
+    "Counter taxonomy beyond +1/+1 in parser/runtime",
+    "Cross-card LIFE_GAIN -> ADD_COUNTERS closure",
+    "Multi-hop causal chains across bridge families"
+  ],
+  "acceptance_evidence": {
+    "diagnose_observation": {
+      "test": "src/engine/semantic/tests/sem_overlay_life_gain_add_counters_diagnose.test.ts",
+      "observed": [
+        "LIFE_GAIN family has real signal in topEdges/excess_producers",
+        "ACTION:ADD_COUNTERS appears as real signal in excess_producers"
+      ]
+    },
+    "pairing_inspect_observation": {
+      "test": "src/engine/semantic/tests/sem_overlay_life_gain_add_counters_pairing_inspect.test.ts",
+      "observed": [
+        "Signal exists on both sides (LIFE_GAIN listeners and ADD_COUNTERS producers)",
+        "pairing_candidates_count = 9",
+        "paired_by_key_count = 0",
+        "has_life_gain_edge = true",
+        "has_add_counters_edge = false"
+      ]
+    }
+  },
+  "post_implementation_validation": {
+    "bridge_runtime_status": "implemented",
+    "bridge_impl_file": "src/engine/semantic/overlay/sem_edges.ts",
+    "observed_runtime_status": [
+      "diagnose now shows local_only self-edge entries in topEdges for LIFE_GAIN -> ADD_COUNTERS local closure",
+      "pairing inspect still reports paired_by_key_count = 0 at raw-key pairing level",
+      "pairing inspect now reports has_add_counters_edge = true after local bridge insertion"
+    ]
+  },
+  "excluded_for_now": {
+    "constructs": [
+      "lifelink-specific closure",
+      "replacement/prevention interactions",
+      "global counter archetype inference",
+      "counter-type wildcard heuristics",
+      "multi-step bridge composition"
+    ],
+    "reasons": [
+      "Keep v1 explicit and narrow",
+      "Avoid accidental semantic broadening",
+      "Preserve parser/runtime boundaries in current phase"
+    ]
+  }
+}

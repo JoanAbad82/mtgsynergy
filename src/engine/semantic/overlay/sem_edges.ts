@@ -61,6 +61,12 @@ function explicitDamageToPlayerTextEvidence(text: string): boolean {
   );
 }
 
+function applyLifeGainAddCountersBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const lifeGainEventKey = keyOf(KeyKind.EVENT, EventId.LIFE_GAIN);
+  const addCountersKey = keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS);
+  return profile.consumed.has(lifeGainEventKey) && profile.produced.has(addCountersKey);
+}
+
 export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSemanticEdgesOptions): SemanticEdge[] {
   const includeLocalOnly = options?.includeLocalOnly ?? true;
   const cards = inputCards.map((card) => ({
@@ -126,6 +132,24 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: dealDamageKey, weight: 1 },
       { key: loseLifeKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const lifeGainEventKey = keyOf(KeyKind.EVENT, EventId.LIFE_GAIN);
+  const addCountersKey = keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS);
+  for (const card of cards) {
+    if (!applyLifeGainAddCountersBridge(card.profile)) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: lifeGainEventKey, weight: 1 },
+      { key: addCountersKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

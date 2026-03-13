@@ -85,6 +85,21 @@ function applyDamageWithLifelinkLifeGainBridge(profile: ReturnType<typeof buildS
   return profile.produced.has(dealDamageKey);
 }
 
+function applyCastSpellDamageBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const castSpellKey = keyOf(KeyKind.EVENT, EventId.CAST_SPELL);
+  const dealDamageKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  return profile.consumed.has(castSpellKey) && profile.produced.has(dealDamageKey);
+}
+
+function explicitCastInstantOrSorceryDamagePayoffTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    normalized.includes("whenever you cast an instant or sorcery spell") &&
+    normalized.includes("deal") &&
+    normalized.includes("damage")
+  );
+}
+
 function explicitLifelinkTextEvidence(text: string): boolean {
   return /\blifelink\b/.test(text.toLowerCase());
 }
@@ -173,6 +188,28 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: dealDamageKey, weight: 1 },
       { key: loseLifeKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const castSpellKey = keyOf(KeyKind.EVENT, EventId.CAST_SPELL);
+  const dealDamageCastSpellKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  for (const card of cards) {
+    const cardName = (card as { name?: string }).name ?? `card_id:${card.card_id}`;
+    const apply = applyCastSpellDamageBridge(card.profile);
+    const textEvidence = explicitCastInstantOrSorceryDamagePayoffTextEvidence(card.oracle_text ?? "");
+    if (!apply) continue;
+    if (!textEvidence) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: castSpellKey, weight: 1 },
+      { key: dealDamageCastSpellKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

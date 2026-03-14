@@ -19,10 +19,27 @@ type EnrichOptions = { enable?: boolean; baseUrl?: string };
 
 type EnrichedEntry = CardEntry & { features?: CardFeatures };
 
-function inferRole(features: CardFeatures): Role {
+function normalizeRoleHeuristicText(text?: string): string {
+  return (text ?? "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isExplicitCastInstantOrSorceryDamagePayoff(text?: string): boolean {
+  const t = normalizeRoleHeuristicText(text);
+  const watchesCastInstantOrSorcery =
+    /\b(?:when|whenever)\s+you\s+cast\s+an?\s+instant\s+or\s+sorcery\s+spell\b/.test(t);
+  const dealsDamage = /\bdeals?\b[\s\S]{0,80}\bdamage\b/.test(t);
+  return watchesCastInstantOrSorcery && dealsDamage;
+}
+
+function inferRole(features: CardFeatures, oracleText?: string): Role {
   if (features.types.includes("Land")) return "LAND";
   if (features.produces_mana) return "RAMP";
   if (features.draws_cards) return "DRAW";
+  if (isExplicitCastInstantOrSorceryDamagePayoff(oracleText)) return "PAYOFF";
   if (features.removes) return "REMOVAL";
   if (features.protects) return "PROTECTION";
   if (
@@ -44,8 +61,8 @@ function inferRole(features: CardFeatures): Role {
 
 export const __testing = { inferRole };
 
-function applyFeatures(entry: CardEntry, features: CardFeatures): EnrichedEntry {
-  const enriched: EnrichedEntry = { ...entry, role_primary: inferRole(features) };
+function applyFeatures(entry: CardEntry, features: CardFeatures, oracleText?: string): EnrichedEntry {
+  const enriched: EnrichedEntry = { ...entry, role_primary: inferRole(features, oracleText) };
   enriched.features = features;
   return enriched;
 }
@@ -71,7 +88,7 @@ export async function enrichEntriesWithCardIndex(
       if (card) {
         matches += 1;
         const features = extractFeatures(card);
-        enriched.push(applyFeatures(entry, features));
+        enriched.push(applyFeatures(entry, features, card.oracle_text ?? undefined));
       } else {
         enriched.push({ ...entry });
       }

@@ -90,10 +90,15 @@ export function generateEdges(entries: EdgeEntry[]): Edge[] {
     const types = e.features?.types ?? [];
     return types.includes("Instant") || types.includes("Sorcery");
   });
-  const prowess = entries.filter((e) => e.features?.has_prowess);
+  const spellMatterTargets = entries.filter(
+    (e) =>
+      e.features?.has_prowess === true ||
+      ((e.role_primary === "ENGINE" || e.role_primary === "PAYOFF") &&
+        e.features?.cares_about_spells === true),
+  );
 
   for (const from of spells) {
-    for (const to of prowess) {
+    for (const to of spellMatterTargets) {
       dedupeAdd(edges, seen, {
         kind: "spells_support_prowess",
         from: from.name_norm,

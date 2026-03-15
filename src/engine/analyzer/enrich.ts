@@ -37,16 +37,26 @@ function isExplicitCastInstantOrSorceryDamagePayoff(text?: string): boolean {
   return (watchesCastInstantOrSorcery || watchesCastNoncreature) && dealsDamage;
 }
 
+function isExplicitCastSpellTokenEngine(text?: string): boolean {
+  const t = normalizeRoleHeuristicText(text);
+  const watchesCastInstantOrSorcery =
+    /\b(?:when|whenever)\s+you\s+cast\s+an?\s+instant\s+or\s+sorcery\s+spell\b/.test(t);
+  const watchesCastNoncreature =
+    /\b(?:when|whenever)\s+you\s+cast\s+an?\s+noncreature\s+spell\b/.test(t);
+  const createsToken = /\bcreate\b[\s\S]{0,120}\btoken\b/.test(t);
+  return (watchesCastInstantOrSorcery || watchesCastNoncreature) && createsToken;
+}
+
 function inferRole(features: CardFeatures, oracleText?: string): Role {
   if (features.types.includes("Land")) return "LAND";
   if (features.produces_mana) return "RAMP";
   if (features.draws_cards) return "DRAW";
   if (isExplicitCastInstantOrSorceryDamagePayoff(oracleText)) return "PAYOFF";
+  if (isExplicitCastSpellTokenEngine(oracleText)) return "ENGINE";
   if (features.removes) return "REMOVAL";
   if (features.protects) return "PROTECTION";
   if (
     features.is_anthem ||
-    features.cares_about_spells ||
     features.recurs_from_graveyard ||
     features.tutors
   )

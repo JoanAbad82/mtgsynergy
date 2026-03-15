@@ -273,7 +273,17 @@ export function explainKey(key: number): string {
   return "UNKNOWN";
 }
 
-export function explainKeyHuman(key: number): string {
+const DRAW_SECOND_KEY = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
+const CREATE_TOKEN_KEY = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+const DRAW_SECOND_GENERIC_LABEL = "Robas cartas adicionales en el turno (experimental)";
+const DRAW_SECOND_CREATE_TOKEN_LABEL = "Robas tu segunda carta del turno -> creas una ficha";
+
+function hasDrawSecondCreateTokenEvidence(reasonKeys?: number[]): boolean {
+  if (!reasonKeys || reasonKeys.length === 0) return false;
+  return reasonKeys.includes(DRAW_SECOND_KEY) && reasonKeys.includes(CREATE_TOKEN_KEY);
+}
+
+export function explainKeyHuman(key: number, reasonKeys?: number[]): string {
   const raw = explainKey(key);
   if (raw === "UNKNOWN") return "Unknown";
   const [prefix, rest] = raw.split(":");
@@ -281,7 +291,10 @@ export function explainKeyHuman(key: number): string {
   if (prefix === "EVENT") {
     if (rest === "CAST_SPELL") return "Lanzas instantáneo o conjuro (experimental)";
     if (rest === "DRAW_EXTRA_CARD_TURN") {
-      return "Robas cartas adicionales en el turno (experimental)";
+      if (hasDrawSecondCreateTokenEvidence(reasonKeys)) {
+        return DRAW_SECOND_CREATE_TOKEN_LABEL;
+      }
+      return DRAW_SECOND_GENERIC_LABEL;
     }
     return `Event · ${rest}`;
   }

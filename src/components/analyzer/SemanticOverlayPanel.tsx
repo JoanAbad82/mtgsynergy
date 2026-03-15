@@ -172,7 +172,7 @@ type Props = {
   metrics: SemanticOverlayMetrics;
   edges: SemanticEdge[];
   explainKey: (key: number) => string;
-  explainKeyHuman: (key: number) => string;
+  explainKeyHuman: (key: number, reasonKeys?: number[]) => string;
   idToName: Record<number, string>;
   deckEntriesCount: number;
   resolvedUnique: number;
@@ -264,13 +264,14 @@ export default function SemanticOverlayPanel({
             const fromName = idToName[edge.from] ?? String(edge.from);
             const toName = idToName[edge.to] ?? String(edge.to);
             const reasons = edge.reasons.slice(0, 3);
+            const reasonKeys = edge.reasons.map((reason) => reason.key);
             return (
               <li key={`${edge.from}-${edge.to}-${edge.score}`}>
                 {fromName} → {toName} ({SEMANTIC_OVERLAY_COPY.edgeScoreLabel} {edge.score})
                 {reasons.length > 0 && (
                   <div className="muted">
                     {reasons.map((reason) => {
-                      const label = explainKeyHuman(reason.key);
+                      const label = explainKeyHuman(reason.key, reasonKeys);
                       const shown = label !== "Unknown" ? label : explainKey(reason.key);
                       return (
                         <div key={`${edge.from}-${edge.to}-${reason.key}`}>

@@ -97,6 +97,12 @@ function applyDrawSecondCreateTokenBridge(profile: ReturnType<typeof buildSemant
   return profile.consumed.has(drawSecondKey) && profile.produced.has(createTokenKey);
 }
 
+function applyDrawSecondDealDamageBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
+  const dealDamageKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  return profile.consumed.has(drawSecondKey) && profile.produced.has(dealDamageKey);
+}
+
 function explicitCastInstantOrSorceryDamagePayoffTextEvidence(text: string): boolean {
   const normalized = text.toLowerCase();
   return (
@@ -112,6 +118,15 @@ function explicitDrawSecondCreateTokenTextEvidence(text: string): boolean {
     /\b(?:when|whenever)[^.]*\bdraw\b[^.]*\bsecond\s+card\b[^.]*\beach\s+turn\b/.test(normalized) &&
     normalized.includes("create") &&
     normalized.includes("token")
+  );
+}
+
+function explicitDrawSecondDealDamageTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    /\b(?:when|whenever)[^.]*\bdraw\b[^.]*\bsecond\s+card\b[^.]*\beach\s+turn\b/.test(normalized) &&
+    normalized.includes("deal") &&
+    normalized.includes("damage")
   );
 }
 
@@ -244,6 +259,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: drawSecondKey, weight: 1 },
       { key: createTokenDrawSecondKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const drawSecondDamageKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
+  const dealDamageDrawSecondKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  for (const card of cards) {
+    if (!applyDrawSecondDealDamageBridge(card.profile)) continue;
+    if (!explicitDrawSecondDealDamageTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: drawSecondDamageKey, weight: 1 },
+      { key: dealDamageDrawSecondKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

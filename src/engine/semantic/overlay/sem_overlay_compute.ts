@@ -1,7 +1,7 @@
 import type { CardRecordMin } from "../../cards/types";
 import { normalizeCardName } from "../../cards/normalize";
 import { normalizeOracleTextV1 } from "../normalize";
-import { EventId } from "../contract";
+import { ActionId, EventId } from "../contract";
 import { parseSemanticIrV0 } from "../parser/sem_parser_v1";
 import { buildSemanticEdges, type SemanticEdge } from "./sem_edges";
 import { buildSemanticOverlayMetrics } from "./sem_metrics";
@@ -17,48 +17,102 @@ type OverlayComputeResult = {
 };
 
 function selectEdgesTop(edges: SemanticEdge[], topN: number): SemanticEdge[] {
-  const top = edges.slice(0, topN);
+  let top = edges.slice(0, topN);
   if (topN <= 0 || edges.length === 0) return top;
 
   const diesKey = keyOf(KeyKind.EVENT, EventId.CREATURE_DIES);
   const isLocalDiesEdge = (edge: SemanticEdge) =>
     !!edge.local_only && edge.reasons.some((reason) => reason.key === diesKey);
 
-  if (top.some(isLocalDiesEdge)) return top;
+  if (!top.some(isLocalDiesEdge)) {
+    const candidates = edges.filter(
+      (edge) => isLocalDiesEdge(edge) && !top.includes(edge),
+    );
+    const nonDiesReasonCount = (edge: SemanticEdge) =>
+      edge.reasons.filter((reason) => reason.key !== diesKey).length;
+    const isBetterCandidate = (next: SemanticEdge, best: SemanticEdge) => {
+      if (next.reasons.length !== best.reasons.length) {
+        return next.reasons.length > best.reasons.length;
+      }
+      const nextNonDies = nonDiesReasonCount(next);
+      const bestNonDies = nonDiesReasonCount(best);
+      if (nextNonDies !== bestNonDies) {
+        return nextNonDies > bestNonDies;
+      }
+      if (next.from !== best.from) return next.from < best.from;
+      return next.to < best.to;
+    };
 
-  const candidates = edges.filter(
-    (edge) => isLocalDiesEdge(edge) && !top.includes(edge),
-  );
-  const nonDiesReasonCount = (edge: SemanticEdge) =>
-    edge.reasons.filter((reason) => reason.key !== diesKey).length;
-  const isBetterCandidate = (next: SemanticEdge, best: SemanticEdge) => {
-    if (next.reasons.length !== best.reasons.length) {
-      return next.reasons.length > best.reasons.length;
+    let candidate: SemanticEdge | null = null;
+    for (const edge of candidates) {
+      if (!candidate || isBetterCandidate(edge, candidate)) {
+        candidate = edge;
+      }
     }
-    const nextNonDies = nonDiesReasonCount(next);
-    const bestNonDies = nonDiesReasonCount(best);
-    if (nextNonDies !== bestNonDies) {
-      return nextNonDies > bestNonDies;
-    }
-    if (next.from !== best.from) return next.from < best.from;
-    return next.to < best.to;
-  };
-
-  let candidate: SemanticEdge | null = null;
-  for (const edge of candidates) {
-    if (!candidate || isBetterCandidate(edge, candidate)) {
-      candidate = edge;
+    if (candidate) {
+      if (top.length < topN) {
+        top = [...top, candidate];
+      } else {
+        const next = [...top];
+        next[next.length - 1] = candidate;
+        top = next;
+      }
     }
   }
-  if (!candidate) return top;
 
-  if (top.length < topN) {
-    return [...top, candidate];
+  const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
+  const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+  const isLocalDrawSecondTokenEdge = (edge: SemanticEdge) =>
+    !!edge.local_only &&
+    edge.reasons.some((reason) => reason.key === drawSecondKey) &&
+    edge.reasons.some((reason) => reason.key === createTokenKey);
+
+  if (!top.some(isLocalDrawSecondTokenEdge)) {
+    const candidates = edges.filter(
+      (edge) => isLocalDrawSecondTokenEdge(edge) && !top.includes(edge),
+    );
+    const nonBridgeReasonCount = (edge: SemanticEdge) =>
+      edge.reasons.filter(
+        (reason) => reason.key !== drawSecondKey && reason.key !== createTokenKey,
+      ).length;
+    const isBetterCandidate = (next: SemanticEdge, best: SemanticEdge) => {
+      if (next.reasons.length !== best.reasons.length) {
+        return next.reasons.length > best.reasons.length;
+      }
+      const nextNonBridge = nonBridgeReasonCount(next);
+      const bestNonBridge = nonBridgeReasonCount(best);
+      if (nextNonBridge !== bestNonBridge) {
+        return nextNonBridge > bestNonBridge;
+      }
+      if (next.from !== best.from) return next.from < best.from;
+      return next.to < best.to;
+    };
+
+    let candidate: SemanticEdge | null = null;
+    for (const edge of candidates) {
+      if (!candidate || isBetterCandidate(edge, candidate)) {
+        candidate = edge;
+      }
+    }
+    if (candidate) {
+      if (top.length < topN) {
+        top = [...top, candidate];
+      } else {
+        const next = [...top];
+        let replaceAt = next.length - 1;
+        for (let idx = next.length - 1; idx >= 0; idx -= 1) {
+          if (!isLocalDiesEdge(next[idx])) {
+            replaceAt = idx;
+            break;
+          }
+        }
+        next[replaceAt] = candidate;
+        top = next;
+      }
+    }
   }
 
-  const next = [...top];
-  next[next.length - 1] = candidate;
-  return next;
+  return top;
 }
 
 export async function computeSemanticOverlayFromDeckEntries(

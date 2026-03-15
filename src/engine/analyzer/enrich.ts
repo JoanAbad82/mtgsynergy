@@ -37,6 +37,22 @@ function isExplicitCastInstantOrSorceryDamagePayoff(text?: string): boolean {
   return (watchesCastInstantOrSorcery || watchesCastNoncreature) && dealsDamage;
 }
 
+function isExplicitDrawSecondTokenEngine(text?: string): boolean {
+  const t = normalizeRoleHeuristicText(text);
+  const watchesDrawSecondCardEachTurn =
+    /\b(?:when|whenever)[^.]*\bdraw\b[^.]*\bsecond\s+card\b[^.]*\beach\s+turn\b/.test(t);
+  const createsToken = /\bcreate\b[\s\S]{0,120}\btoken\b/.test(t);
+  return watchesDrawSecondCardEachTurn && createsToken;
+}
+
+function isExplicitDrawSecondDamagePayoff(text?: string): boolean {
+  const t = normalizeRoleHeuristicText(text);
+  const watchesDrawSecondCardEachTurn =
+    /\b(?:when|whenever)[^.]*\bdraw\b[^.]*\bsecond\s+card\b[^.]*\beach\s+turn\b/.test(t);
+  const dealsDamage = /\b(?:deal|deals|dealt)\b[\s\S]{0,120}\bdamage\b/.test(t);
+  return watchesDrawSecondCardEachTurn && dealsDamage;
+}
+
 function isExplicitCastSpellTokenEngine(text?: string): boolean {
   const t = normalizeRoleHeuristicText(text);
   const watchesCastInstantOrSorcery =
@@ -51,7 +67,9 @@ function inferRole(features: CardFeatures, oracleText?: string): Role {
   if (features.types.includes("Land")) return "LAND";
   if (features.produces_mana) return "RAMP";
   if (features.draws_cards) return "DRAW";
+  if (isExplicitDrawSecondDamagePayoff(oracleText)) return "PAYOFF";
   if (isExplicitCastInstantOrSorceryDamagePayoff(oracleText)) return "PAYOFF";
+  if (isExplicitDrawSecondTokenEngine(oracleText)) return "ENGINE";
   if (isExplicitCastSpellTokenEngine(oracleText)) return "ENGINE";
   if (features.removes) return "REMOVAL";
   if (features.protects) return "PROTECTION";

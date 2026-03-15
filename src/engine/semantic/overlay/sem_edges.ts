@@ -91,12 +91,27 @@ function applyCastSpellDamageBridge(profile: ReturnType<typeof buildSemanticCard
   return profile.consumed.has(castSpellKey) && profile.produced.has(dealDamageKey);
 }
 
+function applyDrawSecondCreateTokenBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
+  const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+  return profile.consumed.has(drawSecondKey) && profile.produced.has(createTokenKey);
+}
+
 function explicitCastInstantOrSorceryDamagePayoffTextEvidence(text: string): boolean {
   const normalized = text.toLowerCase();
   return (
     normalized.includes("whenever you cast an instant or sorcery spell") &&
     normalized.includes("deal") &&
     normalized.includes("damage")
+  );
+}
+
+function explicitDrawSecondCreateTokenTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    /\b(?:when|whenever)[^.]*\bdraw\b[^.]*\bsecond\s+card\b[^.]*\beach\s+turn\b/.test(normalized) &&
+    normalized.includes("create") &&
+    normalized.includes("token")
   );
 }
 
@@ -210,6 +225,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: castSpellKey, weight: 1 },
       { key: dealDamageCastSpellKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
+  const createTokenDrawSecondKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+  for (const card of cards) {
+    if (!applyDrawSecondCreateTokenBridge(card.profile)) continue;
+    if (!explicitDrawSecondCreateTokenTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: drawSecondKey, weight: 1 },
+      { key: createTokenDrawSecondKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

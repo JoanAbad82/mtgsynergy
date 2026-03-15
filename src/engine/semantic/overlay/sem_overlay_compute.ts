@@ -112,6 +112,57 @@ function selectEdgesTop(edges: SemanticEdge[], topN: number): SemanticEdge[] {
     }
   }
 
+  const dealDamageKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  const isLocalDrawSecondDamageEdge = (edge: SemanticEdge) =>
+    !!edge.local_only &&
+    edge.reasons.some((reason) => reason.key === drawSecondKey) &&
+    edge.reasons.some((reason) => reason.key === dealDamageKey);
+
+  if (!top.some(isLocalDrawSecondDamageEdge)) {
+    const candidates = edges.filter(
+      (edge) => isLocalDrawSecondDamageEdge(edge) && !top.includes(edge),
+    );
+    const nonBridgeReasonCount = (edge: SemanticEdge) =>
+      edge.reasons.filter(
+        (reason) => reason.key !== drawSecondKey && reason.key !== dealDamageKey,
+      ).length;
+    const isBetterCandidate = (next: SemanticEdge, best: SemanticEdge) => {
+      if (next.reasons.length !== best.reasons.length) {
+        return next.reasons.length > best.reasons.length;
+      }
+      const nextNonBridge = nonBridgeReasonCount(next);
+      const bestNonBridge = nonBridgeReasonCount(best);
+      if (nextNonBridge !== bestNonBridge) {
+        return nextNonBridge > bestNonBridge;
+      }
+      if (next.from !== best.from) return next.from < best.from;
+      return next.to < best.to;
+    };
+
+    let candidate: SemanticEdge | null = null;
+    for (const edge of candidates) {
+      if (!candidate || isBetterCandidate(edge, candidate)) {
+        candidate = edge;
+      }
+    }
+    if (candidate) {
+      if (top.length < topN) {
+        top = [...top, candidate];
+      } else {
+        const next = [...top];
+        let replaceAt = next.length - 1;
+        for (let idx = next.length - 1; idx >= 0; idx -= 1) {
+          if (!isLocalDiesEdge(next[idx]) && !isLocalDrawSecondTokenEdge(next[idx])) {
+            replaceAt = idx;
+            break;
+          }
+        }
+        next[replaceAt] = candidate;
+        top = next;
+      }
+    }
+  }
+
   return top;
 }
 

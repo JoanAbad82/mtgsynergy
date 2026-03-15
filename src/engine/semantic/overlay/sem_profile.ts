@@ -275,12 +275,19 @@ export function explainKey(key: number): string {
 
 const DRAW_SECOND_KEY = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
 const CREATE_TOKEN_KEY = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+const DEAL_DAMAGE_KEY = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
 const DRAW_SECOND_GENERIC_LABEL = "Robas cartas adicionales en el turno (experimental)";
 const DRAW_SECOND_CREATE_TOKEN_LABEL = "Robas tu segunda carta del turno -> creas una ficha";
+const DRAW_SECOND_DEAL_DAMAGE_LABEL = "Robas tu segunda carta del turno -> haces daño";
 
 function hasDrawSecondCreateTokenEvidence(reasonKeys?: number[]): boolean {
   if (!reasonKeys || reasonKeys.length === 0) return false;
   return reasonKeys.includes(DRAW_SECOND_KEY) && reasonKeys.includes(CREATE_TOKEN_KEY);
+}
+
+function hasDrawSecondDealDamageEvidence(reasonKeys?: number[]): boolean {
+  if (!reasonKeys || reasonKeys.length === 0) return false;
+  return reasonKeys.includes(DRAW_SECOND_KEY) && reasonKeys.includes(DEAL_DAMAGE_KEY);
 }
 
 export function explainKeyHuman(key: number, reasonKeys?: number[]): string {
@@ -293,6 +300,9 @@ export function explainKeyHuman(key: number, reasonKeys?: number[]): string {
     if (rest === "DRAW_EXTRA_CARD_TURN") {
       if (hasDrawSecondCreateTokenEvidence(reasonKeys)) {
         return DRAW_SECOND_CREATE_TOKEN_LABEL;
+      }
+      if (hasDrawSecondDealDamageEvidence(reasonKeys)) {
+        return DRAW_SECOND_DEAL_DAMAGE_LABEL;
       }
       return DRAW_SECOND_GENERIC_LABEL;
     }

@@ -53,11 +53,22 @@ describe("enrich roles cast spell damage payoff", () => {
     expect(__testing.inferRole(features, card.oracle_text)).not.toBe("PAYOFF");
   });
 
-  test("noncreature spell trigger is not PAYOFF in this microphase", () => {
+  test("Firebrand Archer noncreature spell trigger with damage is PAYOFF", () => {
     const card = makeCard(
       "Firebrand Archer",
       "Creature — Human Archer",
       "Whenever you cast a noncreature spell, Firebrand Archer deals 1 damage to each opponent.",
+      2,
+    );
+    const features = extractFeatures(card);
+    expect(__testing.inferRole(features, card.oracle_text)).toBe("PAYOFF");
+  });
+
+  test("Third Path Iconoclast noncreature trigger without damage is not PAYOFF", () => {
+    const card = makeCard(
+      "Third Path Iconoclast",
+      "Creature — Human Monk",
+      "Whenever you cast a noncreature spell, create a 1/1 colorless Soldier artifact creature token.",
       2,
     );
     const features = extractFeatures(card);

@@ -31,8 +31,10 @@ function isExplicitCastInstantOrSorceryDamagePayoff(text?: string): boolean {
   const t = normalizeRoleHeuristicText(text);
   const watchesCastInstantOrSorcery =
     /\b(?:when|whenever)\s+you\s+cast\s+an?\s+instant\s+or\s+sorcery\s+spell\b/.test(t);
+  const watchesCastNoncreature =
+    /\b(?:when|whenever)\s+you\s+cast\s+an?\s+noncreature\s+spell\b/.test(t);
   const dealsDamage = /\bdeals?\b[\s\S]{0,80}\bdamage\b/.test(t);
-  return watchesCastInstantOrSorcery && dealsDamage;
+  return (watchesCastInstantOrSorcery || watchesCastNoncreature) && dealsDamage;
 }
 
 function inferRole(features: CardFeatures, oracleText?: string): Role {

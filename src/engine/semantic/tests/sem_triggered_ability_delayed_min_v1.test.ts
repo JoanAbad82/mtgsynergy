@@ -46,8 +46,8 @@ describe("triggered ability delayed min v1", () => {
         name: "Heart-Piercer Manticore",
         oracle:
           "When Heart-Piercer Manticore enters the battlefield, you may sacrifice another creature. When you do, Heart-Piercer Manticore deals damage equal to that creature's power to any target.",
-        expectedClass: "NONE",
-        expectedFallback: "REFLEXIVE",
+        expectedClass: "REFLEXIVE",
+        expectedFallback: null,
       },
       {
         name: "Oblivion Ring",

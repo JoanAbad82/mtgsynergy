@@ -60,8 +60,8 @@ function tokenResourceFromKind(kind: TokenKindId): ResourceId {
   }
 }
 
-export type TriggeredAbilityClassMinV1 = "NONE" | "NORMAL" | "INTERVENING_IF" | "ZONE_CHANGE" | "DELAYED";
-export type TriggeredAbilityFallbackMinV1 = "REFLEXIVE" | "LINKED";
+export type TriggeredAbilityClassMinV1 = "NONE" | "NORMAL" | "INTERVENING_IF" | "ZONE_CHANGE" | "DELAYED" | "REFLEXIVE";
+export type TriggeredAbilityFallbackMinV1 = "LINKED";
 export type TriggeredAbilityClassificationMinV1 = {
   is_triggered: boolean;
   class: TriggeredAbilityClassMinV1;
@@ -89,7 +89,7 @@ function hasZoneChangePattern(text: string): boolean {
 }
 
 function hasReflexivePattern(text: string): boolean {
-  return /\bwhen\s+you\s+do\b/i.test(text);
+  return /\bwhen\s+you\s+do\b/i.test(text) || /\bwhen\b[^.]*\bthis way\b/i.test(text);
 }
 
 function hasDelayedPattern(text: string): boolean {
@@ -109,7 +109,7 @@ export function classifyTriggeredAbilityMinV1(oracleText: string): TriggeredAbil
   }
 
   if (hasReflexivePattern(text)) {
-    return { is_triggered: true, class: "NONE", fallback: "REFLEXIVE" };
+    return { is_triggered: true, class: "REFLEXIVE", fallback: null };
   }
   if (hasLinkedPattern(text)) {
     return { is_triggered: true, class: "NONE", fallback: "LINKED" };

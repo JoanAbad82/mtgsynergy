@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { classifyTriggeredAbilityMinV1 } from "../parser/sem_parser_v1";
 
 describe("triggered ability classification min v1", () => {
-  it("classifies focal corpus as NORMAL / INTERVENING_IF / ZONE_CHANGE with explicit fallbacks", () => {
+  it("classifies focal corpus as explicit classes with linked fallback", () => {
     const cases = [
       {
         name: "Ajani's Pridemate",
@@ -36,8 +36,8 @@ describe("triggered ability classification min v1", () => {
         name: "Heart-Piercer Manticore",
         oracle:
           "When Heart-Piercer Manticore enters the battlefield, you may sacrifice another creature. When you do, Heart-Piercer Manticore deals damage equal to that creature's power to any target.",
-        expectedClass: "NONE",
-        expectedFallback: "REFLEXIVE",
+        expectedClass: "REFLEXIVE",
+        expectedFallback: null,
       },
       {
         name: "Oblivion Ring",

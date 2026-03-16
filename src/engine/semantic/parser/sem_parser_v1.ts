@@ -60,8 +60,8 @@ function tokenResourceFromKind(kind: TokenKindId): ResourceId {
   }
 }
 
-export type TriggeredAbilityClassMinV1 = "NONE" | "NORMAL" | "INTERVENING_IF" | "ZONE_CHANGE";
-export type TriggeredAbilityFallbackMinV1 = "REFLEXIVE" | "DELAYED" | "LINKED";
+export type TriggeredAbilityClassMinV1 = "NONE" | "NORMAL" | "INTERVENING_IF" | "ZONE_CHANGE" | "DELAYED";
+export type TriggeredAbilityFallbackMinV1 = "REFLEXIVE" | "LINKED";
 export type TriggeredAbilityClassificationMinV1 = {
   is_triggered: boolean;
   class: TriggeredAbilityClassMinV1;
@@ -93,7 +93,7 @@ function hasReflexivePattern(text: string): boolean {
 }
 
 function hasDelayedPattern(text: string): boolean {
-  return /\bat the beginning of the next\b/i.test(text) || /\bnext end step\b/i.test(text);
+  return /\bat the beginning of the next (?:end step|upkeep|cleanup step)\b/i.test(text);
 }
 
 function hasLinkedPattern(text: string): boolean {
@@ -102,7 +102,8 @@ function hasLinkedPattern(text: string): boolean {
 
 export function classifyTriggeredAbilityMinV1(oracleText: string): TriggeredAbilityClassificationMinV1 {
   const text = normalizeOracleTextV1(oracleText ?? "");
-  const isTriggered = hasTriggeredAbilityPrefix(text);
+  const isDelayed = hasDelayedPattern(text);
+  const isTriggered = hasTriggeredAbilityPrefix(text) || isDelayed;
   if (!isTriggered) {
     return { is_triggered: false, class: "NONE", fallback: null };
   }
@@ -110,11 +111,11 @@ export function classifyTriggeredAbilityMinV1(oracleText: string): TriggeredAbil
   if (hasReflexivePattern(text)) {
     return { is_triggered: true, class: "NONE", fallback: "REFLEXIVE" };
   }
-  if (hasDelayedPattern(text)) {
-    return { is_triggered: true, class: "NONE", fallback: "DELAYED" };
-  }
   if (hasLinkedPattern(text)) {
     return { is_triggered: true, class: "NONE", fallback: "LINKED" };
+  }
+  if (isDelayed) {
+    return { is_triggered: true, class: "DELAYED", fallback: null };
   }
   if (hasInterveningIfPattern(text)) {
     return { is_triggered: true, class: "INTERVENING_IF", fallback: null };

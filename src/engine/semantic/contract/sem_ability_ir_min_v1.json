@@ -107,7 +107,7 @@
       "field": "semantic_hints",
       "required": false,
       "shape": "object {possible_zone_change?, possible_lki_required?, possible_creature_dies_derivation?, triggered_ability_min?}",
-      "notes": "Optional narrowing-only wiring metadata for A2.9/A2.10; does not replace metadata provenance; not full game semantics."
+      "notes": "Optional narrowing-only wiring metadata for A2.9/A2.10; triggered_ability_min.class accepts NONE|NORMAL|INTERVENING_IF|ZONE_CHANGE|DELAYED and fallback accepts REFLEXIVE|LINKED; does not replace metadata provenance; not full game semantics."
     }
   ],
   "base_card_skeletons": [

@@ -63,11 +63,11 @@ describe("triggered ability classification min v1", () => {
     }
   });
 
-  it("marks delayed triggered text as explicit DELAYED fallback", () => {
+  it("marks delayed triggered text as explicit DELAYED class", () => {
     const delayedOracle = "At the beginning of the next end step, sacrifice that creature.";
     const classified = classifyTriggeredAbilityMinV1(delayedOracle);
     expect(classified.is_triggered).toBe(true);
-    expect(classified.class).toBe("NONE");
-    expect(classified.fallback).toBe("DELAYED");
+    expect(classified.class).toBe("DELAYED");
+    expect(classified.fallback).toBeNull();
   });
 });

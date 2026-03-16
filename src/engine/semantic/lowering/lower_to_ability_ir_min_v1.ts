@@ -1,5 +1,9 @@
 import { ActionId, FrameKind } from "../contract";
-import { parseSemanticIrV0 } from "../parser/sem_parser_v1";
+import {
+  parseSemanticIrV0,
+  classifyTriggeredAbilityMinV1,
+  type TriggeredAbilityClassificationMinV1,
+} from "../parser/sem_parser_v1";
 import { analyzeCostTargetLegalityMinV1 } from "../services/sem_cost_target_legality_min_v1";
 
 type AbilityIrEffect = {
@@ -24,6 +28,7 @@ export type AbilityIrMin = {
     possible_zone_change?: boolean;
     possible_lki_required?: boolean;
     possible_creature_dies_derivation?: boolean;
+    triggered_ability_min?: TriggeredAbilityClassificationMinV1;
     cost_target_legality_min?: {
       cost_kinds: string[];
       target_kinds: string[];
@@ -195,6 +200,11 @@ function buildSemanticHints(
   }
   if (possibleCreatureDiesDerivation) {
     hints.possible_creature_dies_derivation = true;
+  }
+
+  const triggeredAbilityMin = classifyTriggeredAbilityMinV1(oracleText);
+  if (triggeredAbilityMin.is_triggered || triggeredAbilityMin.fallback) {
+    hints.triggered_ability_min = triggeredAbilityMin;
   }
 
   const costTargetLegalityHint = buildCostTargetLegalityHint(oracleText);

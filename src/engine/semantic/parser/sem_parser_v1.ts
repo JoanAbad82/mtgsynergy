@@ -60,6 +60,71 @@ function tokenResourceFromKind(kind: TokenKindId): ResourceId {
   }
 }
 
+export type TriggeredAbilityClassMinV1 = "NONE" | "NORMAL" | "INTERVENING_IF" | "ZONE_CHANGE";
+export type TriggeredAbilityFallbackMinV1 = "REFLEXIVE" | "DELAYED" | "LINKED";
+export type TriggeredAbilityClassificationMinV1 = {
+  is_triggered: boolean;
+  class: TriggeredAbilityClassMinV1;
+  fallback: TriggeredAbilityFallbackMinV1 | null;
+};
+
+function hasTriggeredAbilityPrefix(text: string): boolean {
+  return (
+    /(?:^|[.;]\s*)(?:when|whenever)\b/i.test(text) ||
+    /(?:^|[.;]\s*)at\s+[^.]*,\s*/i.test(text)
+  );
+}
+
+function hasInterveningIfPattern(text: string): boolean {
+  return /\b(?:when|whenever|at)\b[^.]*,\s*if\b/i.test(text);
+}
+
+function hasZoneChangePattern(text: string): boolean {
+  return (
+    /\bdies\b/i.test(text) ||
+    /\bleaves?\s+the\s+battlefield\b/i.test(text) ||
+    /\benters?\s+the\s+battlefield\b/i.test(text) ||
+    /\bis\s+put\s+into\s+a\s+graveyard\b/i.test(text)
+  );
+}
+
+function hasReflexivePattern(text: string): boolean {
+  return /\bwhen\s+you\s+do\b/i.test(text);
+}
+
+function hasDelayedPattern(text: string): boolean {
+  return /\bat the beginning of the next\b/i.test(text) || /\bnext end step\b/i.test(text);
+}
+
+function hasLinkedPattern(text: string): boolean {
+  return /\bexiled with\b/i.test(text) || /\bthe exiled card\b/i.test(text) || /\bcards exiled with\b/i.test(text);
+}
+
+export function classifyTriggeredAbilityMinV1(oracleText: string): TriggeredAbilityClassificationMinV1 {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  const isTriggered = hasTriggeredAbilityPrefix(text);
+  if (!isTriggered) {
+    return { is_triggered: false, class: "NONE", fallback: null };
+  }
+
+  if (hasReflexivePattern(text)) {
+    return { is_triggered: true, class: "NONE", fallback: "REFLEXIVE" };
+  }
+  if (hasDelayedPattern(text)) {
+    return { is_triggered: true, class: "NONE", fallback: "DELAYED" };
+  }
+  if (hasLinkedPattern(text)) {
+    return { is_triggered: true, class: "NONE", fallback: "LINKED" };
+  }
+  if (hasInterveningIfPattern(text)) {
+    return { is_triggered: true, class: "INTERVENING_IF", fallback: null };
+  }
+  if (hasZoneChangePattern(text)) {
+    return { is_triggered: true, class: "ZONE_CHANGE", fallback: null };
+  }
+  return { is_triggered: true, class: "NORMAL", fallback: null };
+}
+
 export function parseSemanticIrV0(input: {
   name: string;
   oracle_text: string;

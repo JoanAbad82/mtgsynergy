@@ -68,6 +68,7 @@ export type TriggeredAbilityClassificationMinV1 = {
   fallback: TriggeredAbilityFallbackMinV1 | null;
 };
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
+export type LinkedAbilityClassMinV1 = "LINKED";
 
 function hasTriggeredAbilityPrefix(text: string): boolean {
   return (
@@ -101,6 +102,14 @@ function hasLinkedPattern(text: string): boolean {
   return /\bexiled with\b/i.test(text) || /\bthe exiled card\b/i.test(text) || /\bcards exiled with\b/i.test(text);
 }
 
+function hasLinkedAbilityMinPattern(text: string): boolean {
+  return (
+    hasLinkedPattern(text) ||
+    /\bexile\b[^.]*\buntil\b[^.]*\bleaves?\s+the\s+battlefield\b/i.test(text) ||
+    /\bfor\s+as\s+long\s+as\s+that\s+card\s+remains\s+exiled\b/i.test(text)
+  );
+}
+
 function hasReplacementPattern(text: string): boolean {
   return (
     /\bif\b[^.]*\bwould\b[^.]*\binstead\b/i.test(text) ||
@@ -125,6 +134,13 @@ export function classifyReplacementPreventionMinV1(oracleText: string): Replacem
   if (!text) return null;
   if (hasPreventionPattern(text)) return "PREVENTION";
   if (hasReplacementPattern(text)) return "REPLACEMENT";
+  return null;
+}
+
+export function classifyLinkedAbilityMinV1(oracleText: string): LinkedAbilityClassMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+  if (hasLinkedAbilityMinPattern(text)) return "LINKED";
   return null;
 }
 

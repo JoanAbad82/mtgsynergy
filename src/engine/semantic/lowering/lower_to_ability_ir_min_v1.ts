@@ -3,6 +3,8 @@ import {
   parseSemanticIrV0,
   classifyTriggeredAbilityMinV1,
   classifyReplacementPreventionMinV1,
+  classifyLinkedAbilityMinV1,
+  type LinkedAbilityClassMinV1,
   type ReplacementPreventionClassMinV1,
   type TriggeredAbilityClassificationMinV1,
 } from "../parser/sem_parser_v1";
@@ -32,6 +34,7 @@ export type AbilityIrMin = {
     possible_creature_dies_derivation?: boolean;
     triggered_ability_min?: TriggeredAbilityClassificationMinV1;
     replacement_prevention_min?: ReplacementPreventionClassMinV1;
+    linked_ability_min?: LinkedAbilityClassMinV1;
     cost_target_legality_min?: {
       cost_kinds: string[];
       target_kinds: string[];
@@ -213,6 +216,11 @@ function buildSemanticHints(
   const replacementPreventionMin = classifyReplacementPreventionMinV1(oracleText);
   if (replacementPreventionMin) {
     hints.replacement_prevention_min = replacementPreventionMin;
+  }
+
+  const linkedAbilityMin = classifyLinkedAbilityMinV1(oracleText);
+  if (linkedAbilityMin) {
+    hints.linked_ability_min = linkedAbilityMin;
   }
 
   const costTargetLegalityHint = buildCostTargetLegalityHint(oracleText);

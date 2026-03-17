@@ -2,6 +2,8 @@ import { ActionId, FrameKind } from "../contract";
 import {
   parseSemanticIrV0,
   classifyTriggeredAbilityMinV1,
+  classifyReplacementPreventionMinV1,
+  type ReplacementPreventionClassMinV1,
   type TriggeredAbilityClassificationMinV1,
 } from "../parser/sem_parser_v1";
 import { analyzeCostTargetLegalityMinV1 } from "../services/sem_cost_target_legality_min_v1";
@@ -29,6 +31,7 @@ export type AbilityIrMin = {
     possible_lki_required?: boolean;
     possible_creature_dies_derivation?: boolean;
     triggered_ability_min?: TriggeredAbilityClassificationMinV1;
+    replacement_prevention_min?: ReplacementPreventionClassMinV1;
     cost_target_legality_min?: {
       cost_kinds: string[];
       target_kinds: string[];
@@ -205,6 +208,11 @@ function buildSemanticHints(
   const triggeredAbilityMin = classifyTriggeredAbilityMinV1(oracleText);
   if (triggeredAbilityMin.is_triggered || triggeredAbilityMin.fallback) {
     hints.triggered_ability_min = triggeredAbilityMin;
+  }
+
+  const replacementPreventionMin = classifyReplacementPreventionMinV1(oracleText);
+  if (replacementPreventionMin) {
+    hints.replacement_prevention_min = replacementPreventionMin;
   }
 
   const costTargetLegalityHint = buildCostTargetLegalityHint(oracleText);

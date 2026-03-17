@@ -51,7 +51,7 @@
       "guarded_follow_up: optional, null or minimal object",
       "opaque_remainder: optional, null or string",
       "metadata: required, minimal stable object",
-      "semantic_hints: optional, minimal object with optional boolean flags and optional triggered_ability_min classification"
+      "semantic_hints: optional, minimal object with optional boolean flags and optional triggered_ability_min / replacement_prevention_min classifications"
     ]
   },
   "field_rules": [
@@ -106,8 +106,8 @@
     {
       "field": "semantic_hints",
       "required": false,
-      "shape": "object {possible_zone_change?, possible_lki_required?, possible_creature_dies_derivation?, triggered_ability_min?}",
-      "notes": "Optional narrowing-only wiring metadata for A2.9/A2.10; triggered_ability_min.class accepts NONE|NORMAL|INTERVENING_IF|ZONE_CHANGE|DELAYED|REFLEXIVE and fallback accepts LINKED; does not replace metadata provenance; not full game semantics."
+      "shape": "object {possible_zone_change?, possible_lki_required?, possible_creature_dies_derivation?, triggered_ability_min?, replacement_prevention_min?}",
+      "notes": "Optional narrowing-only wiring metadata for A2.9/A2.10; triggered_ability_min.class accepts NONE|NORMAL|INTERVENING_IF|ZONE_CHANGE|DELAYED|REFLEXIVE and fallback accepts LINKED; replacement_prevention_min accepts REPLACEMENT|PREVENTION; does not replace metadata provenance; not full game semantics."
     }
   ],
   "base_card_skeletons": [

@@ -67,6 +67,7 @@ export type TriggeredAbilityClassificationMinV1 = {
   class: TriggeredAbilityClassMinV1;
   fallback: TriggeredAbilityFallbackMinV1 | null;
 };
+export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 
 function hasTriggeredAbilityPrefix(text: string): boolean {
   return (
@@ -98,6 +99,33 @@ function hasDelayedPattern(text: string): boolean {
 
 function hasLinkedPattern(text: string): boolean {
   return /\bexiled with\b/i.test(text) || /\bthe exiled card\b/i.test(text) || /\bcards exiled with\b/i.test(text);
+}
+
+function hasReplacementPattern(text: string): boolean {
+  return (
+    /\bif\b[^.]*\bwould\b[^.]*\binstead\b/i.test(text) ||
+    /\bwould\b[^.]*\binstead\b/i.test(text) ||
+    /\benters?\b[^.]*\binstead\b/i.test(text) ||
+    /\bexile\b[^.]*\binstead\b/i.test(text) ||
+    /\bput\b[^.]*\binstead\b/i.test(text)
+  );
+}
+
+function hasPreventionPattern(text: string): boolean {
+  return (
+    /\bprevent\s+all\s+combat\s+damage\b/i.test(text) ||
+    /\bprevent\s+all\s+damage\b/i.test(text) ||
+    /\bprevent\s+the\s+next\b/i.test(text) ||
+    (/\bdamage\s+that\s+would\s+be\s+dealt\b/i.test(text) && /\bprevent\b/i.test(text))
+  );
+}
+
+export function classifyReplacementPreventionMinV1(oracleText: string): ReplacementPreventionClassMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+  if (hasPreventionPattern(text)) return "PREVENTION";
+  if (hasReplacementPattern(text)) return "REPLACEMENT";
+  return null;
 }
 
 export function classifyTriggeredAbilityMinV1(oracleText: string): TriggeredAbilityClassificationMinV1 {

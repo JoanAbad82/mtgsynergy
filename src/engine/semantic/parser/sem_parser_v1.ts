@@ -69,6 +69,12 @@ export type TriggeredAbilityClassificationMinV1 = {
 };
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
+export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
+export type ContinuousLayersOrderingRiskMinV1 = "NONE" | "TIMESTAMP_OR_DEPENDENCY";
+export type ContinuousLayersDependencyTimestampMinV1 = {
+  class: ContinuousLayersClassMinV1;
+  ordering_risk: ContinuousLayersOrderingRiskMinV1;
+};
 
 function hasTriggeredAbilityPrefix(text: string): boolean {
   return (
@@ -127,6 +133,47 @@ function hasPreventionPattern(text: string): boolean {
     /\bprevent\s+the\s+next\b/i.test(text) ||
     (/\bdamage\s+that\s+would\s+be\s+dealt\b/i.test(text) && /\bprevent\b/i.test(text))
   );
+}
+
+function hasTypeChangeContinuousPattern(text: string): boolean {
+  return (
+    /\bnonbasic lands are mountains\b/i.test(text) ||
+    /\beach land is a swamp in addition to its other land types\b/i.test(text)
+  );
+}
+
+function hasPtChangeContinuousPattern(text: string): boolean {
+  return /\bcreatures?\s+you\s+control\s+get\s*[+-]?\d+\/[+-]?\d+\b/i.test(text);
+}
+
+function hasAbilityChangeContinuousPattern(text: string): boolean {
+  return /\blose all abilities\b/i.test(text);
+}
+
+function hasMultiLayerContinuousPattern(text: string): boolean {
+  return hasAbilityChangeContinuousPattern(text) && /\bhave base power and toughness\b/i.test(text);
+}
+
+export function classifyContinuousLayersDependencyTimestampMinV1(
+  oracleText: string,
+): ContinuousLayersDependencyTimestampMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+
+  if (hasMultiLayerContinuousPattern(text)) {
+    return { class: "MULTI_LAYER", ordering_risk: "TIMESTAMP_OR_DEPENDENCY" };
+  }
+  if (hasTypeChangeContinuousPattern(text)) {
+    return { class: "TYPE_CHANGE", ordering_risk: "TIMESTAMP_OR_DEPENDENCY" };
+  }
+  if (hasPtChangeContinuousPattern(text)) {
+    return { class: "PT_CHANGE", ordering_risk: "NONE" };
+  }
+  if (hasAbilityChangeContinuousPattern(text)) {
+    return { class: "ABILITY_CHANGE", ordering_risk: "TIMESTAMP_OR_DEPENDENCY" };
+  }
+
+  return null;
 }
 
 export function classifyReplacementPreventionMinV1(oracleText: string): ReplacementPreventionClassMinV1 | null {

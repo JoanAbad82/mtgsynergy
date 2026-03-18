@@ -4,6 +4,9 @@ import {
   classifyTriggeredAbilityMinV1,
   classifyReplacementPreventionMinV1,
   classifyLinkedAbilityMinV1,
+  classifyContinuousLayersDependencyTimestampMinV1,
+  type ContinuousLayersClassMinV1,
+  type ContinuousLayersOrderingRiskMinV1,
   type LinkedAbilityClassMinV1,
   type ReplacementPreventionClassMinV1,
   type TriggeredAbilityClassificationMinV1,
@@ -35,6 +38,10 @@ export type AbilityIrMin = {
     triggered_ability_min?: TriggeredAbilityClassificationMinV1;
     replacement_prevention_min?: ReplacementPreventionClassMinV1;
     linked_ability_min?: LinkedAbilityClassMinV1;
+    continuous_layers_min?: {
+      class: ContinuousLayersClassMinV1;
+      ordering_risk: ContinuousLayersOrderingRiskMinV1;
+    };
     cost_target_legality_min?: {
       cost_kinds: string[];
       target_kinds: string[];
@@ -221,6 +228,11 @@ function buildSemanticHints(
   const linkedAbilityMin = classifyLinkedAbilityMinV1(oracleText);
   if (linkedAbilityMin) {
     hints.linked_ability_min = linkedAbilityMin;
+  }
+
+  const continuousLayersMin = classifyContinuousLayersDependencyTimestampMinV1(oracleText);
+  if (continuousLayersMin) {
+    hints.continuous_layers_min = continuousLayersMin;
   }
 
   const costTargetLegalityHint = buildCostTargetLegalityHint(oracleText);

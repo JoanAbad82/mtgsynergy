@@ -82,6 +82,13 @@ export type TargetMinSpecMinV1 = {
   controllerConstraint: TargetControllerConstraintMinV1 | null;
   sourceSpan: string;
 };
+export type LegalityGateMinTypeV1 = "ACTIVATE_ONLY_IF" | "ACTIVATE_ONLY_AS_SORCERY" | "CAST_ONLY_IF" | "OTHER";
+export type LegalityGateMinTimingV1 = "SORCERY_SPEED";
+export type LegalityGateMinV1 = {
+  type: LegalityGateMinTypeV1;
+  condition?: string;
+  timing?: LegalityGateMinTimingV1;
+};
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
 export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
@@ -237,6 +244,44 @@ export function classifyTargetMinV1(oracleText: string): TargetMinSpecMinV1 | nu
       zoneHint: "battlefield",
       controllerConstraint: null,
       sourceSpan: match[0],
+    };
+  }
+
+  return null;
+}
+
+export function classifyLegalityGateMinV1(oracleText: string): LegalityGateMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+
+  if (/\bactivate only as a sorcery\b/i.test(text)) {
+    return {
+      type: "ACTIVATE_ONLY_AS_SORCERY",
+      timing: "SORCERY_SPEED",
+    };
+  }
+
+  const activateOnlyIfMatch = /\bactivate only if\s+([^.;]+)/i.exec(text);
+  if (activateOnlyIfMatch) {
+    return {
+      type: "ACTIVATE_ONLY_IF",
+      condition: activateOnlyIfMatch[1].trim(),
+    };
+  }
+
+  const castOnlyIfMatch = /\bcast only if\s+([^.;]+)/i.exec(text);
+  if (castOnlyIfMatch) {
+    return {
+      type: "CAST_ONLY_IF",
+      condition: castOnlyIfMatch[1].trim(),
+    };
+  }
+
+  const otherLegalityMatch = /\b(?:activate|cast)\s+only\b[^.]*/i.exec(text);
+  if (otherLegalityMatch) {
+    return {
+      type: "OTHER",
+      condition: otherLegalityMatch[0].trim(),
     };
   }
 

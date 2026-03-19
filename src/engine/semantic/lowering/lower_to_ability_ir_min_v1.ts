@@ -3,6 +3,7 @@ import {
   parseSemanticIrV0,
   classifyCostMinV1,
   classifyTargetMinV1,
+  classifyLegalityGateMinV1,
   classifyTriggeredAbilityMinV1,
   classifyReplacementPreventionMinV1,
   classifyLinkedAbilityMinV1,
@@ -10,6 +11,7 @@ import {
   type CostMinClassificationMinV1,
   type ContinuousLayersClassMinV1,
   type ContinuousLayersOrderingRiskMinV1,
+  type LegalityGateMinV1,
   type LinkedAbilityClassMinV1,
   type ReplacementPreventionClassMinV1,
   type TargetMinSpecMinV1,
@@ -48,6 +50,7 @@ export type AbilityIrMin = {
     };
     cost_min_v1?: CostMinClassificationMinV1;
     target_min_v1?: TargetMinSpecMinV1;
+    legality_gate_min_v1?: LegalityGateMinV1;
     cost_target_legality_min?: {
       cost_kinds: string[];
       target_kinds: string[];
@@ -249,6 +252,11 @@ function buildSemanticHints(
   const targetMinV1 = classifyTargetMinV1(oracleText);
   if (targetMinV1) {
     hints.target_min_v1 = targetMinV1;
+  }
+
+  const legalityGateMinV1 = classifyLegalityGateMinV1(oracleText);
+  if (legalityGateMinV1) {
+    hints.legality_gate_min_v1 = legalityGateMinV1;
   }
 
   const costTargetLegalityHint = buildCostTargetLegalityHint(oracleText);

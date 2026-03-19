@@ -71,6 +71,17 @@ export type CostMinClassV1 = "MANA" | "TAP" | "SACRIFICE" | "DISCARD" | "PAY_LIF
 export type CostMinClassificationMinV1 = {
   classes: CostMinClassV1[];
 };
+export type TargetZoneHintMinV1 = "battlefield" | "graveyard" | "stack";
+export type TargetControllerConstraintMinV1 = "any" | "you" | "opponent";
+export type TargetMinSpecMinV1 = {
+  required: boolean;
+  minTargets: number;
+  maxTargets: number;
+  targetKinds: string[];
+  zoneHint: TargetZoneHintMinV1 | null;
+  controllerConstraint: TargetControllerConstraintMinV1 | null;
+  sourceSpan: string;
+};
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
 export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
@@ -159,6 +170,12 @@ function hasMultiLayerContinuousPattern(text: string): boolean {
 }
 
 const COST_MIN_ORDER: ReadonlyArray<CostMinClassV1> = ["MANA", "TAP", "SACRIFICE", "DISCARD", "PAY_LIFE"];
+const TARGET_MIN_PATTERNS: ReadonlyArray<{ regex: RegExp; kinds: string[] }> = [
+  { regex: /\btarget\s+artifact,\s*creature,\s*or\s*land\b/i, kinds: ["artifact", "creature", "land"] },
+  { regex: /\btarget\s+creature\b/i, kinds: ["creature"] },
+  { regex: /\btarget\s+artifact\b/i, kinds: ["artifact"] },
+  { regex: /\btarget\s+land\b/i, kinds: ["land"] },
+];
 
 function getActivatedCostPrefix(text: string): string | null {
   const colonIndex = text.indexOf(":");
@@ -202,6 +219,28 @@ export function classifyCostMinV1(oracleText: string): CostMinClassificationMinV
 
   if (classes.length === 0) return null;
   return { classes: sortedCostClasses(classes) };
+}
+
+export function classifyTargetMinV1(oracleText: string): TargetMinSpecMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text || !/\btarget\b/i.test(text)) return null;
+
+  for (const pattern of TARGET_MIN_PATTERNS) {
+    const match = pattern.regex.exec(text);
+    if (!match) continue;
+
+    return {
+      required: true,
+      minTargets: 1,
+      maxTargets: 1,
+      targetKinds: pattern.kinds,
+      zoneHint: "battlefield",
+      controllerConstraint: null,
+      sourceSpan: match[0],
+    };
+  }
+
+  return null;
 }
 
 export function classifyContinuousLayersDependencyTimestampMinV1(

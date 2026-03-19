@@ -1,0 +1,87 @@
+MTGSynergy — DELTA REAL MICROFASE — COST MINIMAL SEMANTICS V1 Fecha de
+actualización: 2026-03-19 Versión operativa: v33
+
+=====================================================================
+MICROFASE CERRADA
+=====================================================================
+
+Nombre operativo: - cost minimal semantics v1
+
+Objetivo contractual: - introducir clasificación mínima de costes
+explícitos - separar coste vs efecto a nivel semántico mínimo - cablear
+semantic_hints.cost_min_v1 - mantener patch aditivo, interno y no
+visible
+
+=====================================================================
+CONTEXTO INMEDIATO
+=====================================================================
+
+Estado previo consolidado: - continuous effects / layers v1 cerrado en
+commit 7dd05e7 - protocolo post-v33 institucionalizado en f6d4eb5 -
+pipeline semántico ya soporta hints aditivos
+
+=====================================================================
+PATCH REAL CERRADO
+=====================================================================
+
+Commit: - bca6496
+
+Mensaje: - feat(semantic): classify minimal cost semantics v1
+
+Archivos tocados: - contract: sem_ability_ir_min_v1.json - parser:
+sem_parser_v1.ts - lowering: lower_to_ability_ir_min_v1.ts - test:
+sem_cost_min_v1.test.ts
+
+=====================================================================
+CAMBIO TÉCNICO REAL
+=====================================================================
+
+Contrato: - se añade semantic_hints.cost_min_v1
+
+Clases mínimas: - MANA - TAP - SACRIFICE - DISCARD - PAY_LIFE
+
+Parser: - clasificación basada en prefijo de habilidad activada -
+guardrail contra triggers (When, Whenever, At)
+
+Lowering: - transporte aditivo del hint - sin rediseño del IR
+
+=====================================================================
+CORPUS FOCAL
+=====================================================================
+
+Positivos: - habilidades activadas con TAP, MANA, SACRIFICE, DISCARD,
+PAY_LIFE
+
+Guardrails: - spells sin coste activado - texto resolutivo con
+sacrifice/discard - triggers
+
+=====================================================================
+VALIDACIÓN
+=====================================================================
+
+Anillo A: - sem_cost_min_v1.test.ts → PASS
+
+Anillo B: - lowering → PASS - triggered → PASS - linked → PASS -
+continuous → PASS
+
+=====================================================================
+ESTADO GIT / DEPLOY
+=====================================================================
+
+-   commit: bca6496
+-   push: correcto
+-   Cloudflare Pages: correcto
+-   build visible: bca6496
+
+=====================================================================
+LECTURA FINAL
+=====================================================================
+
+-   microfase interna, no visible
+-   separación coste vs efecto establecida
+-   base preparada para TargetSpec y Legality futuras
+-   sin regresión ni sobreafirmación
+
+=====================================================================
+END DELTA (2026-03-19)
+=====================================================================

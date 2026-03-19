@@ -1,0 +1,39 @@
+{
+  "name": "post_v33_canonical_smoke_v1",
+  "version": 1,
+  "decks": [
+    {
+      "name": "rakdos_dies_payoff_v1",
+      "entries": [
+        "Cauldron Familiar",
+        "Witch's Oven",
+        "Mayhem Devil",
+        "Claim the Firstborn",
+        "Village Rites",
+        "Blood Artist"
+      ]
+    },
+    {
+      "name": "spells_matter_damage_v1",
+      "entries": [
+        "Monastery Swiftspear",
+        "Young Pyromancer",
+        "Guttersnipe",
+        "Thermo-Alchemist",
+        "Consider",
+        "Lightning Bolt"
+      ]
+    },
+    {
+      "name": "draw_second_tokens_damage_v1",
+      "entries": [
+        "Irencrag Pyromancer",
+        "Improbable Alliance",
+        "The Locust God",
+        "Opt",
+        "Consider",
+        "Impact Tremors"
+      ]
+    }
+  ]
+}

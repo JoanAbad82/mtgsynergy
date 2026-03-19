@@ -1,0 +1,17 @@
+{
+  "name": "post_v33_snapshot_schema_v1",
+  "version": 1,
+  "required_top_level": [
+    "coverage",
+    "SOS",
+    "total_edge_score",
+    "top_edges",
+    "forbidden_edges_absent"
+  ],
+  "optional_top_level": [
+    "labels_clave",
+    "buckets_clave",
+    "notes"
+  ],
+  "notes": "Esquema operativo minimo para snapshots estructurados post-v33."
+}

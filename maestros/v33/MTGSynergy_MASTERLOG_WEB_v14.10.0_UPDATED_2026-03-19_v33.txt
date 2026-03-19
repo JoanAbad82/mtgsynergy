@@ -1,0 +1,4541 @@
+MTGSynergy_MASTERLOG_WEB_v14.10.0 Fecha actualización: 2026-03-19
+
+=====================================================================
+HISTÓRICO RESUMIDO
+=====================================================================
+
+-   Migración Astro estable.
+-   Motor estructural H1–H4 integrado.
+-   H6 Analizador público publicado.
+-   H6.2 Share UX completado.
+-   H7 Tagging / Roles / Edges / Sanitizer completado.
+
+===================================================================== H7
+DETALLE
+=====================================================================
+
+-   Índice local de cartas generado en prebuild.
+-   Enrich asíncrono con roles reales.
+-   Sanitizador reduce LINE_UNPARSEABLE.
+-   Edges v1 generados automáticamente.
+-   Tests añadidos y build validado.
+
+=====================================================================
+Estado ramas: main estable y sincronizado.
+=====================================================================
+=====================================================================
+NUEVA ENTRADA — H7.1 EDGES PANEL + WEIGHTS + OPS DEPLOY DIAG
+=====================================================================
+
+Commits principales en main:
+- 96ff700  feat(analyzer): add minimal edges panel
+- a4d2eca  feat(engine): add weighted edges
+- e048c63  chore(ops): add deploy diagnostics script + docs
+
+Resumen:
+- Se añade panel "Edges" en /es/analizador-de-mazos-mtg/ que muestra:
+  - Total de edges.
+  - Grupos por tipo de relación (kind).
+  - Pares from → to con peso (xN).
+- El motor calcula weights como producto de cantidades:
+  weight = count(from) * count(to)
+  y ordena edges y grupos por peso.
+- Se añade herramienta de diagnóstico de despliegue:
+  - scripts/ops/deploy_diag.ps1 + docs/ops/DEPLOYMENT.md
+  - Permite confirmar si cards_index está disponible en producción.
+
+Validación:
+- Tras push a origin/main, producción devuelve:
+  - /data/cards_index/_meta.json -> 200
+  - /data/cards_index/l.json -> 200
+- La UI muestra TAGGING_ACTIVE y roles/edges correctos en producción.
+
+=====================================================================
+FIN ACTUALIZACIÓN v11
+=====================================================================
+
+=====================================================================
+NUEVA ENTRADA — H7.2 EDGES SCORE + EXPLAINABILITY (UI) + HYGIENE OPS
+=====================================================================
+
+Commits principales en main:
+- 83cf77e  feat(engine): add edge scores (kind+role factors)
+- 748831d  feat(analyzer): edges explainability v1 (pretty names + explanations)
+- a702775  fix(analyzer): clean up edges panel duplicate render + test imports
+
+Resumen:
+- Engine: Edge.score (kind factor + role factor) para priorización.
+- UI: Edges explainability v1 (nombres humanos, explicación por tipo, score, counts, orden por score).
+- Repo hygiene: .gitignore ignora OPS_DEPLOY_DIAG_*.txt.
+
+Validación:
+- npm test -- --run OK.
+- npm run build OK.
+- git status --porcelain vacío tras commits.
+
+=====================================================================
+ACTUALIZACIÓN (2026-02-18) — Edges Explainability v1 + Rounding + SPS v1.1 + Verificación Producción
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Objetivo: aumentar interpretabilidad y calidad percibida del Analizador sin depender de servidor; asegurar que producción sirve el commit correcto (anti-cache).
+- Resultado: UI muestra nombres “bonitos”, explicación por tipo de edge, scores redondeados de forma estable, y marcador explícito de build (BUILD_SHA).
+- Se añadió SPS v1.1 (Structural Power Score) calculado en motor y renderizado en UI con desglose multiplicativo.
+- Se endureció robustez defensiva en SPS (clamp F_util ≥ 0) y se añadió test extremo.
+- Repo mantenido limpio: `.gitignore` ampliado para artefactos de probes/diagnóstico (OPS_*).
+
+COMMITS (main)
+- a702775  fix(analyzer): clean up edges panel duplicate render + test imports
+- c43eac4  fix(analyzer): round edge score for stable UI output
+- 89a65bc  chore(analyzer): add build sha marker for production verification
+- 0963f52  feat(engine): add SPS v1.1 structural power score (raw)
+- 62416d8  fix(engine): clamp SPS F_util at 0 for robustness
+- 53944e7  test(engine): clarify SPS F_util defensive clamp test name
+- 4032163  chore(analyzer): align BUILD_SHA with HEAD (53944e7)
+
+NOTAS DE `.gitignore` (root)
+- OPS_DEPLOY_DIAG_*.txt  (diagnósticos de deploy)
+- OPS_PROD_HTML*.html    (HTML descargado para probe de producción)
+- OPS_PROD_BUNDLE*.js    (bundle descargado para probe de producción)
+
+RUTINA “PRODUCCIÓN SIRVE EL COMMIT” (anti-cache)
+Contexto: Cloudflare Pages + Cloudflare cache. La verificación se hace en 2 niveles:
+1) UI/HTML: comprobar que el HTML servido incluye el marcador “build: 53944e7”.
+2) Bundle: extraer desde el HTML la ruta del bundle `/\_astro/AnalyzerApp.*.js`, descargarlo con no-cache y buscar dentro el string `53944e7` y/o `BUILD_SHA`.
+
+Comandos (PowerShell, Windows)
+- Variables:
+  $Base = "https://mtgsynergy.com"
+  $Page = "/es/analizador-de-mazos-mtg/"
+  $cb   = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
+  $Url  = "$Base$Page?cb=$cb"
+
+- Descargar HTML (no-cache) a fichero:
+  Invoke-WebRequest -Uri $Url -UseBasicParsing -Headers @{"Cache-Control"="no-cache"; "Pragma"="no-cache"} -TimeoutSec 30 |
+    Select-Object -ExpandProperty Content |
+    Set-Content -Encoding utf8 "OPS_PROD_HTML_probe.html"
+
+- Confirmar build marker en HTML:
+  Select-String -Path "OPS_PROD_HTML_probe.html" -SimpleMatch -Pattern "build:" 
+  Select-String -Path "OPS_PROD_HTML_probe.html" -SimpleMatch -Pattern "53944e7"
+
+- Extraer bundle desde HTML:
+  $Html = Get-Content "OPS_PROD_HTML_probe.html" -Raw
+  $Bundle = ([regex]::Matches($Html, '/_astro/AnalyzerApp\.[^"]+\.js') | ForEach-Object { $_.Value } | Select-Object -First 1)
+
+- Descargar bundle (IMPORTANTE: concatenación correcta del querystring)
+  $JsUrl = "$Base$Bundle?cb=$cb"
+  Invoke-WebRequest -Uri $JsUrl -UseBasicParsing -Headers @{"Cache-Control"="no-cache"; "Pragma"="no-cache"} -TimeoutSec 30 |
+    Select-Object -ExpandProperty Content |
+    Set-Content -Encoding utf8 "OPS_PROD_BUNDLE_probe.js"
+
+- Buscar strings en bundle:
+  Select-String -Path "OPS_PROD_BUNDLE_probe.js" -SimpleMatch -Pattern "53944e7"
+  Select-String -Path "OPS_PROD_BUNDLE_probe.js" -SimpleMatch -Pattern "BUILD_SHA"
+
+INCIDENTE OBSERVADO (PowerShell) — “Invalid URI: hostname could not be parsed”
+- Causa: concatenación incorrecta del URL (string interpolation) que generó `https://mtgsynergy.com=...` en vez de `https://mtgsynergy.com/...?...`.
+- Fix: construir URL como `$Url = "$Base$Page?cb=$cb"` (o `"$($Base)$($Page)?cb=$cb"`). Evitar concatenaciones tipo `"$Base$page?cb=$cb"` si `$page` ya contiene `=` o se forman tokens inesperados.
+
+VALIDACIÓN MANUAL (UI)
+- Capturas muestran:
+  - Cloudflare Pages despliega commit 89a65bc (y posteriores), y en UI se ve `build: c43eac4` previamente.
+  - Tras alinear BUILD_SHA con HEAD, el objetivo es que `build: 53944e7` aparezca en la página del analizador (arriba, en “muted”).
+
+PENDIENTE OPERATIVO
+- Repetir el probe HTML+bundle con el URL corregido, hasta ver `build: 53944e7` tanto en HTML como en bundle descargado.
+- Una vez confirmado, borrar artefactos locales OPS_PROD_* (quedan ignorados) si molestan, pero no bloquean estado del repo.
+
+
+
+================================================================================
+ADDENDUM — v14.10.0 RELEASE SNAPSHOT (WEB/OPS)
+Generated: 2026-02-19 12:49 UTC
+Tag: v14.10.0
+Commit (main): 7c01b1b
+Release title: Full cards index (Scryfall bulk) as static gzip + manifest
+
+PRODUCTION VALIDATION (CLOSED)
+- BUILD_SHA visible in Analyzer UI: 53944e7
+- Assets served from production:
+  - /data/cards_index.json.gz
+  - /data/cards_index.manifest.json
+- Manifest fields validated in production:
+  - bulk_type: oracle_cards
+  - record_count: 35633
+  - sha256_gz: (validated match vs downloaded .gz)
+- Runtime banner confirmed:
+  - TAGGING_ACTIVE ... cards indexed count: 35633
+- DevTools Network validation:
+  - 0 external fetches to Scryfall domains at runtime (only site-local assets)
+
+NOTES
+- This milestone establishes a deterministic, fully static deployment model for full-card coverage.
+================================================================================
+END ADDENDUM v14.10.0
+================================================================================
+
+===================================================================== H8
+MC‑SSL v1 (Monte Carlo Structural Stability) + UI wiring
+Fecha actualización: 2026-02-19
+=====================================================================
+
+-   Añadido módulo determinista MC‑SSL v1 (Monte Carlo) en motor.
+-   Integración UI en Analyzer (panel experimental) activable por URL flag.
+-   Integración UI ajustada para recomputar SPS por iteración con el pipeline real (DeckState), no estimaciones.
+
+Decisiones congeladas (feature flag)
+-   Flag: mc=1 activa el panel experimental.
+-   Overrides: mcN (iterations), mcSeed (seed).
+-   Defaults: iterations=1000, seed=1, robust_p=0.1 (motor).
+
+Commits / PRs
+-   PR #18 (merge a main): feat(engine): add MC‑SSL v1 montecarlo stability module (deterministic)
+    -   commit main: c8a9b4c
+    -   nuevos ficheros: src/engine/montecarlo/{index.ts,types.ts,sampler.ts,calculator.ts}
+    -   tests: src/engine/__tests__/montecarlo_mcssl_v1.test.ts
+-   Commit main: feat(ui): MC‑SSL v1 experimental panel with URL flag, race‑safe execution and SSR‑safe wiring
+    -   commit: b74719d
+-   PR #19 (merge a main): feat(ui): MC‑SSL uses real SPS pipeline per MC iteration (DeckState) + sps coercion helper
+    -   merge commit: 229d68d
+
+Validación
+-   Local: vitest --run ✅ (85 tests) y astro build ✅.
+-   CI (Actions): workflow CI + Production Healthcheck ✅ para el commit de main.
+
+Cómo activar (producción / pruebas controladas)
+-   Abrir el analizador con: ?mc=1
+-   Opcional: &mcN=2000&mcSeed=42
+-   Si mc=1, el panel muestra estado (Running/Done/Error) y métricas: base SPS, robust SPS, fragility, effective_n/requested_n/no_op y warnings.
+
+=====================================================================
+ADDENDUM — B1.1 Friendly UI (Quick Results) + Security Audit (No Leaks)
+Fecha actualización: 2026-02-21
+=====================================================================
+
+B1.1 — Friendly UI (UI-only, sin tocar motor)
+- Objetivo: mejorar legibilidad y jerarquía visual sin modificar engine.
+- Cambios UI:
+  - Panel nuevo “Resultado rápido” (cuando existe summary):
+    - Puntuación estructural (SPS)
+    - Sinergias detectadas (edges_total) + Densidad (density)
+    - Roles dominantes (Top 2–3 por role_counts, evitando LAND si hay otros)
+    - Diagnóstico 1 línea (heurística simple por edges_count/density)
+  - Renombre headings:
+    - “Structural Summary” → “Resumen estructural”
+    - “Edges” → “Relaciones (sinergias)”
+  - Microcopy / tooltips mínimos (title) para SPS/densidad/roles.
+- Scope: solo UI files:
+  - src/components/analyzer/AnalyzerApp.tsx
+  - src/components/analyzer/panels/StructuralPanel.tsx
+- Commit:
+  - main: 7448246  ui: add quick results + friendly labels (B1.1)
+
+OPS / Deploy (Cloudflare Pages)
+- Observación: el deployment de 7448246 quedó en estado “Queued” (Build queued — waiting for other builds). No es fallo; requiere esperar o cancelar/retry.
+- Producción activa en ese momento seguía en el commit anterior (p.ej. 378def3), por lo que probes de strings UI en bundle devolvían False.
+- Regla: validar siempre que Cloudflare muestre “Success” en el commit antes de ejecutar probes postdeploy.
+
+Security Audit (GitHub)
+- Objetivo: asegurar que no se filtró información sensible (tokens/keys) en repo ni historial.
+- Resultados:
+  - Búsqueda de .env trackeados: vacío.
+  - Hits “token” fueron falsos positivos (MTG token images).
+  - Búsqueda de patrones de tokens largos (sk-/ghp_/github_pat_): sin resultados en working tree ni historial.
+  - Revisión commit CF script: solo lectura de ENV (CF_API_TOKEN/CF_ACCOUNT_ID/CF_ZONE_ID), sin valores hardcode.
+  - gitleaks v8.30.0:
+    - gitleaks detect --source . -v  → no leaks found (88 commits)
+    - gitleaks detect --source . --log-opts="--all" -v → no leaks found (88 commits)
+
+Estado post-B1.1
+- Repo limpio (UI-only), tests/build OK local.
+- Próximo paso planificado: B1.2 “Estado del análisis” (anti-camuflaje) como commit separado.
+
+=====================================================================
+END ADDENDUM — 2026-02-21
+=====================================================================
+# UPDATE 2026-02-28 — Semantic Overlay (Fase 8) + Normalizer v1 + UX + Perf
+
+## 1) Semantic Overlay (Analyzer UI mínima)
+
+**Objetivo:** mostrar una primera lectura “semántica” basada en señales *produce/consume* extraídas del Oracle text (experimental).
+
+**UI (Analyzer):** panel **“Superposición semántica (experimental)”** con:
+- Cobertura (covered_count / card_count) + %
+- SOS + total_edge_score
+- Top edges con explicación (explainKey / explainKeyHuman)
+- Top orphan listeners / excess producers
+- Redundancy groups (filtrado de firma vacía `P: | C:`) + glosario colapsable
+- Contadores: entradas del mazo, únicas resueltas y únicas faltantes
+
+**Notas de estabilidad:**
+- Se resolvió el bug en producción **“edges is not defined”** (error en AnalyzerApp) reintroduciendo `const edges = (deckState as any)?.edges ?? []` a scope.
+- Se resolvió la desalineación de “build” en UI: `BUILD_SHA` pasa a ser el `git rev-parse --short HEAD` (no hardcode estático).
+- Se corrigió navegación: Home añade card “Analizador” enlazando a `/es/analizador-de-mazos-mtg`.
+
+## 2) Normalizer v1 (Oracle text)
+
+Se introdujo un **Semantic Normalizer v1** determinista e idempotente:
+- Sustituye comillas Unicode y guiones (smart quotes / em dash)
+- Elimina paréntesis (reminder text)
+- Colapsa whitespace
+- Tests de idempotencia
+
+El normalizer se cablea en:
+- UI (AnalyzerApp) para preparar input del parser
+- Tests semánticos relevantes
+- Parser v1: `parseSemanticIrV0` normaliza en el entrypoint y añade test “paréntesis no afectan”.
+
+## 3) Parser/Overlay: eventos y cobertura
+
+- Overlay: produce `EVENT:SACRIFICE` cuando el coste incluye `SACRIFICE_AS_COST`; tests v1 reforzados.
+- Se adoptó “dies” como `CREATURE_DIES` (sin tocar el enum con alias) y se añadió test `sem_parser_v1_creature_dies.test.ts`.
+- Se añadió dataset + tests **Rakdos v2** (edges/metrics) y gold `sem_gold_v2_rakdos_subset.json`.
+- Test legacy v0: se ajusta para ignorar `CREATURE_DIES` y mantener estabilidad retro.
+
+## 4) Refactor: overlay compute “puro”
+
+Se extrajo el cómputo del overlay a un helper puro:
+- `computeSemanticOverlayFromDeckEntries(entries, lookup)`
+- Test de integración con deck real + determinismo
+
+## 5) Performance: cards_index loader (single fetch)
+
+Se corrigió el comportamiento observado en producción donde `/data/cards_index.json.gz` podía dispararse múltiples veces:
+- Caché de promesa/payload en `lookup.ts` para garantizar **1 fetch por sesión**
+- Tests: múltiples `lookupCard` y `computeSemanticOverlayFromDeckEntries` ⇒ 1 fetch
+
+## 6) PRs / merges (resumen)
+- PR #20: UI Analyzer en español + Semantic Overlay copy friendly (sin impacto SPS)
+- PR #21: perf cache cards_index loader (single fetch per session) + tests (sin impacto SPS)
+
+=====================================================================
+UPDATE (2026-03-01) — Deploy/Probe Hardening + Build Determinism
+=====================================================================
+
+
+# UPDATE 2026-03-01 — Ops/Deploy Stability + Probes + Build Hygiene
+
+## Summary (what changed since 2026-02-28)
+- Added **git commit markers** to Analyzer HTML for reliable production probing:
+  - `<meta name="git-sha" content="...">` (full)
+  - `<!-- git: XXXXXXX -->` (short)
+- Fixed probe methodology (PowerShell) for extracting and validating `_astro/AnalyzerApp.*.js` and avoiding the malformed URL bug (`https://mtgsynergy.com=...`).
+- Added Cloudflare Pages redirect rules:
+  - `/analyzer` and `/analyzer/` → `/es/analizador-de-mazos-mtg` (301)
+- Stabilized Cloudflare build pipeline:
+  - `prebuild` is now **verify-only** (`node scripts/verify_cards_index.mjs`), removing Scryfall network dependency from every deploy.
+  - New script to regenerate artifacts explicitly when desired:
+    - `npm run build:cards-index` = build_cards_index + fetch_scryfall_art_crops + verify
+- Removed noisy Vite build warnings by converting type-only imports to `import type` (no runtime behavior changes).
+- Production validated in Cloudflare Pages:
+  - main deployed green for both changes (prebuild verify-only, Vite warning cleanup).
+  - build logs show `cards_index manifest verified: OK` and no Scryfall fetch step in prebuild.
+
+
+## Key PRs/Commits (high level)
+- Ops/Observability: git markers in Analyzer HTML (meta + comment) for probes.
+- Routes: `/analyzer` redirects (301) to `/es/analizador-de-mazos-mtg`.
+- Build: `prebuild` changed to verify-only (no Scryfall network at deploy time).
+- Build hygiene: removed Vite “not exported” warnings via `import type` conversions.
+
+
+## Production probe snippets (PowerShell / Windows)
+
+### Anti-cache nonce + safe URL construction
+$cb = (Get-Date).ToString("yyyyMMddHHmmss")
+$Base = "https://mtgsynergy.com"
+$Url  = "$Base/es/analizador-de-mazos-mtg?cb=$cb"
+
+### Fetch HTML and confirm git markers
+$Resp = Invoke-WebRequest -UseBasicParsing -Uri $Url
+$Resp.StatusCode
+$Resp.Headers["cf-cache-status"]
+$Resp.Content | Select-String -Pattern 'meta name="git-sha"|<!-- git:' -AllMatches
+
+### Confirm /analyzer redirect (301 + Location) reliably (HttpClient)
+function Get-Location($url) {
+  $handler = New-Object System.Net.Http.HttpClientHandler
+  $handler.AllowAutoRedirect = $false
+  $client = New-Object System.Net.Http.HttpClient($handler)
+  try {
+    $resp = $client.GetAsync($url).Result
+    [int]$resp.StatusCode
+    $resp.Headers.Location.OriginalString
+  } finally {
+    $client.Dispose()
+    $handler.Dispose()
+  }
+}
+Get-Location "$Base/analyzer?cb=$cb"
+
+### Extract Analyzer bundle from HTML and verify SHA inside JS (avoid malformed hostname bug)
+$Html = $Resp.Content
+$BundleRel = ([regex]::Matches($Html, '/_astro/AnalyzerApp\.[^"]+\.js') | ForEach-Object { $_.Value } | Select-Object -First 1)
+$BundleUrl = ("{0}{1}?cb={2}" -f $Base, $BundleRel, $cb)
+$BundleResp = Invoke-WebRequest -UseBasicParsing -Uri $BundleUrl
+$BundleResp.StatusCode
+$BundleResp.Headers["cf-cache-status"]
+$BundleResp.Content | Select-String -Pattern "git-sha|BUILD_SHA|build:" -AllMatches
+============================================================
+UPDATE 2026-03-02 — Fix “build” Drift (UI build label aligned with HTML git-sha)
+Generated: 2026-03-01T23:15:04Z
+============================================================
+
+CONTEXT
+- Issue observed in production: UI showed `build: <old_sha>` while HTML marker `<meta name="git-sha" ...>` reflected the actual Cloudflare Pages commit.
+- This created confusion during validation (deploy was correct, but the UI build label was stale).
+
+ROOT CAUSE
+- Two version identifiers existed:
+  1) HTML-level `git-sha` injected from Cloudflare Pages commit (`CF_PAGES_COMMIT_SHA`) via build meta.
+  2) UI-level `build:` string rendered from a hardcoded/legacy constant (BUILD_SHA) inside AnalyzerApp.
+
+SOLUTION (MINIMAL, LOW RISK)
+- Align the UI “build:” label with the canonical commit SHA used in HTML markers.
+- Propagate `gitShaFull` from the Analyzer page (Astro SSR) to the `AnalyzerApp` island as `buildSha`.
+- Render `build: <short_sha>` derived from `buildSha` (first 7 chars). Fallback: `unknown` if absent.
+
+VALIDATION (PRODUCTION)
+- Cloudflare Pages: production deploy on `main` succeeded.
+- HTML source includes `git-sha` meta.
+- UI now displays `build:` equal to the short SHA of the same commit.
+
+NOTES
+- This change does NOT modify engine/structural scoring or semantic logic.
+- Probes remain canonical via HTML markers (`git-sha` meta + `<!-- git: ... -->`). The UI build label is now consistent and user-visible.
+
+============================================================
+END UPDATE 2026-03-02
+============================================================
+
+=====================================================================
+UPDATE (2026-03-02) — Semantic Overlay v1.1/v1.2 + Ops markers (Production)
+=====================================================================
+
+1) Semantic ROI (templates v1) — Spells/Draw coverage uplift
+- Added minimal v1 templates for:
+  - Cast instant/sorcery (spells-matter)
+  - Draw engines (text trigger: "draw your second card each turn")
+- Added gold decks + tests guaranteeing non-zero semantic signal and deterministic ordering.
+
+2) Correctness hardening (v1 honesty)
+- Removed the incorrect implication that any DRAW_CARDS implies "second card this turn".
+- Canonical event for v1 is now:
+  - DRAW_EXTRA_CARD_TURN (id=20)
+- All uses/aliases of DRAW_SECOND_CARD_TURN removed.
+
+3) Semantic Overlay UX v1.1 (no new templates)
+- Traffic light:
+  - ✅ Señal encontrada (experimental) when SOS>0
+  - ⚠️ Sin señal (experimental) when SOS==0 + calm explanation
+- Coverage: X/Y + %.
+- Reasons: deterministic top categories for non-coverage.
+- No changes to SPS/structural/MC.
+
+4) Semantic Overlay UX v1.2 (copy polish)
+- Spanish-first, no duplicated labels, no EN headings.
+- Regression tests added to keep copy clean.
+
+5) Ops: Production markers restored and verified
+- Analyzer HTML includes BOTH canonical markers:
+  - <meta name="git-sha" content="{FULL_SHA}">
+  - <!-- git: {FULL_SHA} -->
+- Anti-cache probes validated:
+  - status 200, cf-cache-status DYNAMIC
+  - git-sha(short) == deployed commit short
+  - comment marker present and matches commit
+- Cloudflare Pages deployments confirmed sequentially for each change.
+
+=====================================================================
+END UPDATE (2026-03-02)
+=====================================================================
+# 2026-03-03 — Web / Deploy — Verificación y eventos
+
+## Cloudflare Pages — Deploy y validación
+- Deploys verificados en Cloudflare (Production) y validados con probes desde PowerShell.
+- Probe dual recomendado:
+  - URL custom domain + pages.dev con `?cb=<timestamp>`
+  - headers `Cache-Control: no-cache`, `Pragma: no-cache`
+  - extraer y comparar `git-sha` desde meta y comentario
+
+## Incidente GitHub → Cloudflare
+- Se observó aviso en Cloudflare: “GitHub is having an incident and push events to Cloudflare are operating in a degraded state”.
+- Aun así, tras el deploy se consiguió confirmar que:
+  - el contenido servido responde 200,
+  - el `git-sha` coincide (meta y comentario) en ambos endpoints.
+
+## Hotfix parser (A2.3-fix)
+- Commit de0549a (fix(parser): dedupe Arena card lines case-insensitively) desplegado y visible en producción tras el pipeline.
+- Nota operativa: si aparece un commit intermedio “chore: trigger Cloudflare Pages deploy”, se usa como “nudge” ante degradación.
+
+=====================================================================
+UPDATE (2026-03-04)
+=====================================================================
+# 2026-03-04 — Web / Deploy — A2.6-B, A2.7-A, A2.7-A.1, A2.7-B1
+
+## Resumen (alto nivel)
+- Se completó el workflow estándar (branch → CODEX → tests → PR → merge) para:
+  - A2.6-B (bucket LAND templates misses → LAND_RULES_UNMODELED_V1) — PR #31.
+  - A2.7-A (añadir lista determinista uncoveredNonLand al coverage report) — PR #32.
+  - A2.7-A.1 (UI: sección Audit (no-Land) para surfaced uncoveredNonLand) — PR #33.
+  - A2.7-B1 (fix Delver index/lookup + ajuste clasificación coverage) — PR #34.
+- Todos los PRs pasaron checks (CI test/build) y se desplegaron en Cloudflare Pages (Preview + Production).
+
+## GitHub / Branch hygiene
+- Tras merge: `git switch main`, `git pull --ff-only`, `git fetch --prune`, y borrado local de rama (`git branch -D <branch>`).
+- Se confirmó `git status` limpio en `main` tras la actualización.
+
+## Cloudflare Pages — validación de producción
+- Se observó el avance de Production a los commits de merge correspondientes (vía dashboard).
+- Recomendación operativa se mantiene:
+  - Probe con cache-bust (`?cb=<timestamp>`) + extracción `git-sha` (meta + comentario) para verificar que el deploy es el esperado.
+- En esta iteración se vio Production avanzando hasta:
+  - `A2.7-B1: fix Delver index lookup and coverage classification` (commit de merge en main visible en Cloudflare).
+=====================================================================
+END UPDATE (2026-03-04)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-05/06) — Web / Deploy — A2.7-B2 → A2.7-B6
+=====================================================================
+
+RESUMEN
+- Se cerró en producción el train de cobertura semántica v1:
+  - A2.7-B2
+  - A2.7-B3
+  - A2.7-C
+  - A2.7-B4
+  - A2.7-B5
+  - A2.7-B6
+- Todos los bloques siguieron el workflow estándar branch → CODEX → tests → PR → merge → Cloudflare.
+
+GITHUB / PRs
+- PR #35 — A2.7-B2 Archpriest regression hardening
+  - merge commit visible en main: e1b7d57
+- PR #36 — A2.7-B3 Icy Manipulator
+  - merge commit visible en main: 1c0085d
+- PR #37 — A2.7-C shortlist determinista
+  - merge commit visible en main: 8a5e9d5
+- PR #38 — A2.7-B4 Crystal Ball
+  - merge commit visible en main: 8527e1e
+- PR #39 — A2.7-B5 Elvish Mystic
+  - merge commit visible en main: 2cbf5c8
+- PR #40 — A2.7-B6 Millstone
+  - merge commit visible en main: 4bb2d7b
+
+En todos los casos:
+- checks verdes
+- sin conflictos con base branch
+- squash/merge o merge limpio según UI
+- rama feature eliminada tras merge
+
+CLOUDFLARE PAGES
+- Production avanzó secuencialmente a:
+  - e1b7d57
+  - 1c0085d
+  - 8a5e9d5
+  - 8527e1e
+  - 2cbf5c8
+  - 4bb2d7b
+- Preview deploys visibles para cada feature branch antes de merge.
+- Production deploys verdes y activos para todos los commits anteriores.
+
+VERIFICACIÓN FUNCIONAL WEB / PDFs
+1) Build e1b7d57
+- Share link del deck Rakdos validado:
+  - deck hidratado correctamente por `?s=`
+  - `mc=1` activa panel Monte Carlo pero no lo ejecuta automáticamente
+  - overlay semántico sigue operativo
+
+2) Build 2cbf5c8 / 4bb2d7b
+- Deck de lifegain/elfos usado como validación funcional fuerte del overlay semántico.
+- Output observado:
+  - `✅ Señal encontrada (experimental)`
+  - Cobertura 78.6% (11/14)
+  - SOS 2.83
+  - conexiones plausibles alrededor de life gain / payoffs / ETB
+- Elvish Mystic no aparece ya como `NO_MATCH_V1_TEMPLATES`.
+- En los outputs también se observó que la parte estructural puede seguir siendo débil (SPS 0) para este arquetipo sin invalidar la utilidad del overlay semántico.
+
+3) Build 4bb2d7b (Millstone)
+- Production desplegada y visible en dashboard Cloudflare.
+- PR #40 cerrada correctamente y rama eliminada.
+- El cambio de Millstone quedó promovido a producción sin incidencias de deploy.
+
+NOTA OPERATIVA IMPORTANTE
+- Durante B5 hubo un incidente local de workflow (commit accidental en main local).
+- Se corrigió correctamente antes de PR:
+  - reset hard de main a origin/main
+  - reanclaje de la feature branch al commit correcto
+  - push posterior de la feature branch
+- El remoto y la secuencia de PRs no quedaron contaminados.
+
+ESTADO WEB AL CIERRE
+- Producción estable y alineada con main.
+- Semantic Overlay validado en escenarios reales además de tests unitarios.
+- Los siguientes candidatos de coverage que asoman tras B6 son mana rocks simples, adecuados para continuar el train de uplifts.
+
+=====================================================================
+END UPDATE (2026-03-05/06)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-06) — Web / Deploy — A2.7-B7 Darksteel Ingot + recuperación de Production
+=====================================================================
+
+RESUMEN
+- Se completó el workflow estándar para A2.7-B7:
+  - branch → CODEX → tests → suite completa → build → PR → merge → Cloudflare → validación funcional web → cierre local
+- Objetivo del bloque:
+  - cubrir `Darksteel Ingot` con una plantilla mínima v1 para `{T}: Add one mana of any color.`
+
+GITHUB / PRs
+- Feature branch:
+  - `feat/a2.7-b7-darksteel-ingot`
+- Commit en branch:
+  - `8f2ac06` — `feat(semantic): cover Darksteel Ingot mana ability`
+- PR:
+  - `#41` — `A2.7-B7 — cover Darksteel Ingot mana ability`
+- Estado PR:
+  - checks verdes
+  - sin conflictos con base branch
+  - squash merge ejecutado correctamente
+- Commit merge final en `main`:
+  - `c3f7244`
+- Limpieza:
+  - rama feature eliminada en GitHub
+  - rama local eliminada tras `git switch main` + `git pull --ff-only`
+
+TESTS / BUILD
+- Tests focalizados:
+  - `src/engine/semantic/tests/sem_overlay_coverage_report.test.ts` ✅
+  - `src/engine/semantic/tests/sem_parser_v1_templates.test.ts` ✅
+- Suite completa:
+  - 49 files passed
+  - 184 tests passed
+- Build:
+  - `npm run build` ✅
+  - `cards_index manifest verified: OK`
+
+INCIDENCIA CLOUDFLARE PAGES
+- Tras el merge, GitHub quedó correcto pero Cloudflare Production permaneció atascado en:
+  - `main` → `4bb2d7b`
+- Observación relevante:
+  - el Preview deploy del branch sí se generó correctamente
+  - el Production deploy del nuevo `main` NO arrancó automáticamente
+- Diagnóstico:
+  - PDF de settings validado
+  - `production branch = main`
+  - `automatic deployments = enabled`
+  - build settings correctos
+  - `Build watch paths` incluía `*`
+  - NO existían deploy hooks configurados en ese momento
+- Conclusión operativa:
+  - problema de disparo de deploy / evento GitHub→Cloudflare no procesado, no de configuración base del proyecto
+
+RECUPERACIÓN DE PRODUCTION
+- Se creó un Deploy Hook nuevo en Cloudflare Pages:
+  - nombre: `a2.7-b7-prod-redeploy-main`
+  - rama: `main`
+- Disparo manual:
+  - `Invoke-WebRequest -Method Post` al hook
+  - respuesta:
+    - `StatusCode = 200`
+    - `success = true`
+- Resultado:
+  - Cloudflare lanzó un nuevo deployment de Production para `main`
+  - nuevo deployment visible:
+    - `bc1e9f29.mtgsynergy.pages.dev`
+  - commit promovido a producción:
+    - `c3f7244`
+  - dashboard marcó explícitamente:
+    - `Triggered by deploy hook`
+- Observación de hygiene:
+  - como la URL del hook quedó expuesta durante la conversación, conviene rotarlo/eliminarlo tras este cierre
+
+VERIFICACIÓN FUNCIONAL WEB / PDFS
+Deck de diagnóstico usado para validar B7 en producción:
+- 4 Darksteel Ingot
+- 4 Elvish Mystic
+- 4 Crystal Ball
+- 4 Millstone
+- 2 Gilded Lotus
+- 2 Worn Powerstone
+- 22 Forest
+- 22 Plains
+
+Build validado en web:
+- `build: c3f7244`
+
+Output observado:
+- Structural:
+  - SPS 0
+  - sinergias 0
+  - densidad 0
+  - mazo lineal / sin relaciones
+- Semantic Overlay:
+  - `⚠️ Sin señal (experimental)`
+  - Cobertura: 50% (4/8)
+  - “Texto vacío tras normalización”:
+    - `Forest`, `Plains`
+  - “Texto aún no reconocido (v1)”:
+    - `Gilded Lotus`, `Worn Powerstone`
+  - `Darksteel Ingot` ya NO aparece como `NO_MATCH_V1_TEMPLATES`
+  - `Generas más de lo que usas`:
+    - `PRODUCE_MANA: 2`
+    - `MILL_CARDS: 1`
+    - `SCRY: 1`
+  - `Efectos repetidos`:
+    - `Darksteel Ingot, Elvish Mystic`
+- Interpretación:
+  - update B7 validado en producción
+  - sin regresiones visibles en `Elvish Mystic`, `Crystal Ball` y `Millstone`
+  - siguiente frontera práctica observada: `Gilded Lotus` y `Worn Powerstone`
+
+ESTADO WEB AL CIERRE
+- Producción vuelve a estar alineada con `main`.
+- Commit activo en Production:
+  - `c3f7244`
+- B7 queda validado por:
+  - tests
+  - suite completa
+  - build
+  - PR/merge
+  - deploy a producción
+  - prueba funcional web sobre build correcta
+
+SIGUIENTE FRENTE
+- Shortlist práctica post-B7:
+  - `Gilded Lotus`
+  - `Worn Powerstone`
+- Shortlist determinista en tests de coverage:
+  - `Gilded Lotus`
+  - `Worn Powerstone`
+  - `Howling Mine`
+
+=====================================================================
+END UPDATE (2026-03-06)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-06) — Web / Deploy — A2.7-B8 → B10 + fix runtime de Howling Mine
+=====================================================================
+
+RESUMEN
+- Se cerró en producción la secuencia:
+  - A2.7-B8 — Gilded Lotus
+  - A2.7-B9 — Worn Powerstone
+  - A2.7-B10 — Howling Mine
+- Se detectó y resolvió un runtime gap posterior a B10:
+  - tests verdes + deploy correcto, pero comportamiento web incorrecto para Howling Mine
+- Resultado final:
+  - producción alineada con `main` en `4cdccdb`
+  - microfrontera B4–B10 absorbida funcionalmente en web
+
+------------------------------------------------------------
+A2.7-B8 — Gilded Lotus
+------------------------------------------------------------
+
+GITHUB / PRs
+- Feature branch:
+  - `feat/a2.7-b8-gilded-lotus`
+- Commit en branch:
+  - `9d8dfbe` — `feat(semantic): cover Gilded Lotus mana ability`
+- PR:
+  - `#42` — `A2.7-B8 — cover Gilded Lotus mana ability`
+- Merge final en `main`:
+  - `a67cc6e`
+
+TESTS / BUILD
+- Tests focalizados ✅
+- Suite completa:
+  - 49 files passed
+  - 185 tests passed
+- Build ✅
+
+CLOUDFLARE PAGES
+- Preview del branch OK
+- Production desplegada y visible en dashboard:
+  - commit activo `a67cc6e`
+
+VERIFICACIÓN FUNCIONAL WEB / PDFS
+Deck de validación:
+- 4 Elvish Mystic
+- 4 Darksteel Ingot
+- 4 Gilded Lotus
+- 4 Worn Powerstone
+- 4 Crystal Ball
+- 4 Millstone
+- 18 Forest
+- 18 Plains
+
+Output observado:
+- build visible:
+  - `a67cc6e`
+- Cobertura:
+  - 62.5% (5/8)
+- `Gilded Lotus` ya NO aparece como miss v1
+- miss práctico restante:
+  - `Worn Powerstone`
+- contadores:
+  - `PRODUCE_MANA: 3`
+  - `MILL_CARDS: 1`
+  - `SCRY: 1`
+- `Efectos repetidos`:
+  - `Darksteel Ingot, Elvish Mystic, Gilded Lotus`
+
+------------------------------------------------------------
+A2.7-B9 — Worn Powerstone
+------------------------------------------------------------
+
+GITHUB / PRs
+- Feature branch:
+  - `feat/a2.7-b9-worn-powerstone`
+- Commit en branch:
+  - `8f55103` — `feat(semantic): cover Worn Powerstone mana ability`
+- PR:
+  - `#43` — `A2.7-B9 — cover Worn Powerstone mana ability`
+- Merge final en `main`:
+  - `9642929`
+
+TESTS / BUILD
+- Tests focalizados ✅
+- Suite completa:
+  - 49 files passed
+  - 186 tests passed
+- Build ✅
+
+CLOUDFLARE PAGES
+- Preview del branch OK
+- Production desplegada y visible en dashboard:
+  - commit activo `9642929`
+
+VERIFICACIÓN FUNCIONAL WEB / PDFS
+Deck de validación integral:
+- 4 Elvish Mystic
+- 4 Darksteel Ingot
+- 4 Gilded Lotus
+- 4 Worn Powerstone
+- 4 Crystal Ball
+- 4 Millstone
+- 4 Howling Mine
+- 18 Forest
+- 18 Plains
+
+Output observado:
+- build visible:
+  - `9642929`
+- Cobertura:
+  - 66.7% (6/9)
+- `Worn Powerstone` ya NO aparece como miss v1
+- miss práctico único:
+  - `Howling Mine`
+- contadores:
+  - `PRODUCE_MANA: 4`
+  - `MILL_CARDS: 1`
+  - `SCRY: 1`
+- `Efectos repetidos`:
+  - `Darksteel Ingot, Elvish Mystic, Gilded Lotus, Worn Powerstone`
+
+------------------------------------------------------------
+A2.7-B10 — Howling Mine (despliegue inicial)
+------------------------------------------------------------
+
+GITHUB / PRs
+- Feature branch:
+  - `feat/a2.7-b10-howling-mine`
+- Commit en branch:
+  - `7d44f5c` — `feat(semantic): cover Howling Mine exact wording`
+- PR:
+  - `#44`
+- Merge final en `main`:
+  - `aa74186`
+
+TESTS / BUILD
+- Tests focalizados ✅
+- Suite completa:
+  - 49 files passed
+  - 187 tests passed
+- Build ✅
+
+CLOUDFLARE PAGES
+- Preview del branch OK
+- Production desplegada y visible en dashboard:
+  - commit activo `aa74186`
+
+VALIDACIÓN FUNCIONAL WEB — FALLO DETECTADO
+- Primera prueba en web con el deck integral:
+  - build visible correcta: `aa74186`
+  - pero cobertura seguía en 66.7% (6/9)
+  - `Howling Mine` seguía bajo `Texto aún no reconocido (v1)`
+- Repetición en pestaña incógnito:
+  - mismo resultado
+- Conclusión:
+  - NO era un problema de caché
+  - había un runtime gap real entre tests y producción
+
+DIAGNÓSTICO CONFIRMADO
+- runtime `cards_index` servía:
+  - `if this artifact is untapped`
+- tests de B10 usaban:
+  - `if Howling Mine is untapped`
+- el deploy de Cloudflare era correcto; el fallo estaba en la alineación test/runtime
+
+------------------------------------------------------------
+Fix runtime gap — Howling Mine
+------------------------------------------------------------
+
+GITHUB / PRs
+- Feature branch:
+  - `fix/b10-howling-mine-runtime-gap`
+- Commit en branch:
+  - `f1ada2c` — `fix(semantic): align Howling Mine template with runtime oracle`
+- PR:
+  - `#45`
+- Merge final en `main`:
+  - `4cdccdb`
+
+TESTS / BUILD
+- Tests focalizados ✅
+- Suite completa:
+  - 49 files passed
+  - 187 tests passed
+- Build ✅
+- Diff mínimo:
+  - 2 files changed
+  - 2 insertions
+  - 2 deletions
+
+CLOUDFLARE PAGES
+- Preview del fix OK
+- Production desplegada y visible en dashboard:
+  - commit activo `4cdccdb`
+
+VERIFICACIÓN FUNCIONAL WEB FINAL / PDFS
+Deck de validación integral:
+- 4 Elvish Mystic
+- 4 Darksteel Ingot
+- 4 Gilded Lotus
+- 4 Worn Powerstone
+- 4 Crystal Ball
+- 4 Millstone
+- 4 Howling Mine
+- 18 Forest
+- 18 Plains
+
+Output observado:
+- build visible:
+  - `4cdccdb`
+- Cobertura:
+  - 77.8% (7/9)
+- resumen:
+  - `únicas resueltas: 9`
+  - `únicas faltantes: 0`
+- `Texto aún no reconocido (v1)`:
+  - vacío / sin cartas faltantes
+- nuevas huellas visibles:
+  - `Robas cartas adicionales en el turno (experimental) · 1`
+  - `Action · DRAW_CARDS · 1`
+  - `Resource · CARD · 1`
+- sin regresión en:
+  - `Action · PRODUCE_MANA · 4`
+  - `Action · MILL_CARDS · 1`
+  - `Action · SCRY · 1`
+
+ESTADO WEB AL CIERRE
+- Producción alineada con `main` en `4cdccdb`.
+- La microfrontera B4–B10 queda absorbida funcionalmente.
+- Ya no quedan misses v1 en el deck integral de validación.
+- Lección operativa:
+  - además de checks/deploy verdes, la validación web debe contrastar wording real de `cards_index` frente a los tests sintéticos.
+
+DECISIÓN ESTRATÉGICA POSTERIOR
+- Se considera razonable cerrar esta microfase.
+- El siguiente frente no debe ser atracción de usuarios todavía.
+- Dirección acordada:
+  - priorizar `potencia técnica del motor`
+  - abrir siguiente frente alrededor de expansión/capacidad del motor semántico
+
+=====================================================================
+END UPDATE (2026-03-06)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-07) — cierre local de A2.8 en `main` (sin push ni deploy posterior)
+=====================================================================
+
+ESTADO WEB / REPO
+- En esta sesión NO se ha hecho un nuevo despliegue Cloudflare Pages después de `4cdccdb`.
+- En esta sesión SÍ se ha cerrado localmente A2.8 dentro del repo y se ha mergeado en `main` local:
+  - `932bf55` — `merge: close A2.8 canonical semantic foundation`
+- Por tanto:
+  - `main` local ya contiene A2.8
+  - producción web NO debe asumirse todavía en ese estado hasta que haya push + deploy + validación visible
+
+ARTEFACTOS A2.8 AÑADIDOS EN REPO
+- `src/engine/semantic/contract/sem_anchor_corpus_matrix_v1.json`
+- `src/engine/semantic/contract/sem_ontology_min_v1.json`
+- `src/engine/semantic/contract/sem_ability_ir_min_v1.json`
+- `src/engine/semantic/contract/sem_relation_rules_min_v1.json`
+- `src/engine/semantic/contract/sem_deck_relation_metrics_min_v1.json`
+- `src/engine/semantic/contract/sem_validation_policy_min_v1.json`
+- `src/engine/semantic/lowering/lower_to_ability_ir_min_v1.ts`
+- `src/engine/semantic/tests/sem_lower_to_ability_ir_min_v1.test.ts`
+
+COMMITS RELEVANTES DE A2.8
+- `97c0866` — `docs(semantic): add canonical anchor corpus matrix v1`
+- `1cf1145` — `docs(semantic): add minimal semantic ontology v1`
+- `e0ce1e8` — `docs(semantic): add minimal ability ir v1`
+- `e947564` — `feat(semantic): add minimal lowering to ability ir v1`
+- `5cfde21` — `docs(semantic): add minimal relation rules v1`
+- `53686bb` — `docs(semantic): add minimal deck relation metrics v1`
+- `85fe0d5` — `docs(semantic): add minimal validation policy v1`
+- merge local:
+  - `932bf55`
+
+VALIDACIÓN LOCAL PREVIA AL CIERRE
+- Verificación final de rama:
+  - árbol limpio
+  - 8 archivos nuevos respecto a `main` anterior
+- Test focal ejecutado:
+  - `npx vitest run src/engine/semantic/tests/sem_lower_to_ability_ir_min_v1.test.ts`
+  - resultado:
+    - `1 file passed`
+    - `5 tests passed`
+
+ALCANCE DE A2.8 RESPECTO A WEB
+- A2.8 introduce base interna de motor, no cambio visible desplegado todavía.
+- No debe afirmarse aún:
+  - nueva UI visible
+  - nuevas métricas visibles en producción
+  - nueva coverage visible en Cloudflare
+- Sí debe recordarse:
+  - cuando se decida desplegar A2.8 o cualquier integración visible basada en ella,
+    tocará validar:
+    - markers HTML / git-sha
+    - bundle correcto
+    - si procede, comportamiento visible del overlay o del analizador
+
+DECISIÓN OPERATIVA TRAS EL CIERRE
+- La secuencia correcta tras esta sesión es:
+  1) actualizar archivos maestros
+  2) decidir si se hace push de `main`
+  3) decidir si se abre validación web/postdeploy para cambios visibles futuros
+- No mezclar cierre interno de A2.8 con “producción actualizada” mientras no haya deploy posterior.
+
+=====================================================================
+END UPDATE (2026-03-07)
+=====================================================================
+=====================================================================
+ACTUALIZACIÓN (2026-03-08) — POST-A2.8 OVERLAY BRIDGE V1 + VALIDACIÓN EN PRODUCCIÓN
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Tras cerrar A2.8 localmente y desplegar `932bf55`, se abrió una iteración post-A2.8 orientada a un cuello de botella concreto del overlay semántico: `ENTERS_BATTLEFIELD` dominaba el top de conexiones mientras `SACRIFICE` quedaba como excess producer y `CREATURE_DIES` como orphan listener.
+- Se añadió primero diagnóstico focal reproducible en repo y, después, un bridge mínimo del overlay para cerrar localmente `SACRIFICE(creature) -> CREATURE_DIES` sin tocar scoring global.
+- El resultado se desplegó en producción y el analizador web ya muestra conexiones principales por `Event · SACRIFICE` en el mazo Rakdos de validación.
+- El siguiente cuello de botella identificado no es ya `SACRIFICE`, sino el cierre incompleto de `CREATURE_DIES -> payoff`.
+
+COMMITS PRINCIPALES (main)
+- `9fe4c5c` — `test(semantic): add rakdos overlay signal diagnosis`
+- `68a8162` — `docs(semantic): add minimal overlay bridge contract v1`
+- `77bb2e5` — `refactor(semantic): extract bridge evidence helper`
+
+ARTEFACTOS AÑADIDOS / MODIFICADOS
+- nuevo contrato:
+  - `src/engine/semantic/contract/sem_overlay_bridge_min_v1.json`
+- implementación / limpieza mínima del bridge:
+  - `src/engine/semantic/overlay/sem_metrics.ts`
+  - `src/engine/semantic/overlay/sem_bridge_evidence.ts`
+- tests focales:
+  - `src/engine/semantic/tests/sem_overlay_bridge_min_v1.test.ts`
+  - `src/engine/semantic/tests/sem_overlay_rakdos_signal_diagnose.test.ts`
+
+DIAGNÓSTICO PREVIO CONFIRMADO
+- El test focal Rakdos demostró que:
+  - `ENTERS_BATTLEFIELD` sí formaba edges top.
+  - `SACRIFICE` quedaba en `excess producers`.
+  - `CREATURE_DIES` quedaba en `orphan listeners`.
+  - `DRAW` y `LIFE_GAIN` seguían en exceso, no en top edges.
+- Decisión técnica tomada:
+  - no tocar ranking/scoring global todavía.
+  - primero mejorar pairing/cierre local con un único bridge estrecho.
+
+BRIDGE MÍNIMO V1 (estado ejecutado)
+- Bridge formalizado:
+  - `sacrifice_creature_enables_creature_dies`
+- Propósito:
+  - cerrar pairing local, no subir score artificialmente.
+- Alcance:
+  - solo evidencia textual explícita de `Sacrifice a creature`.
+  - sin inferencia cross-card abierta.
+  - sin expansión a `LEAVES_BATTLEFIELD` genérico.
+  - sin tocar todavía `DRAW`, `LIFE_GAIN`, `TOKEN`, etc.
+- La implementación final ya no usa masking global de buckets:
+  - el soporte se inyecta localmente por perfil antes de `mergeProfiles`.
+
+VALIDACIÓN LOCAL
+- Suite diagnóstica Rakdos:
+  - `npx vitest run src/engine/semantic/tests/sem_overlay_rakdos_signal_diagnose.test.ts`
+  - `3 tests passed`
+- Suite focal del bridge:
+  - `npx vitest run src/engine/semantic/tests/sem_overlay_bridge_min_v1.test.ts`
+  - `2 tests passed`
+- Suite diagnóstica reejecutada tras el bridge:
+  - sigue pasando sin regresión.
+
+PUSH / DEPLOY / VALIDACIÓN WEB
+- `main` fue pusheada a GitHub hasta `77bb2e5`.
+- Cloudflare Pages Production desplegó correctamente `77bb2e5`.
+- Validación manual en producción con mazo Rakdos deliberado:
+  - build visible: `77bb2e5`
+  - `SOS = 3.43`
+  - `puntuación total de conexiones = 30`
+  - aparecen conexiones principales por `Event · SACRIFICE`
+  - `ENTERS_BATTLEFIELD` sigue existiendo, pero ya no monopoliza la señal
+  - `CREATURE_DIES` sigue apareciendo en “Efectos sin pareja”
+- El PDF exportado del análisis refleja el mismo estado que la UI.
+
+LECTURA CORRECTA DEL ESTADO ACTUAL WEB
+- La web ya no está solo en “base A2.8 interna”; ahora incluye una primera mejora visible del overlay semántico.
+- Aun así, no debe afirmarse que la familia sacrifice/dies esté completamente resuelta.
+- El siguiente cuello de botella visible es:
+  - `CREATURE_DIES` sigue sin cerrar plenamente hacia payoffs de daño / pérdida de vida / ganancia de vida.
+
+SIGUIENTE FRENTE RECOMENDADO
+- Abrir diagnóstico focal y ajuste mínimo para la cadena:
+  - `CREATURE_DIES -> payoff`
+- Mantener la misma disciplina:
+  - primero diagnóstico reproducible
+  - luego bridge/ajuste mínimo
+  - y solo después reconsiderar ranking global si siguiera siendo necesario
+
+=====================================================================
+END UPDATE (2026-03-08)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-08) — CREATURE_DIES -> payoff bridge v1.0 / v1.1 local closure + production validation
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Se tomó el cuello de botella `CREATURE_DIES -> payoff` como siguiente frente post-A2.8/post-overlay-bridge-v1.
+- La secuencia se ejecutó con disciplina incremental:
+  1) diagnóstico focal reproducible
+  2) inspección de wiring
+  3) inspección de pairing local
+  4) contrato mínimo explícito
+  5) implementación mínima del bridge
+  6) ajuste mínimo de tests diagnósticos
+  7) push + deploy + validación funcional web en producción
+- El objetivo técnico quedó validado:
+  - `CREATURE_DIES` ya cierra localmente contra payoffs permitidos en perfiles intra-card / intra-profile
+  - `CREATURE_DIES` deja de aparecer como efecto sin pareja en el slice Rakdos validado
+  - la mejora es visible en web, aunque su prominencia global todavía es moderada
+
+COMMITS PRINCIPALES (main)
+- `e639697` — `test(semantic): diagnose creature-dies payoff closure in rakdos overlay`
+- `c7d4537` — `test(semantic): inspect creature-dies wiring before local pairing`
+- `f98170b` — `test(semantic): inspect creature-dies local pairing keys`
+- `e02a9b4` — `spec(semantic): define minimal creature-dies payoff bridge contract`
+- `eba09f6` — `feat(semantic): implement minimal creature-dies payoff bridge`
+
+CONTRATO MÍNIMO APROBADO
+Archivo:
+- `src/engine/semantic/contract/sem_creature_dies_payoff_bridge_min_v1.json`
+
+Semántica contractual v1:
+- source:
+  - `EVENT:CREATURE_DIES`
+- targets:
+  - `ACTION:LOSE_LIFE`
+  - `ACTION:DEAL_DAMAGE`
+  - `ACTION:GAIN_LIFE`
+- activation_scope:
+  - `intra_profile_only`
+- causal_mode:
+  - local / explicit / narrow
+- non_goals explícitos:
+  - no cross-card closure
+  - no multi-hop causal chain
+  - no stack / priority ordering
+  - no replacement / prevention handling
+  - no global key remap
+  - no global scoring changes
+- future_extension_points:
+  - quedan declarados, pero NO activados en v1
+
+IMPLEMENTACIÓN MÍNIMA
+Archivos runtime tocados:
+- `src/engine/semantic/overlay/sem_edges.ts`
+- `src/engine/semantic/overlay/sem_metrics.ts` (ajuste mínimo auxiliar sin maquillaje del caso)
+
+Comportamiento nuevo:
+- el pairing por keys puras sigue siendo incompatible:
+  - `EVENT:CREATURE_DIES`
+  - vs `ACTION:LOSE_LIFE / DEAL_DAMAGE / GAIN_LIFE`
+- pero ahora se añade cierre local explícito intra-profile cuando una misma profile:
+  - consume `EVENT:CREATURE_DIES`
+  - y produce uno de los payoffs permitidos
+- el bridge genera cierre real en edges/reasons
+- NO se generaliza a cross-card
+- NO se activa para acciones fuera de target
+
+TESTS AÑADIDOS / ACTUALIZADOS
+Nuevos:
+- `src/engine/semantic/tests/sem_overlay_rakdos_dies_payoff_diagnose.test.ts`
+- `src/engine/semantic/tests/sem_overlay_creature_dies_wiring_inspect.test.ts`
+- `src/engine/semantic/tests/sem_overlay_creature_dies_pairing_inspect.test.ts`
+- `src/engine/semantic/tests/sem_overlay_creature_dies_payoff_bridge_min_v1.test.ts`
+
+Ajustados al estado post-bridge:
+- `src/engine/semantic/tests/sem_overlay_rakdos_signal_diagnose.test.ts`
+
+VALIDACIÓN LOCAL
+Suite conjunta final:
+- `6` files passed
+- `9` tests passed
+
+Lectura correcta de la suite:
+- `paired_by_key_count` sigue siendo `0` para keys puras
+- `has_dies_edge` pasa a `true` por bridge local explícito
+- `CREATURE_DIES` y `LIFE_GAIN` pueden entrar ya en top edges del estado post-bridge
+- el baseline sigue estable sin tocar scoring global
+
+GITHUB / DEPLOY
+- feature branch publicada:
+  - `feat/implement-creature-dies-payoff-bridge-v1`
+- merge local por fast-forward a `main` ✅
+- push de `main` a GitHub:
+  - `77bb2e5 -> eba09f6`
+- Cloudflare Pages Production desplegó correctamente:
+  - branch: `main`
+  - commit activo: `eba09f6`
+
+VALIDACIÓN FUNCIONAL WEB / PDF
+Deck Rakdos deliberado usado:
+- 4 Blood Artist
+- 4 Shambling Ghast
+- 4 Serrated Scorpion
+- 4 Voldaren Epicure
+- 4 Nested Shambler
+- 4 Goblin Bombardment
+- 4 Village Rites
+- 4 Deadly Dispute
+- 4 Oni-Cult Anvil
+- 4 Experimental Synthesizer
+- 4 Claim the Firstborn
+- 2 Deadly Derision
+- 4 Bloodfell Caves
+- 4 Blackcleave Cliffs
+- 4 Haunted Ridge
+- 4 Blightstep Pathway
+- 4 Sulfurous Springs
+- 2 Mountain
+- 2 Swamp
+
+Output observado en producción (`eba09f6`):
+- aparece:
+  - `Blood Artist -> Blood Artist`
+  con:
+    - `Event · CREATURE_DIES × 1`
+    - `Action · GAIN_LIFE × 1`
+    - `Action · LOSE_LIFE × 1`
+- aparece:
+  - `Serrated Scorpion -> Serrated Scorpion`
+  con:
+    - `Event · CREATURE_DIES × 1`
+    - `Action · DEAL_DAMAGE × 1`
+    - `Action · GAIN_LIFE × 1`
+- en “Efectos sin pareja” ya NO aparece `CREATURE_DIES`
+- el efecto sin pareja visible pasa a:
+  - `LEAVES_BATTLEFIELD · 1`
+
+LECTURA CORRECTA DEL ESTADO ACTUAL WEB
+- El bridge `CREATURE_DIES -> payoff` funciona ya en producción.
+- El problema técnico perseguido en esta microfase queda resuelto.
+- La mejora es visible, pero todavía con prominencia global moderada:
+  - varias conexiones nuevas siguen apareciendo con score bajo
+  - `ENTERS_BATTLEFIELD` sigue pesando mucho en la jerarquía visible
+- Por tanto:
+  - éxito técnico = sí
+  - éxito visible = sí, pero parcial
+  - siguiente posible frente = v1.1 de prominencia/presentación semántica, NO rediagnóstico del cierre local
+
+DECISIÓN AL CIERRE
+- La microfase `CREATURE_DIES -> payoff bridge v1` queda cerrada:
+  - contrato
+  - implementación
+  - tests
+  - push
+  - deploy
+  - validación web/PDF
+- El siguiente frente, si se abre, ya no debería ser “hacer que cierre”, sino decidir si conviene una mejora pequeña de prominencia / lectura del overlay post-bridge.
+
+=====================================================================
+END UPDATE (2026-03-08)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-09) — v1.1 / v1.1.1 de prominencia visible post-bridge + validación productiva
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Se abrió y cerró una microfase estrecha posterior al bridge mínimo `CREATURE_DIES -> payoff`.
+- El objetivo NO fue reabrir causalidad ni tocar scoring global.
+- El objetivo sí fue mejorar la prominencia visible del overlay para closures locales post-bridge ya válidos.
+- La microfase quedó cerrada con:
+  - diagnóstico focal de prominencia
+  - implementación mínima de visibilidad local en `edgesTop`
+  - refinamiento determinista del candidato visible
+  - tests focales
+  - commit/push/deploy
+  - validación funcional visible en producción
+
+ALCANCE APROBADO
+- Se mantuvieron invariantes estrictas:
+  - no parser
+  - no lowering
+  - no scoring global
+  - no cross-card
+  - no panel nuevo
+  - no rediseño amplio de overlay/UI
+- La intervención se limitó a la selección local del subconjunto visible `edgesTop`.
+
+DIAGNÓSTICO FOCAL
+- Cuello visible identificado:
+  - los edges `local_only` con razón `EVENT:CREATURE_DIES` existían ya tras `eba09f6`
+  - pero quedaban enterrados por ordenación por `score`
+  - y luego eran expulsados por el recorte a top visible (`edgesTop`)
+- Lectura correcta:
+  - el problema ya no era causal
+  - era de visibilidad local / prominencia visible del overlay
+
+IMPLEMENTACIÓN v1.1
+Commit principal en `main`:
+- `04dae4b` — `sem: refine creature-dies prominence candidate selection`
+
+Archivo runtime principal:
+- `src/engine/semantic/overlay/sem_overlay_compute.ts`
+
+Regla mínima introducida:
+- `edgesTop` preserva el ranking principal por `score`, pero si el top visible no contiene ya un edge elegible `local_only` con razón `EVENT:CREATURE_DIES`, se reserva como máximo 1 plaza visible para esa familia.
+- Esta regla NO altera `score`, NO altera el cálculo base de edges y NO generaliza la política a otras familias.
+
+REFINAMIENTO v1.1.1
+- Se eliminó el fleco de “escoger el primer candidato elegible”.
+- Selección determinista del representante visible dentro de la plaza reservada:
+  1) mayor `reasons.length`
+  2) mayor nº de razones distintas de `EVENT:CREATURE_DIES`
+  3) preferencia por `self-edge`
+  4) desempate estable por clave (`from`/`to`)
+- La reserva se mantiene en 1 slot máximo.
+
+TESTS NUEVOS / AJUSTADOS
+Nuevos:
+- `src/engine/semantic/tests/sem_overlay_creature_dies_prominence_diagnose.test.ts`
+- `src/engine/semantic/tests/sem_overlay_creature_dies_prominence_candidate_select_v1_1_1.test.ts`
+
+Reutilizados en validación focal final:
+- `src/engine/semantic/tests/sem_overlay_creature_dies_payoff_bridge_min_v1.test.ts`
+- `src/engine/semantic/tests/sem_overlay_rakdos_dies_payoff_diagnose.test.ts`
+
+VALIDACIÓN LOCAL FINAL
+- Suite focal ejecutada en local:
+  - `4 files passed`
+  - `4 tests passed`
+- Lectura correcta:
+  - el bridge mínimo `CREATURE_DIES -> payoff` sigue intacto
+  - al menos un closure local relevante entra ya en `edgesTop`
+  - la selección del representante visible es determinista
+  - no hay evidencia de scoring global encubierto
+
+GIT / DEPLOY
+- Commit local en `main`:
+  - `04dae4b`
+- Push a GitHub:
+  - `eba09f6 -> 04dae4b`
+- Cloudflare Pages Production:
+  - hubo un intento inicial fallido
+  - `retry deployment` posterior exitoso
+  - commit activo en producción: `04dae4b`
+
+VALIDACIÓN FUNCIONAL WEB / PDF EN PRODUCCIÓN
+Deck deliberado de validación visible:
+- 4 Blood Artist
+- 4 Zulaport Cutthroat
+- 4 Serrated Scorpion
+- 4 Shambling Ghast
+- 4 Nested Shambler
+- 4 Village Rites
+- 4 Deadly Dispute
+- 4 Eaten Alive
+- 4 Claim the Firstborn
+- 4 Witch's Oven
+- 4 Voldaren Epicure
+- 4 Blightstep Pathway
+- 4 Blood Crypt
+- 4 Haunted Ridge
+- 4 Sulfurous Springs
+- 3 Swamp
+- 1 Mountain
+
+Output observado en producción (`04dae4b`):
+- en “Conexiones semánticas principales” aparecen visibles:
+  - `Blood Artist -> Blood Artist`
+  - `Serrated Scorpion -> Serrated Scorpion`
+  - `Zulaport Cutthroat -> Zulaport Cutthroat`
+- razones visibles coherentes con la familia:
+  - `CREATURE_DIES`
+  - `GAIN_LIFE`
+  - `LOSE_LIFE`
+  - `DEAL_DAMAGE`
+- Conclusión:
+  - la prominencia visible mínima post-bridge queda validada en producción
+
+LECTURA CORRECTA DEL ESTADO WEB TRAS v1.1.1
+- El cierre local `CREATURE_DIES -> payoff` sigue resuelto.
+- La prominencia visible mínima del overlay post-bridge queda ya conseguida.
+- La microfase NO debe reinterpretarse como:
+  - scoring global nuevo
+  - cierre cross-card
+  - resolución global de todos los huérfanos `CREATURE_DIES`
+
+NOTA EXPLÍCITA DE SEGUIMIENTO (FUERA DE ALCANCE DE ESTA MICROFASE)
+- En el mazo de validación más cargado sigue apareciendo residuo:
+  - `Event · CREATURE_DIES · 5` en “Efectos sin pareja”.
+- Lectura correcta:
+  - esto NO invalida v1.1.1
+  - esto NO reabre el bridge `CREATURE_DIES -> payoff`
+  - esto apunta a un posible frente futuro separado de:
+    - coverage residual
+    - bucketing / política de “Efectos sin pareja”
+- Ese posible frente debe formularse aparte y NO mezclarse con el cierre documental de v1.1.1.
+
+DECISIÓN AL CIERRE
+- La microfase v1.1 / v1.1.1 queda cerrada con:
+  - diagnóstico
+  - ajuste mínimo local
+  - refinamiento determinista
+  - tests
+  - push/deploy
+  - validación visible en producción
+- Siguiente decisión correcta:
+  - actualizar maestros / fuentes operativas
+  - registrar el residuo `CREATURE_DIES` en “Efectos sin pareja” como posible futura microfase independiente
+
+=====================================================================
+END UPDATE (2026-03-09)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-09) — RESIDUAL CREATURE_DIES / BUCKETING MICROPHASE CLOSED
+=====================================================================
+
+ESTADO DE ENTRADA CORRECTO
+- La microfase v1.1 / v1.1.1 ya estaba cerrada y validada en producción.
+- Persistía, en el mazo Rakdos pesado de validación web, residuo:
+  - `Event · CREATURE_DIES · 5` en “Efectos sin pareja”.
+- Ese residuo estaba explícitamente registrado como posible frente futuro separado de:
+  - coverage residual
+  - bucketing / política de huérfanos
+- La lectura correcta seguía siendo:
+  - NO reabrir `CREATURE_DIES -> payoff`
+  - NO tocar scoring global
+  - NO abrir cross-card
+  - abrir una microfase diagnóstica separada
+
+MICROFASE ABIERTA
+Nombre lógico:
+- post-v1.1.1 / residual CREATURE_DIES / coverage-or-bucketing diagnose
+
+DIAGNÓSTICO EJECUTADO
+Se ejecutó una fase diagnóstica en repo para seguir el rastro de `CREATURE_DIES`:
+- nacimiento del evento
+- consumo en cierres locales
+- llegada a bucket visible de huérfanos
+
+Resultado del diagnóstico inicial:
+- clasificación provisional: combinación **B + C**
+  - B = bucketing/orphan classification
+  - C = residuo legítimo sin consumidor local válido
+
+Razón técnica:
+- el bucket visible de “Efectos sin pareja” retenía `EVENT:CREATURE_DIES` aun existiendo cierres `local_only` correctos;
+- pero, en mazos más cargados, también seguían existiendo listeners `CREATURE_DIES` sin payoff local soportado.
+
+REPRO CONTROLADO HEAVY RAKDOS
+Se construyó / fijó un slice Rakdos más cargado y reproducible para cerrar el diagnóstico B vs C.
+
+Resultado observado en tests:
+- `dies_with_payoff = 3`
+- `dies_without_payoff = 3`
+- `local_only_edges = [Blood Artist, Serrated Scorpion, Zulaport Cutthroat]`
+- `orphan_consumed = 3`
+- lectura correcta:
+  - parte del bucket era inflado por absorciones locales ya correctas
+  - parte del residuo seguía siendo legítima
+
+DECISIÓN DE IMPLEMENTACIÓN
+Se abrió una microfase mínima y separada de bucketing:
+- residual CREATURE_DIES / orphan bucketing / minimal local discount v1
+
+OBJETIVO DE ESA MICROFASE
+- descontar del bucket visible de “Efectos sin pareja” la parte de `CREATURE_DIES` ya absorbida por cierres locales válidos;
+- preservar visible el residuo legítimo sin consumidor local válido.
+
+IMPLEMENTACIÓN PRIMARIA
+Archivo principal:
+- `src/engine/semantic/overlay/sem_metrics.ts`
+
+Primera versión mínima:
+- descuento local y estrecho solo para `EVENT:CREATURE_DIES`
+- sin tocar:
+  - parser
+  - lowering
+  - scoring global
+  - cross-card
+  - causalidad base del bridge
+
+REFINAMIENTO POSTERIOR
+La implementación se refinó para hacer el descuento más elegante:
+- no basarlo en número bruto de edges locales
+- basarlo en **absorción local efectiva** de `CREATURE_DIES`
+  ya materializada en el overlay
+
+Lectura correcta del refinamiento:
+- el bucket de `CREATURE_DIES` debe representar solo residuo no absorbido;
+- el descuento se computa desde cierres `local_only` con razón `CREATURE_DIES`
+  y al menos una razón adicional no-dies;
+- sigue siendo:
+  - local
+  - estrecho
+  - auditable
+  - no-generalizado a otras familias
+
+TESTS RELEVANTES DE ESTA MICROFASE
+- `src/engine/semantic/tests/sem_overlay_creature_dies_orphan_residual_diagnose.test.ts`
+- `src/engine/semantic/tests/sem_overlay_creature_dies_orphan_residual_heavy_rakdos_diagnose.test.ts`
+
+VALIDACIÓN LOCAL FOCAL
+La validación local focal quedó verde y confirmó:
+- el bridge `CREATURE_DIES -> payoff` sigue intacto
+- la prominencia visible mínima sigue intacta
+- el caso heavy Rakdos reproduce la mezcla B + C
+- el ajuste de bucket reduce residuo ya absorbido sin borrar el residuo legítimo
+
+COMMITS RELEVANTES CERRADOS
+- `fb74f4b` — `sem: refine creature-dies orphan bucketing discount`
+- `ec6ca93` — `test: add heavy rakdos orphan residual diagnose`
+
+PUSH / DEPLOY
+- Push a `main` correcto hasta `ec6ca93`
+- Cloudflare Pages Production desplegó correctamente `ec6ca93`
+
+VALIDACIÓN FUNCIONAL EN PRODUCCIÓN
+En la build `ec6ca93`, con el mazo heavy Rakdos de validación:
+- “Conexiones semánticas principales” mantiene visibles:
+  - `Blood Artist -> Blood Artist`
+  - `Serrated Scorpion -> Serrated Scorpion`
+  - `Zulaport Cutthroat -> Zulaport Cutthroat`
+- “Efectos sin pareja” muestra ahora:
+  - `Event · CREATURE_DIES · 2`
+
+COMPARATIVA WEB CORRECTA
+Estado anterior del mismo mazo:
+- `Event · CREATURE_DIES · 5`
+
+Estado posterior a `ec6ca93`:
+- `Event · CREATURE_DIES · 2`
+
+Lectura correcta:
+- baja visible y limpia del bucket `CREATURE_DIES`
+- NO desaparición completa
+- residuo legítimo preservado
+
+CONCLUSIÓN WEB / PRODUCTO
+- La microfase de bucketing queda validada en producción.
+- El sistema ahora refleja mejor:
+  - la parte de `CREATURE_DIES` ya absorbida localmente
+  - frente a la parte todavía legítimamente huérfana
+
+DECISIÓN DE CIERRE
+- Esta microfase queda cerrada con:
+  - diagnóstico
+  - repro controlado
+  - ajuste mínimo local
+  - refinamiento de elegancia técnica
+  - tests
+  - push/deploy
+  - validación visible en producción
+- NO abrir más código ahora en esta familia.
+- Registrar el estado como cerrado en maestros / fuentes operativas.
+
+LECTURA CORRECTA DEL ESTADO WEB TRAS ec6ca93
+- `CREATURE_DIES -> payoff` sigue cerrado.
+- La prominencia visible post-bridge sigue cerrada.
+- El bucket residual de `CREATURE_DIES` ha mejorado sin colapsar a cero.
+- El residuo visible restante debe leerse ahora como:
+  - compatible con listeners sin payoff local válido
+  - no como reapertura automática de bug en el bridge ya cerrado
+
+=====================================================================
+END UPDATE (2026-03-09)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-09) — A2.9 inicial pusheada en feature branch (sin merge ni deploy)
+=====================================================================
+
+GITHUB / BRANCH
+- Feature branch:
+  - `feat/a2.9-zone-identity-lki-min`
+- Commit en branch:
+  - `e1842a51615a5163d71db102621a36c3abc6049`
+  - short:
+    - `e1842a2`
+- Mensaje:
+  - `feat(semantic): add A2.9 zone identity/LKI minimum scaffolding and optional AbilityIR semantic_hints`
+- Push:
+  - correcto a `origin/feat/a2.9-zone-identity-lki-min`
+
+ALCANCE REAL DEL CAMBIO
+- Este avance es de motor / semántica interna.
+- No hay merge a `main`.
+- No hay PR/merge cerrada todavía.
+- No hay deploy a Cloudflare Pages todavía.
+- No hay cambio visible de producto validado en web todavía.
+
+CONTENIDO DEL AVANCE
+- Contrato nuevo:
+  - `sem_zone_identity_lki_min_v1.json`
+- Tipos nuevos:
+  - `sem_zone_identity_types.ts`
+- Servicio nuevo:
+  - `sem_zone_identity_lki_min_v1.ts`
+- AbilityIR mínimo ampliado:
+  - nuevo campo opcional `semantic_hints`
+- Test focal de lowering ajustado
+- Lowering con wiring mínimo y no invasivo
+
+VALIDACIÓN LOCAL RELEVANTE
+- Lowering focal:
+  - 1 file passed
+  - 5 tests passed
+- Guard suite Rakdos / `CREATURE_DIES`:
+  - 4 files passed
+  - 4 tests passed
+
+LECTURA WEB / PRODUCTO CORRECTA
+- Este update NO cambia todavía el estado visible de producción.
+- Este update NO autoriza a prometer mejora UI o coverage visible en web.
+- Debe leerse como:
+  - infraestructura semántica nueva en branch
+  - impacto visible todavía no verificado en Cloudflare
+  - sin modificación contractual pública del analyzer
+
+CLOUDFLARE PAGES
+- No se ejecutó validación preview/prod para esta subfase.
+- `main` / producción permanecen sin cambio por esta microfase en este punto.
+
+DECISIÓN DOCUMENTAL
+- Registrar el avance en fuentes operativas por trazabilidad.
+- No confundir este estado con:
+  - merge a `main`
+  - producción actualizada
+  - cierre web visible de A2.9
+
+NEXT WEB-RELEVANT STEP
+- Si el frente continúa:
+  - PR / merge a `main`
+  - deploy Cloudflare
+  - validación visible si aparece efecto observable
+- Hasta entonces, el estado correcto en Masterlog Web es:
+  - feature branch pushed
+  - no deploy
+  - no cambio visible todavía
+
+=====================================================================
+END UPDATE (2026-03-09)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-10) — A2.9 inicial mergeada, desplegada y validada en producción
+=====================================================================
+
+RESUMEN
+- La A2.9 inicial ya no está solo en feature branch.
+- El bloque quedó:
+  - mergeado a `main`
+  - validado por CI
+  - desplegado en Cloudflare Pages Production
+  - validado funcionalmente en la web real
+- Commit de producción activo:
+  - `73d9ac8`
+- Build visible en el analizador:
+  - `build: 73d9ac8`
+
+GITHUB / PRs
+- PR:
+  - `#46` — `A2.9 — add zone/identity/LKI minimum scaffolding and optional AbilityIR semantic_hints`
+- Estado PR:
+  - merged and closed
+- Checks:
+  - `CI / test-build (pull request)` ✅
+  - `Cloudflare Pages` ✅
+- Merge commit/squash final en `main`:
+  - `73d9ac8`
+
+SECUENCIA REAL DE LA PR
+- La PR no fue un merge lineal sin incidentes.
+- Hubo una convergencia contractual real sobre la familia:
+  - `local_only`
+  - `CREATURE_DIES`
+  - self-loops visibles
+  - prominence mínima
+- Tras corregir el contrato y reproducir CI en worktree limpio, la PR quedó verde y mergeable.
+
+CLOUDFLARE PAGES
+- Preview deploys de la feature branch visibles durante la iteración.
+- Production desplegada finalmente desde `main` con commit:
+  - `73d9ac8`
+- Dashboard validado:
+  - status success
+  - deploy reciente en producción
+- La rama feature de A2.9 fue eliminada en GitHub tras el merge.
+
+VALIDACIÓN FUNCIONAL EN WEB
+- El analizador cargó correctamente en producción:
+  - `https://mtgsynergy.com/es/analizador-de-mazos-mtg`
+- Se validó visualmente y funcionalmente con deck Rakdos real.
+- Resultado observado:
+  - build correcta `73d9ac8`
+  - deck cargado y analizado sin error visible
+  - índice de cartas cargado correctamente
+  - overlay semántico experimental mostrando conexiones locales explícitas coherentes
+- Señales visibles confirmadas:
+  - `Blood Artist -> Blood Artist`
+  - `Serrated Scorpion -> Serrated Scorpion`
+  - `Zulaport Cutthroat -> Zulaport Cutthroat`
+- Razones visibles observadas:
+  - `Event · CREATURE_DIES`
+  - `Action · GAIN_LIFE`
+  - `Action · LOSE_LIFE`
+  - `Action · DEAL_DAMAGE`
+
+LECTURA WEB CORRECTA DEL CAMBIO
+- A2.9 inicial NO introduce panel nuevo ni rediseño visual amplio.
+- El impacto visible se lee como:
+  - continuidad del analizador actual
+  - overlay semántico coherente con el contrato final ya convergido
+  - build correcta en producción
+  - sin regresión funcional de la web
+- La parte estructural y la parte semántica siguen siendo capas distintas; que SPS/relaciones estructurales permanezcan débiles en ciertos mazos no invalida la señal semántica visible ya validada.
+
+GIT / BRANCH HYGIENE
+- Tras el merge:
+  - `main` local actualizada vía `git pull --ff-only`
+  - `git fetch --prune` ejecutado
+  - rama feature remota eliminada
+  - rama feature local eliminada también
+- Estado final local:
+  - `main...origin/main`
+  - `reports/` fuera de control de versiones
+
+LECTURA OPERATIVA CORRECTA
+- Esta actualización sí cambia ya el estado web/documental respecto a la entrada del 2026-03-09.
+- Ya no corresponde escribir:
+  - “feature branch pushed, no deploy”
+- El estado correcto pasa a ser:
+  - mergeado
+  - desplegado
+  - validado en producción
+
+ESTADO WEB AL CIERRE
+- Producción estable y alineada con `main` en:
+  - `73d9ac8`
+- A2.9 inicial absorbida operativamente.
+- CI y deploy verdes.
+- Validación web funcional completada.
+
+SIGUIENTE FRENTE WEB-RELEVANTE
+- Solo abrirse si una futura microfase produce un cambio visible nuevo.
+- No hace falta abrir nuevo trabajo web solo por A2.9 inicial: el cierre visible de esta entrega ya está completado.
+
+=====================================================================
+END UPDATE (2026-03-10)
+=====================================================================
+
+
+=====================================================================
+NUEVA ENTRADA — A2.10 COST / TARGET / LEGALITY MINIMAL SEMANTICS CLOSED
+=====================================================================
+
+RESUMEN EJECUTIVO
+- A2.10 queda cerrada operativamente como microfase mínima de
+  infraestructura semántica.
+- Su alcance real fue:
+  - contrato mínimo
+  - tipos mínimos
+  - servicio puro
+  - corpus focal dedicado
+  - wiring mínimo al lowering existente
+- La entrega quedó mergeada en `main`, desplegada en producción y
+  cerrada localmente.
+
+SECUENCIA REAL DE LA ENTREGA
+- Feature branch:
+  - `feat/a2.10-cost-target-legality-min`
+- PR:
+  - `#47`
+- Commits de la branch:
+  - `a9f5d81` — contract + types
+  - `37ce52b` — pure service + focal tests
+  - `87f5eca` — focal corpus + corpus-driven test
+  - `b95f63b` — lowering hint wiring
+- Merge final en GitHub:
+  - squash merge hacia `main`
+- Commit resultante en `main`:
+  - `c86419e`
+
+LECTURA WEB / PRODUCTO CORRECTA
+- A2.10 NO introduce panel nuevo ni rediseño visible amplio.
+- Su impacto web se interpreta como:
+  - continuidad del analizador actual
+  - continuidad de la UI pública
+  - enriquecimiento interno del motor sin regresión visible próxima
+- La validación de cierre no fue una UX manual nueva específica, sino:
+  - tests semánticos verdes
+  - test de overlay coverage cercano verde
+  - build verde
+  - deploy de producción correcto
+
+CLOUDFLARE PAGES
+- Preview deploys de la feature branch visibles durante la iteración.
+- Production desplegada finalmente desde `main` con commit:
+  - `c86419e`
+- Dashboard validado:
+  - status success
+  - deploy reciente en producción
+- Esta vez el salto real de producción ya no es A2.9 sino:
+  - `73d9ac8` -> `c86419e`
+
+GIT / BRANCH / REPO HYGIENE
+- Tras el merge:
+  - branch feature remota eliminada
+  - branch feature local eliminada
+  - `main` local actualizada a `origin/main`
+- Estado final local:
+  - `main...origin/main`
+  - `reports/` fuera de control de versiones
+- Cambio operativo adicional:
+  - repo GitHub pasado a privado
+
+LECTURA OPERATIVA CORRECTA
+- Ya no corresponde documentar A2.10 como trabajo “en feature”.
+- El estado correcto pasa a ser:
+  - mergeado
+  - desplegado
+  - absorbido en `main`
+  - listo para servir de base a la siguiente microfase
+
+IMPACTO ESTRATÉGICO
+- A2.10 cierra una fase de infraestructura mínima necesaria.
+- El proyecto queda más preparado para volver a una cadencia
+  recurrente de bridges estrechos sobre una base más estable.
+- La siguiente fase no debería reabrir otra infraestructura transversal
+  grande sin necesidad.
+
+ESTADO WEB AL CIERRE
+- Producción estable y alineada con `main` en:
+  - `c86419e`
+- PR `#47` cerrada correctamente.
+- Deploy de producción confirmado.
+- A2.10 absorbida operativamente.
+
+SIGUIENTE FRENTE WEB-RELEVANTE
+- actualizar maestros / fuentes operativas con el estado post-merge y
+  post-deploy
+- después decidir la primera familia de bridges post-A2.10
+  suficientemente estrecha para reactivar una cadencia recurrente
+
+=====================================================================
+NUEVA ENTRADA — A2.10 FOLLOW-UP: MINIMAL DEAL_DAMAGE -> LOSE_LIFE LOCAL BRIDGE
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Se abrió y cerró la primera microfase de bridges post-A2.10 sobre la
+  base ya estabilizada por la infraestructura mínima de cost/target/
+  legality.
+- La familia elegida fue:
+  - `DEAL_DAMAGE -> LOSE_LIFE`
+- El trabajo se ejecutó con la misma disciplina incremental usada en la
+  familia `CREATURE_DIES -> payoff`:
+  - diagnose
+  - pairing inspect
+  - contrato mínimo
+  - implementación mínima
+  - test de activación real
+  - PR / deploy / validación web
+
+ARTEFACTOS NUEVOS / CAMBIADOS
+- Contrato nuevo:
+  - `src/engine/semantic/contract/sem_deal_damage_lose_life_bridge_min_v1.json`
+- Runtime:
+  - `src/engine/semantic/overlay/sem_edges.ts`
+- Tests:
+  - `src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_diagnose.test.ts`
+  - `src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_pairing_inspect.test.ts`
+  - `src/engine/semantic/tests/sem_overlay_deal_damage_lose_life_bridge_min_v1.test.ts`
+
+ALCANCE TÉCNICO REAL
+- Bridge explícito, estrecho, `local_only`, intra-profile y self-edge.
+- Cierre mínimo implementado sobre las claves reales existentes del
+  motor:
+  - `ACTION:DEAL_DAMAGE`
+  - `ACTION:LOSE_LIFE`
+- No se introdujo ontología nueva de target-player.
+- No se tocaron parser, lowering, scoring global ni cross-card.
+- La guardia quedó deliberadamente conservadora para redacciones
+  explícitas de jugador/oponente (`target player`, `an opponent`,
+  `each opponent`, `each player`).
+
+EVIDENCIA DIAGNÓSTICA Y DE TESTS
+- El diagnose confirmó que `DEAL_DAMAGE` y `LOSE_LIFE` existían ya en
+  el overlay, pero sin cierre local explícito.
+- El pairing inspect saneado confirmó productores en ambos lados y
+  `paired_by_key_count = 0` antes del bridge.
+- El test mínimo de bridge usó `Boltwave` como fixture contractual
+  porque su Oracle text es explícito:
+  - `Boltwave deals 3 damage to each opponent.`
+- Resultado focal:
+  - diagnose verde
+  - pairing inspect verde
+  - bridge-min test verde
+
+GIT / PR / DEPLOY
+- Commit local feature:
+  - `ebd5e28` — `feat(semantic): add minimal DEAL_DAMAGE -> LOSE_LIFE local bridge`
+- PR:
+  - `#48` — `A2.10 follow-up: add minimal DEAL_DAMAGE -> LOSE_LIFE local bridge`
+- Merge en `main`:
+  - `c142b81`
+- Cloudflare Pages:
+  - preview correcto sobre la branch feature
+  - producción desplegada correctamente sobre `main` en `c142b81`
+- Higiene de ramas:
+  - branch feature eliminada en remoto
+  - branch feature eliminada también en local
+  - `main` local alineada con `origin/main`
+  - `reports/` permaneció fuera de Git
+
+VALIDACIÓN WEB / PDF
+- Dos mazos de laboratorio más amplios confirmaron ejecución correcta en
+  producción, pero el bridge quedaba diluido visualmente por el resto
+  del overlay.
+- La validación visible concluyente llegó con el slice ultra-minimalista:
+  - `4 Boltwave`
+  - `56 Mountain`
+- En producción (`build: c142b81`) la UI/PDF mostró de forma explícita:
+  - `Boltwave -> Boltwave (puntuación 0)`
+  - razones:
+    - `Action · DEAL_DAMAGE × 1`
+    - `Action · LOSE_LIFE × 1`
+- `Efectos sin pareja` quedó vacío en esa prueba.
+- Con esto la microfase queda validada no solo en tests internos, sino
+  también en la superficie visible web/PDF para el caso mínimo dentro
+  del alcance contractual.
+
+LECTURA OPERATIVA CORRECTA
+- A2.10 follow-up no fue una discusión abstracta de prominencia; quedó
+  convertida en una microfase real y cerrada de bridges.
+- El proyecto ya no está solo “bridge-ready”: ya ha reanudado de hecho
+  la cadencia de bridges estrechos sobre la base post-A2.10.
+- La referencia correcta del estado ahora es:
+  - `main` en `c142b81`
+  - deploy de producción correcto
+  - validación visible mínima en web/PDF conseguida
+
+SIGUIENTE FRENTE WEB-RELEVANTE
+- actualizar maestros / fuentes con este cierre post-merge,
+  post-deploy y post-validación visible
+- después elegir la siguiente familia estrecha de bridges, sin reabrir
+  parser/lowering ni infra transversal
+
+=====================================================================
+END UPDATE (2026-03-11)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-12) — BRIDGE MÍNIMO LIFE_GAIN -> ADD_COUNTERS / cierre completo + validación visible en producción
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Se abrió y cerró la siguiente familia estrecha de bridges post-A2.10:
+  - `LIFE_GAIN -> ADD_COUNTERS`
+- El slice contractual elegido fue deliberadamente mínimo:
+  - self-edge local
+  - `local_only`
+  - intra-profile
+  - `score = 0`
+- La secuencia siguió la misma disciplina ya validada:
+  1) baseline inspection
+  2) diagnose
+  3) pairing inspect
+  4) contrato mínimo
+  5) implementación en `sem_edges.ts`
+  6) test mínimo de activación real
+  7) deploy a producción
+  8) validación visible web/PDF
+
+CONTRATO MÍNIMO APROBADO
+Archivo:
+- `src/engine/semantic/contract/sem_life_gain_add_counters_bridge_min_v1.json`
+
+Semántica contractual v1:
+- source family:
+  - `EVENT:LIFE_GAIN`
+- target family:
+  - `ACTION:ADD_COUNTERS`
+- activation_scope:
+  - `intra_profile_only`
+- causal_mode:
+  - local / explicit / narrow
+- non_goals explícitos:
+  - no cross-card closure
+  - no global counters-matter family
+  - no taxonomy abierta de counters
+  - no lifelink / replacement / prevention
+  - no multi-hop chains
+  - no parser / lowering changes
+  - no global scoring changes
+
+IMPLEMENTACIÓN MÍNIMA
+Archivo runtime tocado:
+- `src/engine/semantic/overlay/sem_edges.ts`
+
+Comportamiento nuevo:
+- se añade helper local separado para:
+  - `EVENT:LIFE_GAIN -> ACTION:ADD_COUNTERS`
+- el bridge activa self-edge `local_only` cuando una misma profile:
+  - consume `EVENT:LIFE_GAIN`
+  - y produce `ACTION:ADD_COUNTERS`
+- razones explícitas emitidas:
+  - `EVENT:LIFE_GAIN`
+  - `ACTION:ADD_COUNTERS`
+- `score = 0`
+- no se generaliza a cross-card ni a familias counters-matter más amplias
+
+TESTS AÑADIDOS / ACTUALIZADOS
+Nuevos:
+- `src/engine/semantic/tests/sem_overlay_life_gain_add_counters_diagnose.test.ts`
+- `src/engine/semantic/tests/sem_overlay_life_gain_add_counters_pairing_inspect.test.ts`
+- `src/engine/semantic/tests/sem_overlay_life_gain_add_counters_bridge_min_v1.test.ts`
+
+Lectura correcta de la suite:
+- el diagnose pasa y ya muestra `LIFE_GAIN` y `ADD_COUNTERS` en top edges / excess producers en el estado post-bridge
+- el pairing inspect sigue sirviendo como lectura raw-key:
+  - `pairing_candidates_count = 9`
+  - `paired_by_key_count = 0`
+  - `has_life_gain_edge = true`
+  - `has_add_counters_edge = true`
+- el bridge-min test demuestra activación real con slice mínimo:
+  - `Ajani's Pridemate`
+  - `Revitalize`
+
+GIT / DEPLOY
+- Commit en `main`:
+  - `417496d` — `feat(semantic): add minimal LIFE_GAIN -> ADD_COUNTERS local bridge`
+- Push a GitHub:
+  - `c142b81 -> 417496d`
+- Cloudflare Pages Production:
+  - desplegado correctamente sobre `main`
+  - commit visible en producción: `417496d`
+
+VALIDACIÓN WEB / PDF
+Mazo mínimo validado en producción:
+- `4 Ajani's Pridemate`
+- `4 Revitalize`
+- `52 Plains`
+
+Output visible observado en producción (`build: 417496d`):
+- aparece:
+  - `Revitalize -> Ajani's Pridemate (puntuación 1)`
+  con:
+    - `Event · LIFE_GAIN × 1`
+- aparece:
+  - `Ajani's Pridemate -> Ajani's Pridemate (puntuación 0)`
+  con:
+    - `Event · LIFE_GAIN × 1`
+    - `Action · ADD_COUNTERS × 1`
+- en “Efectos sin pareja”:
+  - no se detectaron
+
+LECTURA OPERATIVA CORRECTA
+- El proyecto ya no acumula solo un bridge estrecho post-A2.10, sino dos:
+  - `DEAL_DAMAGE -> LOSE_LIFE`
+  - `LIFE_GAIN -> ADD_COUNTERS`
+- La disciplina correcta sigue siendo:
+  - cuello de botella pequeño
+  - contrato mínimo
+  - helper local explícito
+  - test mínimo de activación
+  - validación visible en producción con slice pequeño
+- La validación de `LIFE_GAIN -> ADD_COUNTERS` queda cerrada no solo a nivel de runtime/test, sino también en la surface visible web/PDF.
+
+SIGUIENTE FRENTE WEB-RELEVANTE
+- actualizar maestros / fuentes con este segundo cierre post-A2.10
+- mantener el ritmo de familias estrechas sin reabrir parser/lowering
+- elegir la siguiente familia causal con la misma disciplina incremental
+
+=====================================================================
+END UPDATE (2026-03-12)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-12) — THIRD POST-A2.10 BRIDGE CLOSED / DAMAGE_WITH_LIFELINK -> LIFE_GAIN
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Se abrió y cerró la siguiente familia estrecha de bridges post-A2.10:
+  - `DAMAGE_WITH_LIFELINK -> LIFE_GAIN`
+- El slice contractual elegido volvió a ser deliberadamente mínimo:
+  - self-edge local
+  - `local_only`
+  - intra-profile
+  - `score = 0`
+- La secuencia mantuvo exactamente la disciplina incremental ya fijada:
+  1) diagnose
+  2) pairing inspect
+  3) contrato mínimo
+  4) implementación mínima en `sem_edges.ts`
+  5) test mínimo de activación real
+  6) validación focal local
+  7) push a `main`
+  8) deploy a producción
+  9) validación visible web/PDF
+
+CONTRATO MÍNIMO APROBADO
+Archivo:
+- `src/engine/semantic/contract/sem_damage_with_lifelink_life_gain_bridge_min_v1.json`
+
+Semántica contractual v1:
+- family:
+  - `DAMAGE_WITH_LIFELINK -> LIFE_GAIN`
+- activation_scope:
+  - `intra_profile_only`
+- causal_mode:
+  - local / explicit / narrow
+- activation predicate:
+  - evidencia local de `ACTION:DEAL_DAMAGE`
+  - evidencia textual explícita de `lifelink`
+  - cierre esperado hacia `EVENT:LIFE_GAIN`
+- non_goals explícitos:
+  - no cross-card closure
+  - no replacement / prevention
+  - no ontología global de combat damage
+  - no múltiples fuentes simultáneas
+  - no parser / lowering changes
+  - no global scoring changes
+
+IMPLEMENTACIÓN MÍNIMA
+Archivo runtime tocado:
+- `src/engine/semantic/overlay/sem_edges.ts`
+
+Comportamiento nuevo:
+- se añade helper local separado para:
+  - `DAMAGE_WITH_LIFELINK -> LIFE_GAIN`
+- el bridge activa self-edge `local_only` cuando una misma profile:
+  - produce `ACTION:DEAL_DAMAGE`
+  - y el `oracle_text` contiene evidencia explícita de `lifelink`
+- razones explícitas emitidas:
+  - `ACTION:DEAL_DAMAGE`
+  - `EVENT:LIFE_GAIN`
+- `score = 0`
+- no se generaliza a cross-card ni a familias amplias de gain-life
+
+TESTS AÑADIDOS / ACTUALIZADOS
+Nuevos:
+- `src/engine/semantic/tests/sem_overlay_damage_with_lifelink_life_gain_pairing_inspect.test.ts`
+- `src/engine/semantic/tests/sem_overlay_damage_with_lifelink_life_gain_bridge_min_v1.test.ts`
+
+Lectura correcta de la suite focal:
+- `pairing_inspect` congela el hueco raw-key pre-bridge:
+  - `pairing_candidates_count > 0`
+  - `paired_by_key_count = 0`
+- el `bridge_min` demuestra activación real de self-edge local
+- la validación focal local quedó verde sin romper familias previas:
+  - `DEAL_DAMAGE -> LOSE_LIFE`
+  - `LIFE_GAIN -> ADD_COUNTERS`
+
+GIT / DEPLOY
+- Commit en `main`:
+  - `c41912f` — `feat(semantic): add minimal DAMAGE_WITH_LIFELINK -> LIFE_GAIN local bridge`
+- Push a GitHub:
+  - correcto sobre `origin/main`
+- Cloudflare Pages Production:
+  - desplegado correctamente sobre `main`
+  - commit visible en producción: `c41912f`
+
+VALIDACIÓN WEB / PDF
+Mazo mínimo validado en producción:
+- `4 Archangel of Wrath`
+- `56 Plains`
+
+Output visible observado en producción (`build: c41912f`):
+- aparece en `Superposición semántica`:
+  - `Archangel of Wrath -> Archangel of Wrath (puntuación 0)`
+  con:
+    - `Event · LIFE_GAIN × 1`
+    - `Action · DEAL_DAMAGE × 1`
+- en `Efectos sin pareja` sigue apareciendo:
+  - `Event · ENTERS_BATTLEFIELD · 1`
+
+LECTURA OPERATIVA CORRECTA
+- El proyecto ya acumula tres bridges estrechos cerrados post-A2.10:
+  - `DEAL_DAMAGE -> LOSE_LIFE`
+  - `LIFE_GAIN -> ADD_COUNTERS`
+  - `DAMAGE_WITH_LIFELINK -> LIFE_GAIN`
+- La cadencia de bridges queda confirmada como repetible sobre la misma
+  base estable, sin reabrir parser ni lowering.
+- La validación de `DAMAGE_WITH_LIFELINK -> LIFE_GAIN` queda cerrada a
+  nivel de runtime, suite focal y surface visible web/PDF.
+
+FOLLOW-UP EXPLÍCITO REGISTRADO
+- Surface inconsistency pending:
+  - el banner `⚠️ Sin señal (experimental)` y `SOS: 0.00` pueden
+    coexistir con edges `local_only` visibles en overlay.
+- Esta discrepancia se interpreta como deuda de UI/summary/prominence,
+  no como fallo del bridge semántico ya validado.
+- Debe abrirse, si se aborda, como microfase separada y sin tocar la
+  semántica ya validada de esta familia.
+
+SIGUIENTE FRENTE WEB-RELEVANTE
+- actualizar maestros / fuentes con este tercer cierre post-A2.10
+- mantener el ritmo de familias estrechas sin reabrir parser/lowering
+- dejar la inconsistencia de summary/UI como follow-up separado
+
+=====================================================================
+END UPDATE (2026-03-12)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-12) — UI summary status v1 cerrada post-deploy y validación visible
+=====================================================================
+
+ORIGEN DE LA MICROFASE
+- Se toma como punto de partida el follow-up ya registrado tras cerrar:
+  - `DAMAGE_WITH_LIFELINK -> LIFE_GAIN`
+- La discrepancia observada era de surface/UI:
+  - el banner `⚠️ Sin señal (experimental)` y `SOS: 0.00`
+    podían coexistir con edges `local_only` visibles en
+    `Conexiones semánticas principales`
+- La interpretación correcta se confirmó como:
+  - no fallo semántico
+  - no fallo del bridge de lifelink
+  - sí deuda separada de UI/summary/prominence
+
+DIAGNOSE / INSPECCIÓN EJECUTADAS
+- Inspección focal en:
+  - `src/components/analyzer/SemanticOverlayPanel.tsx`
+  - `src/components/analyzer/AnalyzerApp.tsx`
+  - `src/engine/semantic/overlay/sem_overlay_compute.ts`
+  - `src/engine/semantic/overlay/sem_metrics.ts`
+- Hallazgo congelado:
+  - el banner dependía solo de `metrics.SOS > 0`
+  - no miraba si había `edgesTop` visibles
+- Lectura correcta del wiring:
+  - `edgesTop` ya llegaba correctamente al panel
+  - `total_edge_score` y `SOS` seguían calculándose en motor
+    sin regresión ni hueco nuevo
+
+IMPLEMENTACIÓN MÍNIMA
+Archivos tocados:
+- `src/components/analyzer/SemanticOverlayPanel.tsx`
+- `src/components/analyzer/tests/semantic_overlay_panel.test.ts`
+
+Cambio visible exacto:
+- `getSignalStatus(...)` pasa a considerar:
+  - `metrics.SOS > 0`
+  - o `visibleEdgesCount > 0`
+- El panel pasa `edgesTop.length` al cálculo del banner
+- No se tocan:
+  - `sem_edges.ts`
+  - `sem_metrics.ts`
+  - `sem_overlay_compute.ts`
+  - scoring
+  - ordenación
+  - `SOS`
+
+TESTS / VALIDACIÓN LOCAL
+- Suite focal:
+  - `npx vitest run src/components/analyzer/tests/semantic_overlay_panel.test.ts`
+  - verde (`7 tests passed`)
+- `npm run build`
+  - verde
+- La lectura correcta de la suite es:
+  - `SOS = 0` + edges visibles => ya no `Sin señal`
+  - `SOS = 0` + sin edges => sigue `Sin señal`
+  - `SOS > 0` => sigue `Señal encontrada`
+
+GIT / DEPLOY
+- Commit en `main`:
+  - `d270ac7` — `fix(ui): avoid no-signal banner when semantic edges are visible`
+- Push a GitHub:
+  - correcto sobre `origin/main`
+- Cloudflare Pages Production:
+  - desplegado correctamente sobre `main`
+  - commit visible en producción: `d270ac7`
+
+VALIDACIÓN WEB / PDF
+Mazo mínimo validado en producción:
+- `4 Archangel of Wrath`
+- `56 Plains`
+
+Output visible observado en producción (`build: d270ac7`):
+- el banner superior ya muestra:
+  - `✅ Señal encontrada (experimental)`
+- siguen intactos:
+  - `SOS: 0.00`
+  - `puntuación total de conexiones: 0`
+- sigue visible el edge local:
+  - `Archangel of Wrath -> Archangel of Wrath (puntuación 0)`
+  con:
+    - `Event · LIFE_GAIN × 1`
+    - `Action · DEAL_DAMAGE × 1`
+- la validación PDF quedó alineada con la validación web
+
+LECTURA OPERATIVA CORRECTA
+- `UI summary status v1` queda cerrada como microfase separada
+  y honesta de surface
+- El cierre confirma que:
+  - el bridge semántico de lifelink ya estaba bien
+  - la deuda real estaba en el estado del banner
+- Se mantiene intacta la frontera:
+  - semántica/core no reabierta
+  - scoring/SOS no tocados
+  - cambio concentrado en summary/banner UI
+
+PENDIENTE MENOR RESIDUAL
+- Se observa todavía una inconsistencia menor de surface:
+  - `Efectos repetidos` puede seguir mostrando:
+    - `No aplicable (sin señal).`
+  aunque el banner superior ya diga:
+    - `✅ Señal encontrada (experimental)`
+- Este punto no bloquea el cierre de `UI summary status v1`
+- Si se aborda, debe abrirse como microfase separada adicional de
+  copy/summary secundaria, no como reapertura de esta entrega
+
+SIGUIENTE FRENTE WEB-RELEVANTE
+- actualizar maestros / fuentes con este cierre real post-commit,
+  post-deploy y post-validación visible
+- mantener separadas:
+  - microfases semánticas/core
+  - microfases de summary/prominence/copy
+- decidir después si conviene abrir una microfase menor para el copy
+  residual de `Efectos repetidos`
+
+=====================================================================
+END UPDATE (2026-03-12)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-12) — UI repeated-effects status alignment v1
+=====================================================================
+
+OBJETIVO REAL
+- Cerrar una microfase separada y estrictamente local de copy/summary
+  secundaria
+- Resolver la incoherencia residual observada tras `UI summary status v1`:
+  - banner principal:
+    - `✅ Señal encontrada (experimental)`
+  - pero bloque secundario:
+    - `Efectos repetidos`
+    - `No aplicable (sin señal).`
+
+ALCANCE CORRECTO
+- Microfase solo de surface/copy
+- No reabrir:
+  - bridges semánticos ya cerrados
+  - scoring
+  - `SOS`
+  - parser
+  - lowering
+  - wiring de motor
+- El frente correcto quedó fijado como:
+  - alineación del empty-state local de `Efectos repetidos`
+
+ARTEFACTOS TOCADOS
+- `src/components/analyzer/SemanticOverlayPanel.tsx`
+- `src/components/analyzer/tests/semantic_overlay_panel.test.ts`
+
+CAMBIO MÍNIMO APLICADO
+- Se sustituyó el fallback:
+  - `No aplicable (sin señal).`
+  por:
+  - `No se detectaron efectos repetidos relevantes.`
+- El cambio se mantuvo estrictamente local a la sección
+  `Efectos repetidos`
+- El banner principal permanece gobernado por la microfase previa:
+  - `getSignalStatus(metrics, edgesTop.length)`
+
+TESTS / VALIDACIÓN LOCAL
+- Suite focal:
+  - `npx vitest run src/components/analyzer/tests/semantic_overlay_panel.test.ts`
+  - verde (`7 tests passed`)
+- `npm run build`
+  - verde
+- La suite actualizada protege que:
+  - el copy ya no contiene `sin señal`
+  - el fallback sigue siendo local/neutral
+- `reports/` permaneció fuera de Git
+
+GIT / DEPLOY
+- Commit en `main`:
+  - `465ed0c` — `fix(ui): align repeated effects empty-state copy`
+- Push a GitHub:
+  - correcto sobre `origin/main`
+- Cloudflare Pages Production:
+  - desplegado correctamente sobre `main`
+  - commit visible en producción: `465ed0c`
+
+VALIDACIÓN WEB / PDF
+Mazo mínimo validado en producción:
+- `4 Archangel of Wrath`
+- `56 Plains`
+
+Output visible observado en producción (`build: 465ed0c`):
+- el banner superior se mantiene en:
+  - `✅ Señal encontrada (experimental)`
+- se mantienen intactos:
+  - `SOS: 0.00`
+  - `puntuación total de conexiones: 0`
+- sigue visible el edge local:
+  - `Archangel of Wrath -> Archangel of Wrath (puntuación 0)`
+  con:
+    - `Event · LIFE_GAIN × 1`
+    - `Action · DEAL_DAMAGE × 1`
+- `Efectos repetidos` ahora muestra:
+  - `No se detectaron efectos repetidos relevantes.`
+- la validación PDF quedó alineada con la validación web
+
+LECTURA OPERATIVA CORRECTA
+- Esta microfase cierra el residual menor que había quedado tras
+  `UI summary status v1`
+- La corrección es exclusivamente de copy/summary secundaria
+- No hay cambio alguno en:
+  - motor
+  - bridge de lifelink
+  - scoring
+  - `SOS`
+  - semántica del overlay
+- Queda confirmado que el proyecto puede cerrar también microfases
+  pequeñas de surface secundaria con la misma disciplina que los bridges
+
+ESTADO DEL RESIDUAL
+- El residual explícito del mismo slice queda resuelto
+- En este punto:
+  - banner principal alineado
+  - bloque `Efectos repetidos` alineado
+  - web y PDF alineados
+- No debe reabrirse ninguna familia semántica a partir de este cierre
+
+SIGUIENTE FRENTE WEB-RELEVANTE
+- actualizar maestros / fuentes con este cierre real post-commit,
+  post-push, post-deploy y post-validación visible
+- después decidir de nuevo el siguiente frente desde el estado real,
+  manteniendo separadas:
+  - microfases semánticas/core
+  - microfases UI/copy/surface
+
+=====================================================================
+END UPDATE (2026-03-12)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-12) — Microfase semántica mínima LEAVES_BATTLEFIELD -> CREATE_TOKEN local bridge
+=====================================================================
+
+OBJETIVO REAL DE LA MICROFASE
+- Reabrir el carril semántico post-A2.10 sin tocar scoring global, UI
+  ni parser/lowering.
+- Cerrar una familia estrecha y explícita documentada en las fuentes:
+  - `LEAVES_BATTLEFIELD -> CREATE_TOKEN`
+- Hacerlo como bridge local mínimo `intra_profile_only`.
+
+DIAGNÓSTICO PREVIO Y ELECCIÓN DEL FRENTE
+- Se descartó abrir `CREATE_TOKEN -> ETB` porque el slice `tokens/ETB`
+  ya aparecía cableado y cubierto por tests focales verdes.
+- Se confirmó soporte de parser para:
+  - `LEAVES_BATTLEFIELD`
+- Se confirmó ausencia de cierre local explícito equivalente en overlay
+  para el patrón:
+  - watch `LEAVES_BATTLEFIELD`
+  - action `CREATE_TOKEN`
+- La elección correcta pasó a ser:
+  - `LEAVES_BATTLEFIELD -> CREATE_TOKEN`
+
+ALCANCE CORRECTO
+- Bridge explícito y estrecho.
+- Misma carta / mismo profile.
+- Self-edge `local_only`.
+- `score: 0`.
+- Razones:
+  - `EVENT:LEAVES_BATTLEFIELD`
+  - `ACTION:CREATE_TOKEN`
+- Evidence gate textual estricto:
+  - solo `leaves the battlefield`
+- Fuera de alcance:
+  - alias `dies`
+  - cross-card
+  - multi-hop
+  - scoring global
+  - UI/copy
+  - parser/lowering
+
+ARTEFACTOS DEL REPO TOCADOS
+- `src/engine/semantic/overlay/sem_edges.ts`
+- `src/engine/semantic/tests/sem_overlay_leaves_battlefield_create_token_bridge_min_v1.test.ts`
+
+IMPLEMENTACIÓN REAL
+- Se añadió helper mínimo de elegibilidad local para:
+  - `EVENT:LEAVES_BATTLEFIELD`
+  - `ACTION:CREATE_TOKEN`
+- Se añadió gate textual explícito:
+  - `leaves the battlefield`
+- Se añadió bloque de generación de self-edge local siguiendo el patrón
+  de bridges mínimos ya cerrados.
+- No se tocaron:
+  - parser
+  - lowering
+  - `sem_metrics.ts`
+  - UI
+  - contrato de analyzer
+  - scoring
+  - `SOS`
+
+TESTS / VALIDACIÓN LOCAL
+- Validación focal de CODEX:
+  - nuevo test verde (`1 passed`)
+- Validación local explícita en PowerShell:
+  - `src/engine/semantic/tests/sem_overlay_leaves_battlefield_create_token_bridge_min_v1.test.ts`
+  - `src/engine/semantic/tests/sem_parser_v1_templates.test.ts`
+  - `src/engine/semantic/tests/sem_overlay_rakdos_signal_diagnose.test.ts`
+- Resultado:
+  - `3 test files passed`
+  - `13 tests passed`
+- El diagnóstico Rakdos pasó a mostrar coherentemente:
+  - `Experimental Synthesizer -> Experimental Synthesizer`
+  - `score: 0`
+  - `EVENT:LEAVES_BATTLEFIELD:1`
+  - `ACTION:CREATE_TOKEN:1`
+
+GIT / DEPLOY
+- Commit en `main`:
+  - `c289b6b`
+  - `feat(semantic): add minimal LEAVES_BATTLEFIELD -> CREATE_TOKEN local bridge`
+- Push a GitHub:
+  - correcto sobre `origin/main`
+  - avance remoto:
+    - `465ed0c -> c289b6b`
+- Cloudflare Pages Production:
+  - desplegado correctamente sobre `main`
+  - build visible en producción:
+    - `c289b6b`
+
+VALIDACIÓN WEB / PDF
+Mazo mínimo validado en producción:
+- `4 Experimental Synthesizer`
+- `56 Mountain`
+
+Output visible observado en producción (`build: c289b6b`):
+- banner:
+  - `✅ Señal encontrada (experimental)`
+- métricas:
+  - `SOS: 0.00`
+  - `puntuación total de conexiones: 0`
+- conexión visible:
+  - `Experimental Synthesizer -> Experimental Synthesizer (puntuación 0)`
+    - `Event · LEAVES_BATTLEFIELD × 1`
+    - `Action · CREATE_TOKEN × 1`
+- `Efectos repetidos`:
+  - `No se detectaron efectos repetidos relevantes.`
+
+LECTURA OPERATIVA CORRECTA
+- La microfase queda validada end-to-end:
+  - local
+  - commit
+  - push
+  - deploy
+  - web
+  - PDF
+- El edge nuevo es visible, pero sigue siendo deliberadamente:
+  - `local_only`
+  - `score 0`
+- Que el bloque estructural permanezca en:
+  - `Sinergias detectadas: 0`
+  - `Densidad: 0`
+  - `SOS: 0.00`
+  es correcto y no constituye regresión.
+- También es correcta la permanencia de buckets como:
+  - `Efectos sin pareja -> LEAVES_BATTLEFIELD`
+  - exceso de señales ligadas a tokens
+  porque esta microfase no resolvía la familia completa de buckets
+  derivados.
+
+ESTADO REAL TRAS EL CIERRE
+- Quedan cerradas y no deben reabrirse:
+  - `SACRIFICE(creature) -> CREATURE_DIES`
+  - `CREATURE_DIES -> payoff`
+  - `DEAL_DAMAGE -> LOSE_LIFE`
+  - `LIFE_GAIN -> ADD_COUNTERS`
+  - `DAMAGE_WITH_LIFELINK -> LIFE_GAIN`
+  - `LEAVES_BATTLEFIELD -> CREATE_TOKEN`
+  - `UI summary status v1`
+  - `UI repeated-effects status alignment v1`
+- El proyecto vuelve a demostrar que puede alternar:
+  - microfases semánticas estrechas
+  - y microfases de surface
+  sin mezclar planos.
+
+SIGUIENTE DISCIPLINA CORRECTA
+- Actualizar fuentes operativas con este delta real ya validado.
+- Elegir el siguiente frente otra vez desde el estado cerrado real.
+- Mantener separadas:
+  - semántica/core
+  - UI/copy/surface
+
+=====================================================================
+END UPDATE (2026-03-12)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-13) — Cobertura contractual ampliada del bridge mínimo DEAL_DAMAGE -> LOSE_LIFE
+=====================================================================
+
+RESUMEN EJECUTIVO
+- No se abrió una familia semántica nueva.
+- Tampoco se reabrió el bridge ya cerrado `DEAL_DAMAGE -> LOSE_LIFE`.
+- La microfase real fue de endurecimiento contractual y validación visible:
+  - ampliar la cobertura focal del bridge mínimo ya existente
+  - confirmar explícitamente qué phrasing sí entra
+  - confirmar explícitamente que `any target` sigue fuera
+- El alcance se mantuvo estricto:
+  - sin cambios en parser/lowering
+  - sin cambios en scoring global
+  - sin cambios en UI/surface
+  - sin cambios cross-card
+
+ESTADO REAL DEL FRENTE
+- Tras revisar maestros, tests y wiring real del repo, se confirmó que:
+  - el cierre mínimo vigente sigue siendo `DEAL_DAMAGE -> LOSE_LIFE`
+  - vive como self-edge `local_only`
+  - con `score: 0`
+  - y con razones:
+    - `ACTION:DEAL_DAMAGE`
+    - `ACTION:LOSE_LIFE`
+- También quedó confirmado que el overlay no dispone aún de un modelado
+  estructural nuevo del tipo:
+  - `DAMAGE_TO_PLAYER -> LIFE_LOST`
+- Por eso la microfase correcta fue reforzar el contrato del slice ya
+  cerrado, no renombrar la familia.
+
+ARTEFACTOS REALMENTE TOCADOS
+- Solo se tocó:
+  - `src/engine/semantic/tests/sem_overlay_deal_damage_lose_life_bridge_min_v1.test.ts`
+- No se tocó:
+  - `src/engine/semantic/overlay/sem_edges.ts`
+  - parser
+  - lowering
+  - scoring
+  - UI
+
+COBERTURA CONTRACTUAL NUEVA FIJADA
+Casos positivos explícitos admitidos por el bridge local mínimo:
+- `target player`
+- `an opponent`
+- `each opponent`
+- `each player`
+
+Caso negativo explícito fijado:
+- `any target`
+
+Corpus real usado en el test focal ampliado:
+- `Scorching Missile`  -> `target player`
+- `Zaffai, Thunder Conductor` -> `an opponent`
+- `Creeping Bloodsucker` -> `each opponent`
+- `Flame Rift` -> `each player`
+- `Chain of Plasma` -> `any target` (negativo)
+
+VALIDACIÓN LOCAL
+- Anillo focal ejecutado en local:
+  - `src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_diagnose.test.ts`
+  - `src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_pairing_inspect.test.ts`
+  - `src/engine/semantic/tests/sem_overlay_deal_damage_lose_life_bridge_min_v1.test.ts`
+- Resultado:
+  - `3 files passed`
+  - `3 tests passed`
+- Lectura técnica correcta:
+  - el pairing por keys crudas sigue sin cerrar
+  - `DEAL_DAMAGE` y `LOSE_LIFE` siguen apareciendo como señales/buckets
+    separados en diagnose
+  - el bridge local mínimo ampliado pasa sin tocar core
+
+GIT / DEPLOY
+- Commit en `main`:
+  - `ec2986d`
+  - `test(semantic): expand minimal DEAL_DAMAGE -> LOSE_LIFE local bridge coverage`
+- Push a GitHub:
+  - correcto sobre `origin/main`
+  - avance remoto:
+    - `c289b6b -> ec2986d`
+- Cloudflare Pages Production:
+  - desplegado correctamente sobre `main`
+  - build visible en producción:
+    - `ec2986d`
+- No hizo falta PR:
+  - el flujo real de esta microfase fue directo sobre `main`
+  - con deploy automático validado en producción
+
+VALIDACIÓN WEB / PDF EN PRODUCCIÓN
+Mazo positivo validado:
+- `4 Flame Rift`
+- `56 Mountain`
+
+Output visible observado en producción (`build: ec2986d`):
+- banner:
+  - `✅ Señal encontrada (experimental)`
+- métricas:
+  - `SOS: 0.00`
+  - `puntuación total de conexiones: 0`
+- conexión visible:
+  - `Flame Rift -> Flame Rift (puntuación 0)`
+    - `Action · DEAL_DAMAGE × 1`
+    - `Action · LOSE_LIFE × 1`
+
+Mazo negativo de control validado:
+- `4 Chain of Plasma`
+- `56 Mountain`
+
+Output visible observado en producción (`build: ec2986d`):
+- banner:
+  - `⚠️ Sin señal (experimental)`
+- no aparecen conexiones semánticas principales del slice
+- `DEAL_DAMAGE` puede seguir apareciendo como señal excedente
+  sin cierre local hacia `LOSE_LIFE`
+- la exclusión de `any target` queda validada en visible
+
+LECTURA OPERATIVA CORRECTA
+- Esta microfase no cierra una familia nueva; endurece el contrato y la
+  cobertura de una familia ya cerrada.
+- El bridge `DEAL_DAMAGE -> LOSE_LIFE` sigue siendo deliberadamente:
+  - local
+  - estrecho
+  - score 0
+- La exclusión de `any target` queda ahora validada en:
+  - test focal
+  - web
+  - PDF
+- El proyecto mantiene la disciplina correcta:
+  - diagnose
+  - inspección
+  - criterio mínimo
+  - implementación mínima
+  - validación local
+  - commit
+  - push
+  - deploy
+  - validación visible
+
+ESTADO REAL TRAS ESTE CIERRE
+- Siguen cerradas y no deben reabrirse:
+  - `SACRIFICE(creature) -> CREATURE_DIES`
+  - `CREATURE_DIES -> payoff`
+  - `DEAL_DAMAGE -> LOSE_LIFE`
+  - `LIFE_GAIN -> ADD_COUNTERS`
+  - `DAMAGE_WITH_LIFELINK -> LIFE_GAIN`
+  - `LEAVES_BATTLEFIELD -> CREATE_TOKEN`
+  - `UI summary status v1`
+  - `UI repeated-effects status alignment v1`
+- La novedad real es:
+  - cobertura contractual ampliada y revalidada de `DEAL_DAMAGE -> LOSE_LIFE`
+
+SIGUIENTE DISCIPLINA CORRECTA
+- Actualizar fuentes operativas con este delta real ya validado.
+- Elegir el siguiente frente otra vez desde el estado cerrado real.
+- Mantener separadas:
+  - semántica/core
+  - UI/copy/surface
+
+=====================================================================
+END UPDATE (2026-03-13)
+=====================================================================
+=====================================================================
+UPDATE (2026-03-13) — A2.9 zone identity / LKI: cobertura mínima de servicio + validación de regresión en producción
+=====================================================================
+
+OBJETO REAL DE ESTA MICROFASE
+- No se abrió una familia nueva de bridges.
+- No hubo cambio visible de UI/surface.
+- No hubo cambio de parser, lowering, overlay ni scoring.
+- El trabajo real fue un endurecimiento focal de A2.9 por el lado de
+  servicio/test:
+  - zone identity
+  - LKI mínima
+  - no-overclaim mínimo
+  - token extinction mínimo
+
+DIAGNOSIS Y LECTURA CORRECTA PREVIA
+- Tras cerrar la cobertura ampliada de `DEAL_DAMAGE -> LOSE_LIFE`, se
+  volvió a los maestros v21 para elegir el siguiente frente real.
+- La exploración del repo confirmó:
+  - no había un `bridge_min_v1` nuevo preparado
+  - `CREATE_TOKEN -> ETB` ya estaba cableado y verde
+  - los mana rocks simples (`Gilded Lotus`, `Worn Powerstone`) ya estaban
+    absorbidos históricamente
+- La deuda real documentada que seguía abierta era A2.9, no por falta de
+  contrato o servicio base, sino por falta de test focal propio.
+
+ESTADO REAL DE A2.9 ANTES DE ESTA MICROFASE
+Ya existían en `main`:
+- `src/engine/semantic/contract/sem_zone_identity_lki_min_v1.json`
+- `src/engine/semantic/types/sem_zone_identity_types.ts`
+- `src/engine/semantic/services/sem_zone_identity_lki_min_v1.ts`
+- wiring mínimo de lowering vía `semantic_hints`
+
+También ya estaban presentes en el servicio las derivaciones mínimas:
+- `deriveLeavesBattlefieldFromZoneChange`
+- `deriveCreatureDiesFromZoneChange`
+- `captureLastKnownInformation`
+- `resolveLkiQuery`
+- `isTokenExtinguishedAfterLeave`
+- `evaluateZoneSemantics`
+
+La lectura correcta fue:
+- A2.9 no necesitaba nueva infraestructura en este corte
+- sí necesitaba congelación contractual / test focal de servicio
+
+ARTEFACTO REAL TOCADO EN EL REPO
+Único archivo añadido:
+- `src/engine/semantic/tests/sem_zone_identity_lki_min_v1.test.ts`
+
+Artefactos explícitamente no tocados:
+- parser
+- lowering
+- overlay
+- UI
+- scoring
+- contrato JSON A2.9
+- servicio A2.9
+
+ALCANCE REAL DEL TEST AÑADIDO
+Casos fijados:
+- `BATTLEFIELD -> GRAVEYARD` con criatura previa:
+  - deriva `LEAVES_BATTLEFIELD`
+  - deriva `CREATURE_DIES`
+- `BATTLEFIELD -> EXILE`:
+  - deriva `LEAVES_BATTLEFIELD`
+  - no deriva `CREATURE_DIES`
+- cambio que no parte del battlefield:
+  - no sobreafirma `LEAVES_BATTLEFIELD`
+  - no sobreafirma `CREATURE_DIES`
+- token que abandona battlefield:
+  - extinción por SBA mínima
+- captura / resolución mínima de LKI:
+  - sin inventar semántica adicional
+
+VALIDACIÓN LOCAL
+Anillo focal ejecutado:
+- `npm test -- src/engine/semantic/tests/sem_zone_identity_lki_min_v1.test.ts`
+
+Resultado:
+- `1 file passed`
+- `5 tests passed`
+
+GIT / DEPLOY
+- Commit en `main`:
+  - `392babd`
+- Mensaje:
+  - `test(semantic): add minimal zone identity / LKI service coverage`
+- Push a GitHub:
+  - correcto
+- Cloudflare Pages Production:
+  - correcto
+- Build visible en producción:
+  - `392babd`
+- No hizo falta PR:
+  - la microfase fue test-only
+  - y se ejecutó de forma deliberada directamente sobre `main`
+
+VALIDACIÓN VISIBLE DE REGRESIÓN EN PRODUCCIÓN
+Mazo positivo de regresión:
+- `4 Doomed Dissenter`
+- `4 Bastion of Remembrance`
+- `52 Swamp`
+
+Resultado visible observado (`build: 392babd`):
+- banner:
+  - `✅ Señal encontrada (experimental)`
+- métricas:
+  - `SOS: 0.69`
+  - `puntuación total de conexiones: 1`
+- conexión principal:
+  - `Doomed Dissenter -> Bastion of Remembrance (puntuación 1)`
+    - `Event · ENTERS_BATTLEFIELD × 1`
+- self-edge visible adicional:
+  - `Bastion of Remembrance -> Bastion of Remembrance (puntuación 0)`
+    - `Event · CREATURE_DIES × 1`
+    - `Action · GAIN_LIFE × 1`
+    - `Action · LOSE_LIFE × 1`
+
+Mazo negativo / control de no-overclaim:
+- `4 Banisher Priest`
+- `56 Plains`
+
+Resultado visible observado (`build: 392babd`):
+- banner:
+  - `⚠️ Sin señal (experimental)`
+- métricas:
+  - `SOS: 0.00`
+  - `puntuación total de conexiones: 0`
+- no aparecen conexiones semánticas principales
+- se observan señales sueltas coherentes:
+  - `Event · ENTERS_BATTLEFIELD × 1`
+  - `Event · LEAVES_BATTLEFIELD × 1`
+- no aparece `CREATURE_DIES`
+- la microfase no sobreafirma muerte donde solo hay exilio / leave
+
+LECTURA OPERATIVA CORRECTA
+- Esta microfase no cierra A2.9 completa.
+- Cierra un corte pequeño, honesto y útil dentro de A2.9:
+  - cobertura mínima de servicio
+  - no-overclaim mínimo
+  - smoke de regresión visible
+- El proyecto vuelve a avanzar con la disciplina correcta:
+  - diagnose
+  - inspect
+  - criterio mínimo
+  - implementación mínima
+  - test focal
+  - commit
+  - push
+  - deploy
+  - validación visible de regresión
+
+ESTADO REAL TRAS ESTE CIERRE
+Siguen cerradas y no deben reabrirse:
+- `SACRIFICE(creature) -> CREATURE_DIES`
+- `CREATURE_DIES -> payoff`
+- `DEAL_DAMAGE -> LOSE_LIFE`
+- `LIFE_GAIN -> ADD_COUNTERS`
+- `DAMAGE_WITH_LIFELINK -> LIFE_GAIN`
+- `LEAVES_BATTLEFIELD -> CREATE_TOKEN`
+- `UI summary status v1`
+- `UI repeated-effects status alignment v1`
+
+Novedad real añadida ahora:
+- A2.9 queda endurecida con cobertura mínima de servicio ya validada en:
+  - test local
+  - commit / push / deploy
+  - smoke visible de regresión
+
+SIGUIENTE DISCIPLINA CORRECTA
+- Actualizar fuentes operativas con este delta real ya validado.
+- Seguir dentro de A2.9 en una microfase separada.
+- El mejor siguiente frente técnico pasa a ser:
+  - corpus focal A2.9 y/o
+  - `runtime oracle guard` / `no-overclaim` dedicado
+- Mantener separadas:
+  - microfases semánticas/core
+  - microfases UI/copy/surface
+
+=====================================================================
+END UPDATE (2026-03-13)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-14) — CAST_SPELL -> DEAL_DAMAGE payoff bridge mínimo
+=====================================================================
+
+MICROFASE CERRADA
+- Familia:
+  - `CAST_SPELL -> DEAL_DAMAGE payoff`
+- Naturaleza:
+  - bridge local mínimo de overlay
+  - wording explícito y estrecho
+  - sin cambios en parser, contracts, sem_profile, UI ni scoring global
+
+LECTURA TÉCNICA CORRECTA
+- El repo ya tenía:
+  - `EventId.CAST_SPELL`
+  - `ActionId.DEAL_DAMAGE`
+  - parser de wording de daño
+  - wiring parcial en `sem_profile.ts`
+- La deuda real era cerrar el self-edge local para cartas tipo:
+  - `Whenever you cast an instant or sorcery spell, this creature deals ... damage ...`
+- El corpus ancla real de cierre fue:
+  - `Guttersnipe`
+
+ARTEFACTOS DEL REPO TOCADOS
+- `src/engine/semantic/overlay/sem_edges.ts`
+- `src/engine/semantic/tests/sem_overlay_cast_spell_damage_bridge_min_v1.test.ts`
+
+ARTEFACTOS EXPLÍCITAMENTE NO TOCADOS
+- parser
+- lowering
+- contracts JSON
+- `sem_profile.ts`
+- UI / surface
+- SPS
+- scoring global
+
+VALIDACIÓN LOCAL
+Test focal:
+- comando:
+  - `npm test -- src/engine/semantic/tests/sem_overlay_cast_spell_damage_bridge_min_v1.test.ts`
+- resultado final:
+  - `1 file passed`
+  - `1 test passed`
+
+Suite completa:
+- comando:
+  - `npm test -- --run`
+- resultado:
+  - `73 files passed`
+  - `227 tests passed`
+
+GIT / DEPLOY
+- Commit:
+  - `a5b6dc3`
+- Mensaje:
+  - `semantic: add CAST_SPELL -> DEAL_DAMAGE self-edge bridge for explicit instant-or-sorcery damage payoffs`
+- Push:
+  - correcto a `origin/main`
+- Cloudflare Pages Production:
+  - correcto
+- Build activo validado:
+  - `a5b6dc3`
+
+VALIDACIÓN VISIBLE WEB / PDF
+Mazo de prueba:
+- `4 Guttersnipe`
+- `4 Opt`
+- `4 Shock`
+- `4 Lightning Bolt`
+- `4 Consider`
+- `40 Mountain`
+
+Resultado visible observado (`build: a5b6dc3`):
+- banner:
+  - `✅ Señal encontrada (experimental)`
+- cobertura:
+  - `83.3% (5/6)`
+- métricas:
+  - `SOS: 1.95`
+  - `puntuación total de conexiones: 6`
+
+Conexiones semánticas principales observadas:
+- `Lightning Bolt -> Guttersnipe (puntuación 2)`
+  - `Lanzas instantáneo o conjuro (experimental) × 1`
+  - `Action · DEAL_DAMAGE × 1`
+- `Shock -> Guttersnipe (puntuación 2)`
+  - `Lanzas instantáneo o conjuro (experimental) × 1`
+  - `Action · DEAL_DAMAGE × 1`
+- `Consider -> Guttersnipe (puntuación 1)`
+  - `Lanzas instantáneo o conjuro (experimental) × 1`
+- `Opt -> Guttersnipe (puntuación 1)`
+  - `Lanzas instantáneo o conjuro (experimental) × 1`
+- `Guttersnipe -> Guttersnipe (puntuación 0)`
+  - `Action · DEAL_DAMAGE × 1`
+  - `Action · LOSE_LIFE × 1`
+- `Guttersnipe -> Guttersnipe (puntuación 0)`
+  - `Lanzas instantáneo o conjuro (experimental) × 1`
+  - `Action · DEAL_DAMAGE × 1`
+
+LECTURA OPERATIVA CORRECTA
+- Esta microfase sí cierra una nueva familia mínima de bridge local.
+- No convierte todavía el arquetipo `spells-matter` en lectura estructural plena.
+- Sí añade cierre causal visible y verificable para payoff explícito de daño al lanzar instantáneo/conjuro.
+- La separación entre capas queda preservada:
+  - structural / roles: sin cambio funcional
+  - overlay semántico: mejorado
+  - UI contract: sin cambio de versión
+
+SIGUIENTE DISCIPLINA CORRECTA
+- Actualizar fuentes operativas con este delta real ya validado.
+- Abrir en microfase separada una mejora pequeña y estricta para tagging/roles si procede, por ejemplo:
+  - inferencia `PAYOFF` para cartas con patrón
+    `watch CAST_SPELL + effect DEAL_DAMAGE`
+  - sin mezclarlo con parser, overlay ni UI nueva
+- Alternativamente, seguir con la shortlist rápida de bridges semánticos:
+  - `CAST_SPELL -> CREATE_TOKEN payoff`
+
+=====================================================================
+END UPDATE (2026-03-14)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-14) — STRUCTURAL SPELLS-MATTER: PAYOFF + EDGES
+=====================================================================
+
+CONTEXTO OPERATIVO
+- Este bloque cierra dos microfases estructurales posteriores al estado validado en `a5b6dc3`.
+- La deuda antigua “overlay sí / structural no” queda parcialmente superada en producción.
+- Se conserva trazabilidad: no se reescribe el historial previo; se añade el delta real observado después de commit, push, deploy y validación web.
+
+ESTADO PREVIO VISIBLE (POST-OVERLAY, PRE-STRUCTURAL CLOSURE)
+- Build visible de referencia previa: `8c607c7`.
+- El shell spells-matter ya mostraba roles dominantes `DRAW, REMOVAL, PAYOFF`.
+- Pero seguía con:
+  - `SPS = 0`
+  - `Sinergias detectadas = 0`
+  - `Relaciones detectadas = 0`
+  - `Densidad = 0.000`
+- Lectura correcta en ese momento:
+  - overlay semántico sí
+  - structural PAYOFF sí
+  - edges estructurales todavía no
+
+MICROFASE ESTRUCTURAL 1 — TAGGING / ROLES
+- Commit main:
+  - `8c607c7`
+- Mensaje:
+  - `feat(structural): infer PAYOFF for explicit cast-spell damage triggers`
+- Cambio funcional mínimo:
+  - inferencia `PAYOFF` para textos con patrón estrecho:
+    - `when/whenever you cast an instant or sorcery spell`
+    - `deals ... damage`
+- Guardrails del test focal:
+  - `Guttersnipe` positivo
+  - `Shock` negativo
+  - `Kiln Fiend` negativo
+  - `Firebrand Archer` negativo en esta microfase
+- Ajuste necesario:
+  - la heurística se evalúa antes de `features.removes` para evitar que `Guttersnipe` caiga en `REMOVAL`
+- Validación local:
+  - test focal `4/4` OK
+
+MICROFASE ESTRUCTURAL 2 — EDGES / RELACIONES
+- Commit main:
+  - `42bb3b6`
+- Mensaje:
+  - `feat(structural): connect spells support edges to spell-matter PAYOFF targets`
+- Cambio funcional mínimo:
+  - `spells_support_prowess` preserva target histórico `has_prowess === true`
+  - además admite target:
+    - `role_primary === ENGINE || role_primary === PAYOFF`
+    - `cares_about_spells === true`
+- No-regresión preservada:
+  - el target histórico `has_prowess` no se reemplaza; se amplía el predicado
+- Validación local:
+  - test focal de edges `3/3` OK
+
+DEPLOY / BUILD ACTIVO
+- Push a `origin/main`: correcto
+- Cloudflare Pages Production: correcto
+- Commit desplegado:
+  - `42bb3b6`
+- Build marker visible observado en la web:
+  - `42bb36b`
+- Regla operativa:
+  - conservar ambos literales en fuentes porque el commit validado en git y el literal visible de build fueron observados así en la sesión
+
+VALIDACIÓN VISIBLE NUEVA EN PRODUCCIÓN
+Deck de validación A:
+- `4 Guttersnipe`
+- `4 Opt`
+- `4 Consider`
+- `4 Sleight of Hand`
+- `4 Crash Through`
+- `4 Shock`
+- `4 Play with Fire`
+- `4 Lightning Bolt`
+- `12 Mountain`
+- `12 Island`
+- `12 Swiftwater Cliffs`
+
+Deck de validación B (laboratorio):
+- `4 Guttersnipe`
+- `4 Opt`
+- `4 Consider`
+- `4 Sleight of Hand`
+- `4 Crash Through`
+- `4 Shock`
+- `4 Play with Fire`
+- `4 Lightning Bolt`
+- `32 Mountain`
+
+Resultado visible convergente en ambos decks:
+- `SPS = 77.1`
+- `Sinergias detectadas = 7`
+- `Relaciones detectadas = 7`
+- `Densidad = 0.125`
+- `Roles dominantes = DRAW, REMOVAL, PAYOFF`
+- `ENGINE = 0`
+- `PAYOFF = 4`
+- `DRAW = 12`
+- `REMOVAL = 12`
+
+RELACIONES ESTRUCTURALES NUEVAS OBSERVADAS
+- Grupo visible:
+  - `spells_support_prowess (7)`
+- Relaciones observadas:
+  - `Lightning Bolt -> Guttersnipe (x16 | score 26.4)`
+  - `Play with Fire -> Guttersnipe (x16 | score 26.4)`
+  - `Shock -> Guttersnipe (x16 | score 26.4)`
+  - `Consider -> Guttersnipe (x16 | score 17.6)`
+  - `Crash Through -> Guttersnipe (x16 | score 17.6)`
+  - `Opt -> Guttersnipe (x16 | score 17.6)`
+  - `Sleight of Hand -> Guttersnipe (x16 | score 17.6)`
+
+LECTURA OPERATIVA CORRECTA
+- El arquetipo `spells-matter` deja de ser solo una señal de overlay semántico.
+- Pasa a tener ya lectura estructural visible mínima y verificable.
+- La subida de `SPS / sinergias / densidad` no viene de tocar scoring ni SPS, sino de materializar edges estructurales reales.
+- La cadena causal cerrada queda así:
+  - overlay causal mínimo
+  - `PAYOFF` estructural para `Guttersnipe`
+  - edges `spell support -> PAYOFF spell-matter`
+  - reflejo visible en structural summary
+
+NUEVA DEUDA ABIERTA PRINCIPAL
+- `spells-matter` ya es detectable estructuralmente, pero la robustez sigue colapsando en MC:
+  - `SPS robusto vs SPS base: 0 / 77.1`
+  - `Fragilidad: 50`
+- Lectura correcta:
+  - la siguiente deuda ya no es de detección básica
+  - la siguiente deuda es de redundancia / segundo motor / cartas puente
+- Observación adicional útil:
+  - el shell validado sigue con `ENGINE = 0`
+  - el plan existe, pero todavía no se ve un segundo motor estructural en este slice
+
+SIGUIENTE DISCIPLINA CORRECTA
+- Mantener cerradas estas dos microfases estructurales.
+- Actualizar a partir de aquí cualquier hoja de ruta para que no siga tratando como deuda abierta:
+  - inferencia `PAYOFF` para `Guttersnipe`
+  - ausencia de edges estructurales spell-support -> Guttersnipe
+- Si se abre la siguiente microfase, que sea ya de:
+  - redundancia estructural
+  - segundo motor spells-matter
+  - puentes entre soporte y payoff
+
+=====================================================================
+END UPDATE (2026-03-14)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-15) — STRUCTURAL SPELLS-MATTER REDUNDANCY: NONCREATURE DAMAGE PAYOFF
+=====================================================================
+
+ESTADO DE PARTIDA CORRECTO
+- Tras v24, el slice `Guttersnipe PAYOFF + edges estructurales` ya estaba cerrado.
+- El estado visible previo consolidado era:
+  - `SPS = 77.1`
+  - `Sinergias = 7`
+  - `Relaciones = 7`
+  - `Densidad = 0.125`
+  - `PAYOFF = 4`
+  - `ENGINE = 0`
+- La deuda abierta principal registrada en v24 era ya de robustez / redundancia, no de detección básica.
+
+MICROFASE NUEVA CERRADA
+- Commit de código validado localmente y cerrado en `main`:
+  - `65cdf37`
+  - `feat(structural): infer PAYOFF for noncreature spell damage triggers`
+- Alcance mínimo real:
+  - ampliar en `src/engine/analyzer/enrich.ts` la heurística `damage payoff`
+  - preservar el slice previo `instant/sorcery spell -> deals damage`
+  - admitir además `noncreature spell -> deals damage`
+- Guardrail explícito preservado:
+  - `Third Path Iconoclast` NO debe entrar como `PAYOFF`
+  - sigue siendo un target válido de relaciones estructurales por ser `ENGINE` spell-matter, pero no se promueve a `PAYOFF`
+
+TEST FOCAL REAL CERRADO
+- Test focal actualizado y validado localmente:
+  - `src/engine/__tests__/enrich_roles_cast_spell_damage_payoff.test.ts`
+- Resultado local validado:
+  - `1 file passed`
+  - `5 tests passed`
+- Casos cubiertos en este slice:
+  - `Guttersnipe` positivo
+  - `Firebrand Archer` positivo
+  - `Shock` negativo
+  - `Third Path Iconoclast` negativo como guardrail
+  - `Kiln Fiend` negativo
+
+PUSH Y DEPLOY
+- Push validado a `origin/main` en:
+  - `65cdf37`
+- Cloudflare Pages validado en producción:
+  - `main`
+  - commit visible `65cdf37`
+  - estado verde
+  - deploy reciente correcto
+
+DECK DE VALIDACIÓN VISIBLE
+- Lista de validación usada para comprobar la nueva microfase:
+  - `4 Firebrand Archer`
+  - `4 Guttersnipe`
+  - `4 Third Path Iconoclast`
+  - `4 Opt`
+  - `4 Consider`
+  - `4 Sleight of Hand`
+  - `4 Crash Through`
+  - `4 Shock`
+  - `4 Play with Fire`
+  - `4 Lightning Bolt`
+  - `4 Treasure Cruise`
+  - `10 Mountain`
+  - `6 Island`
+  - `4 Swiftwater Cliffs`
+
+RESULTADO VISIBLE NUEVO EN PRODUCCIÓN
+- Build visible correcta:
+  - `65cdf37`
+- Resultado estructural observado:
+  - `SPS = 122`
+  - `Sinergias = 27`
+  - `Densidad = 0.482`
+  - `Roles dominantes = DRAW, REMOVAL, PAYOFF`
+  - `ENGINE = 4`
+  - `PAYOFF = 8`
+- Lectura correcta de roles:
+  - `Guttersnipe` se mantiene como `PAYOFF`
+  - `Firebrand Archer` entra ya como `PAYOFF`
+  - `Third Path Iconoclast` se mantiene fuera de `PAYOFF` y encaja como `ENGINE`
+
+RELACIONES ESTRUCTURALES OBSERVADAS
+- Bloques visibles en producción:
+  - `spells_support_prowess (24)`
+  - `burn_supports_threat (3)`
+- Ejemplos observados y relevantes:
+  - spells de soporte hacia `Firebrand Archer`
+  - spells de soporte hacia `Guttersnipe`
+  - spells de soporte hacia `Third Path Iconoclast`
+  - burn directo hacia `Firebrand Archer` en `burn_supports_threat`
+- Lectura correcta:
+  - el shell spells-matter ya no depende de un único payoff estructural visible
+  - existe una redundancia mínima adicional mediante `Firebrand Archer`
+  - el guardrail no se rompió porque `Third Path Iconoclast` no fue promovida a `PAYOFF`
+
+LECTURA OPERATIVA CORRECTA
+- Esta microfase SÍ ha tenido efecto real.
+- El salto de `PAYOFF = 4` a `PAYOFF = 8` es coherente con la promoción estructural de `Firebrand Archer`.
+- El salto de `SPS = 77.1` a `SPS = 122` y de `Relaciones = 7` a `Relaciones = 27` indica que la redundancia mínima sí refuerza el plan estructural.
+- El cambio visible principal sigue siendo estructural, no de UI ni de scoring global.
+- No se reabrió overlay ni hubo cambios cosméticos de surface.
+
+DEUDA ABIERTA PRINCIPAL ACTUALIZADA
+- Aunque el plan estructural mejora mucho, la robustez MC sigue colapsando:
+  - `SPS robusto vs SPS base: 0 / 122`
+  - `Fragilidad: 50`
+- Lectura correcta:
+  - la deuda ya no es añadir un segundo damage payoff básico; eso queda ya abierto mínimamente con `Firebrand Archer`
+  - la deuda sigue siendo de robustez / redundancia / puentes / estabilidad del shell
+  - el sistema detecta mejor el plan que antes, pero el plan sigue siendo frágil bajo perturbación
+
+SIGUIENTE DISCIPLINA CORRECTA
+- Mantener cerradas ya estas tres microfases enlazadas:
+  - `CAST_SPELL -> DEAL_DAMAGE` overlay mínimo
+  - `Guttersnipe -> PAYOFF` estructural
+  - `Firebrand Archer -> PAYOFF` para `noncreature spell -> damage payoff`
+- Si se abre la siguiente microfase, debe seguir orientada a robustez real y no a reabrir deuda cerrada.
+- Candidatos razonables, sin fijarlos aún como decisión definitiva:
+  - refinar redundancia/segundo motor spells-matter
+  - estudiar puentes adicionales sin abrir familias difusas
+  - mantener guardrails para no promover genéricamente cualquier trigger de `noncreature spell`
+
+=====================================================================
+END UPDATE (2026-03-15)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-15) — STRUCTURAL SPELLS-MATTER: EXPLICIT CAST-SPELL TOKEN ENGINE
+=====================================================================
+
+CONTEXTO OPERATIVO
+- Este bloque registra el delta real posterior al estado validado en `65cdf37`.
+- La deuda previa ya no era de detección básica de payoff ni de edges mínimos spells-matter.
+- El objetivo de esta microfase fue abrir redundancia visible de motor dentro del mismo shell spells-matter, sin tocar UI, scoring global ni overlay.
+
+ESTADO PREVIO CORRECTO
+- Build visible de referencia previa:
+  - `65cdf37`
+- Estado visible consolidado previo:
+  - `SPS = 122`
+  - `Sinergias = 27`
+  - `Relaciones = 27`
+  - `Densidad = 0.482`
+  - `Roles dominantes = DRAW, REMOVAL, PAYOFF`
+  - `ENGINE = 4`
+  - `PAYOFF = 8`
+- Deuda abierta principal en ese punto:
+  - `SPS robusto vs SPS base: 0 / 122`
+  - `Fragilidad: 50`
+- Lectura correcta:
+  - el plan spells-matter ya se detectaba
+  - pero seguía frágil
+  - faltaba redundancia visible de motor
+
+MICROFASE NUEVA CERRADA
+- Commit de código validado y cerrado en `main`:
+  - `da8370f`
+- Mensaje:
+  - `feat(structural): add explicit cast-spell token engine role inference`
+- Cambio funcional mínimo real:
+  - añadir inferencia estructural `ENGINE` para textos con patrón estrecho:
+    - `when/whenever you cast an instant or sorcery spell`
+    - o `when/whenever you cast a noncreature spell`
+    - junto con:
+      - `create ... token`
+- Archivo runtime tocado:
+  - `src/engine/analyzer/enrich.ts`
+- Archivo de test añadido:
+  - `src/engine/__tests__/enrich_roles_cast_spell_token_engine.test.ts`
+- No fue necesario tocar:
+  - `generate.ts`
+  - scoring global
+  - UI
+  - overlay
+  - edge kinds
+
+VALIDACIÓN LOCAL
+- Test focal nuevo:
+  - `src/engine/__tests__/enrich_roles_cast_spell_token_engine.test.ts`
+  - resultado:
+    - `1 file passed`
+    - `6 tests passed`
+- Revalidación de no-regresión relevante:
+  - `src/engine/__tests__/enrich_roles_cast_spell_damage_payoff.test.ts`
+    - `1 file passed`
+    - `5 tests passed`
+  - `src/engine/__tests__/edges_spells_support_payoff_min_v1.test.ts`
+    - `1 file passed`
+    - `3 tests passed`
+
+GUARDRAILS CERRADOS EN ESTA MICROFASE
+- `Young Pyromancer` entra como `ENGINE`
+- `Third Path Iconoclast` entra como `ENGINE`
+- `Monastery Mentor` entra como `ENGINE` en el test focal
+- `Guttersnipe` sigue como `PAYOFF`, no `ENGINE`
+- `Firebrand Archer` sigue como `PAYOFF`, no `ENGINE`
+- `Kiln Fiend` no entra como `ENGINE`
+- Guardrail crítico preservado:
+  - `Third Path Iconoclast` sigue fuera de `PAYOFF`
+
+PUSH / DEPLOY / BUILD ACTIVO
+- Push a `origin/main`: validado
+- Cloudflare Pages Production: validado en verde
+- Commit desplegado:
+  - `da8370f`
+- Build visible observado:
+  - `da8370f`
+
+VALIDACIÓN FUNCIONAL VISIBLE EN WEB
+Deck de validación usado:
+- `4 Young Pyromancer`
+- `4 Third Path Iconoclast`
+- `2 Talrand, Sky Summoner`
+- `2 Guttersnipe`
+- `2 Stormwing Entity`
+- `4 Consider`
+- `4 Opt`
+- `4 Play with Fire`
+- `4 Lightning Strike`
+- `4 Wizard's Lightning`
+- `4 Wrenn's Resolve`
+- `2 Expressive Iteration`
+- `2 Crash Through`
+- `2 Fading Hope`
+- `2 Reckless Impulse`
+- `2 Saheeli, Sublime Artificer`
+- `4 Steam Vents`
+- `4 Spirebluff Canal`
+- `4 Riverglide Pathway`
+- `4 Shivan Reef`
+- `4 Island`
+- `2 Mountain`
+
+Resultado visible observado en producción:
+- `SPS = 148.7`
+- `Sinergias = 60`
+- `Relaciones = 60`
+- `Densidad = 1.071`
+- `Roles dominantes = ENGINE, REMOVAL, DRAW`
+- `ENGINE = 12`
+- `PAYOFF = 4`
+- `DRAW = 10`
+- `REMOVAL = 12`
+- `UTILITY = 10`
+
+LECTURA VISIBLE CORRECTA
+- `Young Pyromancer` aparece como `ENGINE`
+- `Third Path Iconoclast` aparece como `ENGINE`
+- `Talrand, Sky Summoner` aparece como `ENGINE`
+- `Saheeli, Sublime Artificer` aparece como `ENGINE`
+- `Guttersnipe` permanece como `PAYOFF`
+- El shell ya no muestra solo redundancia mínima de payoff; muestra también redundancia visible de motor
+
+RELACIONES ESTRUCTURALES RELEVANTES OBSERVADAS
+- Grupo visible:
+  - `spells_support_prowess (60)`
+- Ejemplos observados y relevantes:
+  - `Consider -> Third Path Iconoclast (x16 | score 17.6)`
+  - `Consider -> Young Pyromancer (x16 | score 17.6)`
+  - `Lightning Strike -> Third Path Iconoclast (x16 | score 17.6)`
+  - `Lightning Strike -> Young Pyromancer (x16 | score 17.6)`
+  - relaciones también hacia:
+    - `Talrand, Sky Summoner`
+    - `Saheeli, Sublime Artificer`
+    - `Guttersnipe`
+- Lectura correcta:
+  - la mejora visible no es solo de etiquetas
+  - existe materialización real de targets adicionales dentro del mismo shell
+
+SUPERPOSICIÓN SEMÁNTICA OBSERVADA
+- Cobertura:
+  - `77.3% (17/22)`
+- `SOS = 3.66`
+- `puntuación total de conexiones = 38`
+- Señales visibles coherentes:
+  - `Action · CREATE_TOKEN`
+  - `Event · TOKEN_CREATED`
+  - conexiones hacia `Young Pyromancer`, `Talrand` y `Guttersnipe`
+- Lectura correcta:
+  - overlay y structural convergen razonablemente sobre el mismo shell
+  - sin haber tocado overlay en esta microfase
+
+DEUDA ABIERTA PRINCIPAL ACTUALIZADA
+- Monte Carlo sigue mostrando:
+  - `SPS robusto vs SPS base: 0 / 148.7`
+  - `Fragilidad: 50`
+- Lectura correcta:
+  - la redundancia de motor visible SÍ mejora
+  - pero la robustez MC todavía NO queda resuelta
+  - la deuda abierta ya no es de detección básica ni de visibilidad de segundo motor
+  - la deuda sigue siendo de robustez / estabilidad / cartas puente bajo perturbación
+
+REGLA DE CONTINUIDAD
+No reabrir como deuda abierta:
+- `Guttersnipe` como `PAYOFF`
+- `Firebrand Archer` como `PAYOFF`
+- `Third Path Iconoclast` como falso `PAYOFF`
+- ausencia de segundo motor spells-matter visible
+
+La lectura correcta de cierre post-microfase es:
+- redundancia de motor visible: sí
+- robustez MC: aún no
+
+=====================================================================
+END UPDATE (2026-03-15)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-15) — WEB / OVERLAY SEMÁNTICO: DRAW-SECOND TOKEN BRIDGE VISIBLE EN SURFACE
+=====================================================================
+
+CONTEXTO INMEDIATO POST-v26
+- Tras v26 quedó cerrada la microfase estructural `cast spell -> token engine`.
+- La nueva familia `draw-second matters` NO debía perseguirse en structural como ambición principal.
+- La disciplina correcta aceptada en esta sesión fue:
+  - structural = chasis / baseline / fallback
+  - semantic = capa de ambición y bridges causales nuevos
+
+CADENA REAL DE MICROFASES EJECUTADAS
+1) `a75a45d`
+- `feat(structural): add minimal draw-second matters role inference`
+- Lectura correcta posterior:
+  - útil como exploración / contraste
+  - insuficiente como cierre visible limpio de la familia
+
+2) `280b46e`
+- `feat(semantic): add local draw-second to token bridge`
+- Bridge mínimo real añadido:
+  - `DRAW_EXTRA_CARD_TURN -> CREATE_TOKEN`
+  - `local_only`
+  - self-edge
+  - `score = 0`
+
+3) `e280b42`
+- `feat(semantic): prioritize draw-second token overlay label`
+- Ajuste de presentación del overlay:
+  - prioridad del label específico
+    `Robas tu segunda carta del turno -> creas una ficha`
+  - frente al label genérico
+    `Robas cartas adicionales en el turno (experimental)`
+
+4) `6253dd5`
+- `feat(semantic): promote draw-second token bridge in overlay top edges`
+- Ajuste de prominencia visible en:
+  - `src/engine/semantic/overlay/sem_overlay_compute.ts`
+- Lectura correcta:
+  - no cambia scoring
+  - no reabre bridge
+  - no toca structural
+  - replica el patrón de prominencia ya existente para `CREATURE_DIES`
+
+PUSH / DEPLOY / BUILD VISIBLE
+- `main` quedó alineado en:
+  - `6253dd5`
+- Cloudflare Pages Production:
+  - branch `main`
+  - commit visible `6253dd5`
+  - despliegue validado en verde
+
+DECK DE VALIDACIÓN VISIBLE USADO
+- `4 Improbable Alliance`
+- `4 Jolrael, Mwonvuli Recluse`
+- `2 Faerie Vandal`
+- `2 Irencrag Pyromancer`
+- `4 Consider`
+- `4 Opt`
+- `4 Chart a Course`
+- `4 Quick Study`
+- `4 Thirst for Discovery`
+- `4 Behold the Multiverse`
+- `2 Thrill of Possibility`
+- `2 Radical Idea`
+- base de maná Temur correspondiente
+
+RESULTADO VISIBLE OBSERVADO EN PRODUCCIÓN
+- En structural:
+  - `SPS = 0`
+  - `Sinergias = 0`
+  - `Relaciones = 0`
+  - `Densidad = 0`
+- Lectura correcta:
+  - esto NO es un fallo de la microfase
+  - esta familia se ha perseguido en overlay semántico, no en structural
+
+SUPERPOSICIÓN SEMÁNTICA OBSERVADA
+- `Cobertura = 63.2% (12/19)`
+- `SOS = 3.78`
+- `puntuación total de conexiones = 43`
+- Convivencia visible de:
+  - señal genérica de draw-second
+  - y cierre visible del bridge específico
+
+EVIDENCIA VISIBLE NUEVA YA CONFIRMADA
+- En “Conexiones semánticas principales” aparece:
+  - `Improbable Alliance -> Improbable Alliance (puntuación 0)`
+- con la razón visible específica:
+  - `Robas tu segunda carta del turno -> creas una ficha`
+- y además:
+  - `Action · CREATE_TOKEN`
+- Lectura correcta:
+  - el bridge `DRAW_EXTRA_CARD_TURN -> CREATE_TOKEN` ya no queda enterrado
+  - entra en `edgesTop`
+  - y la surface visible distingue el caso compuesto del genérico
+
+QUÉ SIGUE COEXISTIENDO Y POR QUÉ NO INVALIDA EL CIERRE
+- Siguen apareciendo señales genéricas de draw-second hacia:
+  - `Faerie Vandal`
+  - `Irencrag Pyromancer`
+  - `Improbable Alliance`
+  - `Jolrael`
+- Esto NO invalida la microfase actual, porque el objetivo contractual era:
+  - promover al top visible al menos un bridge específico compuesto
+  - no eliminar toda señal genérica del overlay
+
+LECTURA CORRECTA DE CIERRE POST-MICROFASE
+- El bridge local semántico ya existía internamente.
+- La cadena completa necesaria para hacerlo visible en surface ha quedado cerrada mediante:
+  - bridge local
+  - label específico
+  - prominencia en `edgesTop`
+- El cambio visible es real y consistente entre web y PDF.
+
+DECISIÓN ARQUITECTÓNICA REAFIRMADA
+- Structural se mantiene como:
+  - chasis
+  - baseline
+  - fallback
+- Semantic se mantiene como:
+  - capa de ambición
+  - bridges causales nuevos
+  - mejora visible del overlay
+- Esta sesión refuerza que la familia `draw-second matters` debía cerrarse en semantic overlay, no empujarse artificialmente en structural.
+
+REGLA DE CONTINUIDAD ACTUALIZADA
+No reabrir como deuda activa:
+- la visibilidad del bridge `DRAW_EXTRA_CARD_TURN -> CREATE_TOKEN`
+- el label específico de ese bridge en overlay
+- la promoción visible mínima en `edgesTop` para ese cierre local
+
+La lectura correcta de cierre es:
+- bridge específico visible en surface: sí
+- diferencia específica vs genérico: sí, al menos en el top visible
+- structural afectado: no, y no era el objetivo
+
+=====================================================================
+END UPDATE (2026-03-15)
+=====================================================================
+
+
+=====================================================================
+NUEVA ENTRADA — POST-v27 / DRAW-SECOND DAMAGE OVERLAY VISIBILITY
+=====================================================================
+
+Estado operativo consolidado de esta cadena:
+- Commit de motor mínimo:
+  - `e1547cd`
+  - `feat(semantic): add minimal draw-second to damage local bridge`
+- Commit de visibilidad/surface:
+  - `1d39ae9`
+  - `feat(semantic): surface draw-second damage bridge in overlay`
+
+Push / deploy:
+- Push de `main` a GitHub: correcto
+- Cloudflare Pages Production:
+  - deploy `e1547cd`: correcto
+  - deploy `1d39ae9`: correcto
+- Build visible final validada:
+  - `1d39ae9`
+
+ALCANCE REAL CERRADO EN ESTA MICROFASE
+- No se abrió familia nueva.
+- No se tocó scoring global.
+- No se tocó structural.
+- No se reabrió parser/lowering global.
+- Se cerró exclusivamente la rama:
+  - `DRAW_EXTRA_CARD_TURN -> DEAL_DAMAGE`
+- y se cerró con la misma disciplina ya aplicada a token:
+  1. bridge local mínimo en motor
+  2. label específico en surface
+  3. prominencia visible mínima en `edgesTop`
+
+VALIDACIÓN VISIBLE FINAL CONFIRMADA
+Deck focal usado:
+- `Irencrag Pyromancer`
+- `Improbable Alliance`
+- `Faerie Vandal`
+- `Jolrael, Mwonvuli Recluse`
+- shell de draw/cantrips deliberado
+
+Resultado visible final en producción / PDF:
+- structural:
+  - `SPS = 0`
+  - `Sinergias = 0`
+  - `Relaciones = 0`
+  - `Densidad = 0`
+- semántica:
+  - `Cobertura = 62.5% (10/16)`
+  - `SOS = 3.53`
+  - `puntuación total de conexiones = 33`
+
+Conexiones específicas visibles confirmadas:
+- `Irencrag Pyromancer -> Irencrag Pyromancer (puntuación 0)`
+  - label específico:
+    - `Robas tu segunda carta del turno -> haces daño`
+  - además:
+    - `Action · DEAL_DAMAGE × 1`
+- `Improbable Alliance -> Improbable Alliance (puntuación 0)`
+  - label específico:
+    - `Robas tu segunda carta del turno -> creas una ficha`
+  - además:
+    - `Action · CREATE_TOKEN × 1`
+
+LECTURA CORRECTA DE CIERRE
+- La rama damage ya no está solo en motor:
+  - queda también visible en surface.
+- La rama token no se rompe.
+- `Faerie Vandal` y `Jolrael` no quedan contaminadas como damage específico.
+- La coexistencia de señal genérica de draw-second sigue siendo aceptable:
+  - no invalida el cierre
+  - no era objetivo eliminar toda señal genérica vecina
+
+DECISIÓN ARQUITECTÓNICA REAFIRMADA
+- Structural se mantiene como:
+  - chasis
+  - baseline
+  - fallback
+- Semantic se mantiene como:
+  - capa principal de ambición
+  - bridges causales estrechos
+  - cierres visibles disciplinados en overlay
+
+REGLA DE CONTINUIDAD ACTUALIZADA
+No reabrir como deuda activa:
+- el bridge local `DRAW_EXTRA_CARD_TURN -> DEAL_DAMAGE`
+- el label específico:
+  - `Robas tu segunda carta del turno -> haces daño`
+- la prominencia visible mínima en `edgesTop` para esa rama
+- la rama token previa ya cerrada
+
+La lectura correcta de cierre es:
+- bridge específico de damage visible en surface: sí
+- no-regresión de token: sí
+- structural afectado: no, y no era el objetivo
+
+=====================================================================
+END UPDATE (2026-03-16)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-16) — Triggered abilities + zone-change semantics v1 / cierre operacional post-v28
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Tras el cierre visible de v28, NO se abrió otra familia de bridge visible.
+- Se abrió y cerró una microfase semántica interna, mínima y no visible, para:
+  - clasificación contractual de triggered abilities
+  - tipado mínimo de `NORMAL`
+  - tipado mínimo de `INTERVENING_IF`
+  - tipado mínimo de `ZONE_CHANGE`
+  - fallback explícito para:
+    - `REFLEXIVE`
+    - `DELAYED`
+    - `LINKED`
+- La pieza quedó integrada en `main`, desplegada en producción y validada sin regresión visible en web/PDF.
+
+COMMIT / PUSH / DEPLOY / BUILD
+- Commit local y en `main`:
+  - `a1d0bea`
+- Mensaje:
+  - `semantic: add minimal triggered ability classification hints for normal, intervening-if, and zone-change`
+- Push a GitHub:
+  - correcto
+- Cloudflare Pages Production:
+  - deploy correcto
+- Build activa validada en producción:
+  - `a1d0bea`
+
+ALCANCE REAL CERRADO
+- Parser / lowering / contrato mínimo de AbilityIR.
+- Sin cambios visibles de producto.
+- Sin cambios en:
+  - overlay visible
+  - scoring global
+  - SPS
+  - structural engine
+  - Monte Carlo
+  - UI cosmética
+- La mejora queda encapsulada como hint interno de lowering:
+  - `semantic_hints.triggered_ability_min`
+
+ARCHIVOS DE MOTOR TOCADOS
+- `src/engine/semantic/parser/sem_parser_v1.ts`
+- `src/engine/semantic/lowering/lower_to_ability_ir_min_v1.ts`
+- `src/engine/semantic/contract/sem_ability_ir_min_v1.json`
+- `src/engine/semantic/tests/sem_triggered_ability_classification_min_v1.test.ts`
+
+LECTURA TÉCNICA CORRECTA
+- No se implementó simulación amplia de stack / priority.
+- No se abrió replacement / prevention / layers.
+- No se intentó resolver linked/delayed/reflexive de forma completa.
+- Sí se cerró un slice contractual mínimo y explícito:
+  - `When / Whenever / At ...` como base de triggered ability
+  - `..., if ...` como `INTERVENING_IF`
+  - `dies / enters the battlefield / leaves the battlefield / is put into a graveyard` como `ZONE_CHANGE`
+  - `when you do` -> fallback `REFLEXIVE`
+  - `at the beginning of the next ...` / `next end step` -> fallback `DELAYED`
+  - `exiled with` / `the exiled card` / `cards exiled with` -> fallback `LINKED`
+
+VALIDACIÓN LOCAL MÍNIMA
+- Test nuevo focal de clasificación:
+  - verde
+- Test focal de lowering existente:
+  - verde
+- Cobertura focal congelada:
+  - `Ajani's Pridemate` -> `NORMAL`
+  - `Resplendent Angel` -> `INTERVENING_IF`
+  - `Doomed Dissenter` -> `ZONE_CHANGE`
+  - `Blood Artist` -> `ZONE_CHANGE`
+  - `Heart-Piercer Manticore` -> fallback `REFLEXIVE`
+  - `Oblivion Ring` -> fallback `LINKED`
+  - caso adicional `At ...` -> `NORMAL`
+
+VALIDACIÓN EN PRODUCCIÓN
+Deck focal usado para no-regresión visible:
+- `Lunarch Veteran`
+- `Ajani's Pridemate`
+- `Doomed Dissenter`
+- `Blood Artist`
+- `Resplendent Angel`
+- `Heart-Piercer Manticore`
+- `Impassioned Orator`
+- `Ajani's Welcome`
+- `Oblivion Ring`
+- `Village Rites`
+
+Resultado visible correcto en producción / PDF:
+- build:
+  - `a1d0bea`
+- structural:
+  - `SPS = 0`
+  - `Sinergias = 0`
+  - `Relaciones = 0`
+  - `Densidad = 0`
+- semántica:
+  - `Cobertura = 75% (12/16)`
+  - `SOS = 3.09`
+  - `puntuación total de conexiones = 21`
+- lectura correcta:
+  - no hay regresión visible de overlay
+  - el corpus entra y se analiza bien
+  - la microfase debe leerse como infraestructura semántica interna validada, no como cambio visible de surface
+
+DECISIÓN DE CONTINUIDAD ACTUALIZADA
+- Esta microfase queda cerrada.
+- No reabrir como deuda activa:
+  - `triggered_ability_min`
+  - la clasificación mínima `NORMAL / INTERVENING_IF / ZONE_CHANGE`
+  - el fallback explícito `REFLEXIVE / DELAYED / LINKED`
+  dentro de este mismo corte v1.
+- La continuación correcta deberá abrir, si procede, el siguiente slice semántico estrecho sobre esta base, sin reabrir draw-second ni mezclar UI visible con esta infraestructura.
+
+=====================================================================
+END UPDATE (2026-03-16)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-16) — Delayed triggered abilities v1 / cierre operacional post-v29
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Tras el cierre interno de `triggered abilities + zone-change semantics v1`,
+  la continuación correcta NO fue abrir UI visible ni otra familia amplia.
+- Se abrió y cerró una microfase semántica interna, mínima y no visible, para:
+  - promover `DELAYED` a clase explícita dentro de `triggered_ability_min`
+  - mantener `REFLEXIVE` y `LINKED` como fallback estrecho
+  - reforzar guardrails sin tocar scoring, structural ni surface
+
+ALCANCE REAL CERRADO
+- parser semántico mínimo
+- contrato mínimo de `semantic_hints.triggered_ability_min`
+- test focal nuevo delayed
+- ajuste del test de clasificación existente
+- sin cambios en:
+  - UI
+  - overlay visible
+  - scoring
+  - SPS
+  - MC
+  - structural
+
+ARCHIVOS REALES TOCADOS
+- `src/engine/semantic/parser/sem_parser_v1.ts`
+- `src/engine/semantic/contract/sem_ability_ir_min_v1.json`
+- `src/engine/semantic/tests/sem_triggered_ability_classification_min_v1.test.ts`
+- `src/engine/semantic/tests/sem_triggered_ability_delayed_min_v1.test.ts`
+
+CAMBIO TÉCNICO REAL
+- `DELAYED` pasa a clase explícita dentro de `TriggeredAbilityClassMinV1`
+- `TriggeredAbilityFallbackMinV1` queda en:
+  - `REFLEXIVE`
+  - `LINKED`
+- matching delayed v1 congelado a patrones superficiales estrechos:
+  - `at the beginning of the next end step`
+  - `at the beginning of the next upkeep`
+  - `at the beginning of the next cleanup step`
+
+CORPUS FOCAL CERRADO
+Positivos delayed:
+- `Sneak Attack`
+- `Through the Breach`
+- `Goryo's Vengeance`
+- `Twinflame`
+
+Guardrails:
+- `Ball Lightning` -> `NORMAL`
+- `Heart-Piercer Manticore` -> fallback `REFLEXIVE`
+- `Oblivion Ring` -> fallback `LINKED`
+
+VALIDACIÓN TÉCNICA EJECUTADA
+- `npm test -- src/engine/semantic/tests/sem_triggered_ability_delayed_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_triggered_ability_classification_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_lower_to_ability_ir_min_v1.test.ts`
+- resultado:
+  - verde
+
+ESTADO OPERATIVO FINAL
+- commit local:
+  - `694630a`
+- push a GitHub:
+  - correcto
+- Cloudflare Pages Production:
+  - correcto
+- build/commit activo validado:
+  - `694630a`
+
+LECTURA CORRECTA
+- La web no introduce nueva surface visible por esta microfase.
+- Eso NO invalida el cierre.
+- El objetivo correcto era:
+  - endurecer la clasificación interna de delayed triggers
+  - mantener producción estable
+  - no introducir regresión visible
+- Ese objetivo queda cumplido.
+
+DECISIÓN DE CONTINUIDAD ACTUALIZADA
+- Esta microfase queda cerrada.
+- No reabrir como deuda activa:
+  - la promoción mínima de `DELAYED`
+  - el corpus focal delayed v1
+  - los guardrails ya congelados
+- El siguiente trabajo deberá seguir siendo otro slice semántico estrecho,
+  sin mezclar surface visible salvo justificación fuerte.
+
+=====================================================================
+END UPDATE (2026-03-16)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-16) — Reflexive triggered abilities v1 / cierre operacional post-v30
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Tras el cierre de `delayed triggered abilities v1`, la continuación correcta
+  siguió dentro de la misma familia `triggered_ability_min`, sin abrir
+  surface visible, replacement/prevention ni linked general.
+- Se abrió y cerró una microfase semántica interna, mínima y no visible, para:
+  - promover `REFLEXIVE` a clase explícita dentro de `triggered_ability_min`
+  - reducir el fallback restante a `LINKED`
+  - reforzar guardrails sin tocar scoring, structural ni surface
+
+ALCANCE REAL CERRADO
+- parser semántico mínimo
+- contrato mínimo de `semantic_hints.triggered_ability_min`
+- test focal nuevo reflexive
+- ajuste de tests existentes de clasificación y guardrails delayed
+- sin cambios en:
+  - UI
+  - overlay visible
+  - labels visibles
+  - scoring
+  - SPS
+  - MC
+  - structural
+
+ARCHIVOS REALES TOCADOS
+- `src/engine/semantic/parser/sem_parser_v1.ts`
+- `src/engine/semantic/contract/sem_ability_ir_min_v1.json`
+- `src/engine/semantic/tests/sem_triggered_ability_classification_min_v1.test.ts`
+- `src/engine/semantic/tests/sem_triggered_ability_delayed_min_v1.test.ts`
+- `src/engine/semantic/tests/sem_triggered_ability_reflexive_min_v1.test.ts`
+
+CAMBIO TÉCNICO REAL
+- `REFLEXIVE` pasa a clase explícita dentro de `TriggeredAbilityClassMinV1`
+- `TriggeredAbilityFallbackMinV1` queda reducido a:
+  - `LINKED`
+- matching reflexive v1 congelado a patrones superficiales estrechos:
+  - `when you do`
+  - `when ... this way`
+
+CORPUS FOCAL CERRADO
+Positivos reflexive:
+- `Heart-Piercer Manticore`
+- `Dream Eater`
+
+Guardrails:
+- `Sneak Attack` -> `DELAYED`
+- `Oblivion Ring` -> `LINKED`
+- `Ball Lightning` -> `NORMAL`
+
+VALIDACIÓN TÉCNICA EJECUTADA
+- `npm test -- src/engine/semantic/tests/sem_triggered_ability_reflexive_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_triggered_ability_classification_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_triggered_ability_delayed_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_lower_to_ability_ir_min_v1.test.ts`
+- resultado:
+  - verde
+
+ESTADO OPERATIVO FINAL
+- commit local:
+  - `f22ed65`
+- mensaje:
+  - `feat(semantic): classify minimal reflexive triggered abilities`
+- push a GitHub:
+  - correcto
+- Cloudflare Pages Production:
+  - correcto
+- build/commit activo validado:
+  - `f22ed65`
+
+VALIDACIÓN VISIBLE / FUNCIONAL EN PRODUCCIÓN
+Deck de verificación usado:
+- shell Izzet spells / draw-second con:
+  - `Third Path Iconoclast`
+  - `Young Pyromancer`
+  - `Improbable Alliance`
+  - `Irencrag Pyromancer`
+  - `Guttersnipe`
+  - `Firebrand Archer`
+  - `Opt / Consider / Chart a Course / Of One Mind / Quick Study`
+
+Resultado observado en producción:
+- build visible:
+  - `f22ed65`
+- cards index cargado:
+  - `35757`
+- structural:
+  - `SPS = 99.1`
+  - `Relaciones = 20`
+  - `Densidad = 0.357`
+- semántica:
+  - `Cobertura = 70.6% (12/17)`
+  - `SOS = 3.22`
+  - `puntuación total de conexiones = 24`
+- surface visible preservada:
+  - familia `spells_support_prowess` activa
+  - `draw-second -> token` visible en `Improbable Alliance`
+  - `draw-second -> damage` visible en `Irencrag Pyromancer`
+
+LECTURA CORRECTA
+- La web no introduce nueva surface visible por esta microfase.
+- Eso NO invalida el cierre.
+- El objetivo correcto era:
+  - endurecer la clasificación interna de reflexive triggers
+  - mantener producción estable
+  - no introducir regresión visible
+- Ese objetivo queda cumplido.
+
+DECISIÓN DE CONTINUIDAD ACTUALIZADA
+- Esta microfase queda cerrada.
+- No reabrir como deuda activa:
+  - la promoción mínima de `REFLEXIVE`
+  - el corpus focal reflexive v1
+  - los guardrails ya congelados
+- El siguiente trabajo deberá elegir otro slice semántico estrecho,
+  sin mezclar surface visible salvo justificación fuerte.
+
+=====================================================================
+END UPDATE (2026-03-16)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-18) — Replacement / prevention v1 / cierre operacional post-v31
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Tras el cierre de `reflexive triggered abilities v1`, se abrió y cerró una
+  microfase semántica interna, mínima y no visible para:
+  - clasificar `REPLACEMENT`
+  - clasificar `PREVENTION`
+  - cablear `semantic_hints.replacement_prevention_min`
+- No se abrió surface visible nueva.
+- No se tocó UI pública, overlay visible, scoring, SPS, MC ni structural.
+
+ALCANCE REAL CERRADO
+- contrato mínimo
+- parser estrecho
+- lowering aditivo
+- test focal nuevo
+- sin cambios en:
+  - UI
+  - overlay visible
+  - labels visibles
+  - scoring
+  - SPS
+  - MC
+  - structural
+
+ARCHIVOS REALES TOCADOS
+- `src/engine/semantic/contract/sem_ability_ir_min_v1.json`
+- `src/engine/semantic/parser/sem_parser_v1.ts`
+- `src/engine/semantic/lowering/lower_to_ability_ir_min_v1.ts`
+- `src/engine/semantic/tests/sem_replacement_prevention_min_v1.test.ts`
+
+CAMBIO TÉCNICO REAL
+- Se añade el hint aditivo:
+  - `semantic_hints.replacement_prevention_min`
+- Clasificación mínima cerrada:
+  - `REPLACEMENT`
+  - `PREVENTION`
+- Matching congelado a wording estrecho:
+  - replacement apoyado en `instead`
+  - prevention apoyado en `prevent`
+
+CORPUS FOCAL CERRADO
+Positivos replacement:
+- `Rest in Peace`
+- `Leyline of the Void`
+
+Positivos prevention:
+- `Fog`
+- `Healing Salve`
+
+Guardrails:
+- `Oblivion Ring`
+- `Heart-Piercer Manticore`
+
+VALIDACIÓN TÉCNICA EJECUTADA
+- `npm test -- src/engine/semantic/tests/sem_replacement_prevention_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_triggered_ability_classification_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_lower_to_ability_ir_min_v1.test.ts`
+- resultado:
+  - verde
+
+ESTADO OPERATIVO FINAL
+- commit local:
+  - `31863e8`
+- mensaje:
+  - `feat(semantic): classify minimal replacement and prevention effects`
+- push a GitHub:
+  - correcto
+- Cloudflare Pages Production:
+  - correcto
+- build/commit activo validado:
+  - `31863e8`
+
+VALIDACIÓN VISIBLE / FUNCIONAL EN PRODUCCIÓN
+Deck de verificación usado:
+- shell Izzet spells / draw-second con:
+  - `Third Path Iconoclast`
+  - `Young Pyromancer`
+  - `Improbable Alliance`
+  - `Irencrag Pyromancer`
+  - `Guttersnipe`
+  - `Firebrand Archer`
+  - `Howling Mine`
+  - `Rest in Peace`
+  - `Fog`
+
+Resultado observado en producción:
+- build visible:
+  - `31863e8`
+- cards index cargado:
+  - `35757`
+- structural:
+  - `SPS = 105.2`
+  - `Relaciones = 25`
+  - `Densidad = 0.446`
+- semántica:
+  - `Cobertura = 73.7% (14/19)`
+  - `SOS = 3.56`
+  - `puntuación total de conexiones = 34`
+- surface visible preservada:
+  - familia `spells_support_prowess` activa
+  - `draw-second -> token` visible en `Improbable Alliance`
+  - `draw-second -> damage` visible en `Irencrag Pyromancer`
+  - sin feature visible nueva específica de replacement/prevention
+
+LECTURA CORRECTA
+- La web no introduce nueva surface visible por esta microfase.
+- Eso NO invalida el cierre.
+- El objetivo correcto era:
+  - endurecer la clasificación interna de replacement/prevention
+  - mantener producción estable
+  - no introducir regresión visible
+- Ese objetivo queda cumplido.
+
+=====================================================================
+END UPDATE (2026-03-18)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-18) — Linked abilities v1 / cierre operacional post-replacement-prevention
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Tras el cierre de `replacement / prevention v1`, se abrió y cerró una
+  microfase semántica interna, mínima y no visible para:
+  - clasificar `LINKED`
+  - cablear `semantic_hints.linked_ability_min`
+  - sacar linked del residuo puramente implícito y dejarlo como hint explícito
+- No se abrió surface visible nueva.
+- No se tocó UI pública, overlay visible, scoring, SPS, MC ni structural.
+
+ALCANCE REAL CERRADO
+- contrato mínimo
+- parser estrecho
+- lowering aditivo
+- test focal nuevo
+- sin cambios en:
+  - UI
+  - overlay visible
+  - labels visibles
+  - scoring
+  - SPS
+  - MC
+  - structural
+
+ARCHIVOS REALES TOCADOS
+- `src/engine/semantic/contract/sem_ability_ir_min_v1.json`
+- `src/engine/semantic/parser/sem_parser_v1.ts`
+- `src/engine/semantic/lowering/lower_to_ability_ir_min_v1.ts`
+- `src/engine/semantic/tests/sem_linked_ability_min_v1.test.ts`
+
+CAMBIO TÉCNICO REAL
+- Se añade el hint aditivo:
+  - `semantic_hints.linked_ability_min`
+- Clasificación mínima cerrada:
+  - `LINKED`
+- Matching linked v1 congelado a patrones estrechos tipo O-Ring:
+  - `the exiled card`
+  - `a card exiled with`
+  - `cards exiled with`
+  - `exiled with`
+  - `until ... leaves the battlefield`
+  - `for as long as that card remains exiled`
+
+CORPUS FOCAL CERRADO
+Positivos linked:
+- `Oblivion Ring`
+- `Banishing Light`
+- `Fiend Hunter`
+- `Elite Spellbinder`
+
+Guardrails:
+- `Rest in Peace`
+- `Fog`
+- `Heart-Piercer Manticore`
+- `Sneak Attack`
+
+VALIDACIÓN TÉCNICA EJECUTADA
+- `npm test -- src/engine/semantic/tests/sem_linked_ability_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_triggered_ability_classification_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_lower_to_ability_ir_min_v1.test.ts`
+- resultado:
+  - verde
+
+ESTADO OPERATIVO FINAL
+- commit local:
+  - `e12e210`
+- mensaje:
+  - `feat(semantic): classify minimal linked abilities`
+- push a GitHub:
+  - correcto
+- Cloudflare Pages Production:
+  - correcto
+- build/commit activo validado:
+  - `e12e210`
+
+VALIDACIÓN VISIBLE / FUNCIONAL EN PRODUCCIÓN
+Deck de verificación usado:
+- shell Jeskai spells / draw-second + linked anchors con:
+  - `Third Path Iconoclast`
+  - `Young Pyromancer`
+  - `Improbable Alliance`
+  - `Irencrag Pyromancer`
+  - `Guttersnipe`
+  - `Firebrand Archer`
+  - `Oblivion Ring`
+  - `Banishing Light`
+  - `Fiend Hunter`
+  - `Elite Spellbinder`
+
+Resultado observado en producción:
+- build visible:
+  - `e12e210`
+- cards index cargado:
+  - `35757`
+- structural:
+  - `SPS = 99.9`
+  - `Relaciones = 22`
+  - `Densidad = 0.393`
+- semántica:
+  - `Cobertura = 69.6% (16/23)`
+  - `SOS = 3.74`
+  - `puntuación total de conexiones = 41`
+- surface visible preservada:
+  - familia `spells_support_prowess` activa
+  - `draw-second -> token` visible en `Improbable Alliance`
+  - `draw-second -> damage` visible en `Irencrag Pyromancer`
+  - no aparece feature visible nueva específica de linked
+  - aparece agrupación coherente de efectos repetidos:
+    - `Banishing Light`
+    - `Fiend Hunter`
+    - `Oblivion Ring`
+
+LECTURA CORRECTA
+- La web no introduce nueva surface visible por esta microfase.
+- Eso NO invalida el cierre.
+- El objetivo correcto era:
+  - endurecer la clasificación interna de linked abilities
+  - mantener producción estable
+  - no introducir regresión visible
+- Ese objetivo queda cumplido.
+
+DECISIÓN DE CONTINUIDAD ACTUALIZADA
+- Esta microfase queda cerrada.
+- No reabrir como deuda activa:
+  - `replacement_prevention_min`
+  - `linked_ability_min`
+  - los corpus focales y guardrails ya congelados
+- El siguiente trabajo deberá abrir otro slice semántico estrecho,
+  preferentemente de infraestructura de estado derivado, sin mezclar
+  surface visible salvo justificación fuerte.
+
+=====================================================================
+END UPDATE (2026-03-18)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-19) — continuous effects / layers / dependency / timestamp v1 cerrado operativamente
+=====================================================================
+
+RESUMEN EJECUTIVO
+- Se abre y cierra una microfase semántica interna, mínima y no visible para
+  reservar infraestructura mínima de estado derivado en torno a:
+  - `continuous effects`
+  - `layers`
+  - `dependency`
+  - `timestamp`
+- No se abre simulador completo de CR 613.
+- No se toca surface visible, UI pública, overlay visible, scoring, SPS,
+  Monte Carlo ni structural.
+- La lectura correcta del slice es:
+  - hint mínimo
+  - parser conservador
+  - lowering aditivo
+  - test focal
+
+ALCANCE REAL CERRADO
+- contrato mínimo
+- parser estrecho para efectos continuos estáticos reconocibles
+- lowering aditivo
+- test focal nuevo
+- sin cambios en:
+  - UI
+  - overlay visible
+  - labels visibles
+  - scoring
+  - SPS
+  - MC
+  - structural
+
+ARCHIVOS REALES TOCADOS
+- `src/engine/semantic/contract/sem_ability_ir_min_v1.json`
+- `src/engine/semantic/parser/sem_parser_v1.ts`
+- `src/engine/semantic/lowering/lower_to_ability_ir_min_v1.ts`
+- `src/engine/semantic/tests/sem_continuous_layers_dependency_timestamp_min_v1.test.ts`
+
+CAMBIO TÉCNICO REAL
+- Se añade el hint aditivo:
+  - `semantic_hints.continuous_layers_min`
+- Shape mínimo reservado:
+  - `class`
+  - `ordering_risk`
+- Clasificación mínima cerrada:
+  - `TYPE_CHANGE`
+  - `COLOR_CHANGE`
+  - `ABILITY_CHANGE`
+  - `PT_CHANGE`
+  - `MULTI_LAYER`
+- Riesgo mínimo de ordering:
+  - `NONE`
+  - `TIMESTAMP_OR_DEPENDENCY`
+
+CORPUS FOCAL CERRADO
+Positivos:
+- `Glorious Anthem`
+- `Humility`
+- `Blood Moon`
+- `Urborg, Tomb of Yawgmoth`
+
+Guardrails:
+- `Rest in Peace`
+- `Oblivion Ring`
+
+Lectura correcta del corpus:
+- el slice NO resuelve el resultado final entre múltiples efectos continuos
+- NO implementa dependency/timestamp completos
+- NO implementa CR 613 completa
+- sí deja tipificada y auditable la familia mínima de estado derivado
+
+VALIDACIÓN TÉCNICA EJECUTADA
+Ring mínimo ejecutado y verde:
+- `npm test -- src/engine/semantic/tests/sem_continuous_layers_dependency_timestamp_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_lower_to_ability_ir_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_triggered_ability_classification_min_v1.test.ts`
+
+Nota de limpieza final del test:
+- se conserva `MIN_RUNTIME_PREFIX`
+- se conserva el comentario corregido de propósito técnico
+- el carrier canónico permanece como `Howling Mine` por requisito actual de
+  `lowerToAbilityIrMinV1`
+
+ESTADO OPERATIVO FINAL
+- commit local:
+  - `7dd05e7`
+- mensaje:
+  - `feat(semantic): classify minimal continuous effects layers and ordering risk`
+- push a GitHub:
+  - correcto
+- Cloudflare Pages Production:
+  - correcto
+- build/commit activo validado:
+  - `7dd05e7`
+
+VALIDACIÓN VISIBLE / FUNCIONAL EN PRODUCCIÓN
+Deck de verificación usado:
+- shell Jeskai spells / draw-second + anchors de continuous effects con:
+  - `Third Path Iconoclast`
+  - `Young Pyromancer`
+  - `Guttersnipe`
+  - `Firebrand Archer`
+  - `Irencrag Pyromancer`
+  - `Improbable Alliance`
+  - `Howling Mine`
+  - `Glorious Anthem`
+  - `Humility`
+  - `Blood Moon`
+  - `Rest in Peace`
+  - `Oblivion Ring`
+  - `Urborg, Tomb of Yawgmoth`
+
+Resultado observado en producción:
+- build visible:
+  - `7dd05e7`
+- cards index cargado:
+  - `35757`
+- structural:
+  - `SPS = 104.5`
+  - `Relaciones = 24`
+  - `Densidad = 0.429`
+- semántica:
+  - `Cobertura = 51.9% (14/27)`
+  - `SOS = 3.58`
+  - `puntuación total de conexiones = 35`
+- surface visible preservada:
+  - `spells_support_prowess` activa
+  - `burn_supports_threat` activa
+  - `draw-second -> token` visible en `Improbable Alliance`
+  - `draw-second -> damage` visible en `Irencrag Pyromancer`
+  - no aparece feature visible nueva específica de `continuous_layers_min`
+  - el overlay sigue marcando como texto aún no reconocido (v1):
+    - `Blood Moon`
+    - `Glorious Anthem`
+    - `Humility`
+
+LECTURA CORRECTA
+- La microfase está cerrada técnicamente y desplegada en producción.
+- El hecho de que `continuous_layers_min` no aparezca aún expuesto en la UI
+  es coherente con su naturaleza interna/no visible.
+- El objetivo correcto era:
+  - endurecer infraestructura mínima de estado derivado
+  - mantener producción estable
+  - no introducir regresión visible
+- Ese objetivo queda cumplido.
+
+DECISIÓN DE CONTINUIDAD ACTUALIZADA
+- Esta microfase queda cerrada.
+- No reabrir como deuda activa:
+  - `replacement_prevention_min`
+  - `linked_ability_min`
+  - `continuous_layers_min` v1 en su alcance ya congelado
+- Antes de abrir cambios metodológicos o de flujo de trabajo, conviene congelar
+  documentalmente este estado técnico.
+
+=====================================================================
+END UPDATE (2026-03-19)
+=====================================================================

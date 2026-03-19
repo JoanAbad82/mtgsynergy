@@ -1,0 +1,240 @@
+MTGSYNERGY — DELTA REAL MICROFASE — CONTINUOUS EFFECTS / LAYERS / DEPENDENCY / TIMESTAMP V1
+Fecha de actualización: 2026-03-19
+Versión operativa: v33
+
+=====================================================================
+MICROFASE CERRADA
+=====================================================================
+
+Nombre operativo:
+- `continuous effects / layers / dependency / timestamp v1`
+
+Objetivo contractual:
+- cerrar una microfase mínima, contractual y no visible para:
+  - clasificar una familia estrecha de efectos continuos estáticos
+  - cablear `semantic_hints.continuous_layers_min`
+  - registrar una señal mínima de ordering/risk sin abrir simulador completo
+- sin abrir UI nueva
+- sin tocar overlay visible
+- sin tocar scoring global
+- sin tocar SPS / MC / structural
+- sin abrir CR 613 completa
+
+Lectura arquitectónica aceptada:
+- structural = chasis / baseline / fallback
+- semantic = capa principal de ambición
+- esta microfase debía cerrar infraestructura semántica interna,
+  no surface visible
+
+=====================================================================
+CONTEXTO INMEDIATO
+=====================================================================
+
+Estado previo consolidado:
+- `linked abilities v1` ya cerrado en:
+  - commit `e12e210`
+  - build validada `e12e210`
+- continuous/layers/dependency/timestamp seguía siendo la siguiente deuda
+  semántica dura estrecha y cerrable tras replacement/prevention + linked
+- se eligió explícitamente NO abrir:
+  - CR 613 completa
+  - stack/priority
+  - SBA loop
+  - nueva surface visible
+
+=====================================================================
+PATCH REAL CERRADO
+=====================================================================
+
+Commit:
+- `7dd05e7`
+
+Mensaje:
+- `feat(semantic): classify minimal continuous effects layers and ordering risk`
+
+Archivos realmente tocados:
+- `src/engine/semantic/contract/sem_ability_ir_min_v1.json`
+- `src/engine/semantic/parser/sem_parser_v1.ts`
+- `src/engine/semantic/lowering/lower_to_ability_ir_min_v1.ts`
+- `src/engine/semantic/tests/sem_continuous_layers_dependency_timestamp_min_v1.test.ts`
+
+Alcance congelado:
+- contrato mínimo
+- parser estrecho
+- lowering aditivo
+- test focal nuevo
+- sin tocar:
+  - UI
+  - overlay visible
+  - labels visibles
+  - scoring
+  - SPS
+  - MC
+  - structural
+  - bridges visibles previos
+
+=====================================================================
+CAMBIO TÉCNICO REAL
+=====================================================================
+
+Contrato:
+- se añade el hint aditivo:
+  - `semantic_hints.continuous_layers_min`
+- shape mínimo:
+  - `class`
+  - `ordering_risk`
+
+Clases mínimas aceptadas:
+- `TYPE_CHANGE`
+- `COLOR_CHANGE`
+- `ABILITY_CHANGE`
+- `PT_CHANGE`
+- `MULTI_LAYER`
+
+Ordering mínimo aceptado:
+- `NONE`
+- `TIMESTAMP_OR_DEPENDENCY`
+
+Parser:
+- se añade una clasificación mínima y muy estrecha para efectos continuos
+  estáticos reconocibles
+- matching v1 congelado a casos focales:
+  - `Glorious Anthem` -> `PT_CHANGE` / `NONE`
+  - `Blood Moon` -> `TYPE_CHANGE` / `TIMESTAMP_OR_DEPENDENCY`
+  - `Humility` -> `MULTI_LAYER` / `TIMESTAMP_OR_DEPENDENCY`
+  - `Urborg, Tomb of Yawgmoth` -> `TYPE_CHANGE` /
+    `TIMESTAMP_OR_DEPENDENCY`
+
+Lowering:
+- se cablea:
+  - `semantic_hints.continuous_layers_min`
+- de forma aditiva y sin tocar el wiring previo de:
+  - `triggered_ability_min`
+  - `replacement_prevention_min`
+  - `linked_ability_min`
+  - `cost_target_legality_min`
+
+Nota de limpieza final del test:
+- `MIN_RUNTIME_PREFIX` queda como helper neutro
+- el comentario final queda corregido a propósito técnico explícito
+- el carrier del lowering se mantiene como `Howling Mine` por compatibilidad
+  actual de `lowerToAbilityIrMinV1`
+
+=====================================================================
+CORPUS FOCAL CERRADO
+=====================================================================
+
+Positivos:
+- `Glorious Anthem`
+- `Humility`
+- `Blood Moon`
+- `Urborg, Tomb of Yawgmoth`
+
+Guardrails:
+- `Rest in Peace`
+- `Oblivion Ring`
+
+Lectura correcta del corpus:
+- continuous/layers v1 queda congelado a una familia estrecha y auditable
+- NO equivale a engine de layers/dependency
+- NO cubre todavía:
+  - resolución final entre múltiples efectos
+  - dependency completa
+  - timestamp completo
+  - CR 613 completa
+
+=====================================================================
+VALIDACIÓN TÉCNICA EJECUTADA
+=====================================================================
+
+Ring mínimo de tests ejecutado y verde:
+- `npm test -- src/engine/semantic/tests/sem_continuous_layers_dependency_timestamp_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_lower_to_ability_ir_min_v1.test.ts`
+- `npm test -- src/engine/semantic/tests/sem_triggered_ability_classification_min_v1.test.ts`
+- resultado:
+  - verde
+
+=====================================================================
+ESTADO GIT / DEPLOY
+=====================================================================
+
+Estado operativo final:
+- commit local:
+  - `7dd05e7`
+- mensaje:
+  - `feat(semantic): classify minimal continuous effects layers and ordering risk`
+- push a GitHub:
+  - correcto
+- Cloudflare Pages Production:
+  - correcto
+- build/commit activo validado:
+  - `7dd05e7`
+
+=====================================================================
+VALIDACIÓN VISIBLE / FUNCIONAL EN PRODUCCIÓN
+=====================================================================
+
+Deck de verificación usado:
+- shell Jeskai spells / draw-second + anchors de continuous effects con:
+  - `Third Path Iconoclast`
+  - `Young Pyromancer`
+  - `Guttersnipe`
+  - `Firebrand Archer`
+  - `Irencrag Pyromancer`
+  - `Improbable Alliance`
+  - `Howling Mine`
+  - `Glorious Anthem`
+  - `Humility`
+  - `Blood Moon`
+  - `Rest in Peace`
+  - `Oblivion Ring`
+  - `Urborg, Tomb of Yawgmoth`
+
+Resultado observado en producción:
+- build visible:
+  - `7dd05e7`
+- cards index cargado:
+  - `35757`
+- structural:
+  - `SPS = 104.5`
+  - `Relaciones = 24`
+  - `Densidad = 0.429`
+- semántica:
+  - `Cobertura = 51.9% (14/27)`
+  - `SOS = 3.58`
+  - `puntuación total de conexiones = 35`
+- surface visible preservada:
+  - familia `spells_support_prowess` activa
+  - familia `burn_supports_threat` activa
+  - `draw-second -> token` visible en `Improbable Alliance`
+  - `draw-second -> damage` visible en `Irencrag Pyromancer`
+  - no aparece feature visible nueva específica de `continuous_layers_min`
+  - el overlay sigue marcando como texto aún no reconocido (v1):
+    - `Blood Moon`
+    - `Glorious Anthem`
+    - `Humility`
+
+LECTURA CORRECTA
+- La web no introduce nueva surface visible por esta microfase.
+- Eso NO invalida el cierre.
+- El objetivo correcto era:
+  - endurecer la clasificación interna de estado derivado mínimo
+  - mantener producción estable
+  - no introducir regresión visible
+- Ese objetivo queda cumplido.
+
+=====================================================================
+DECISIÓN DE CONTINUIDAD
+=====================================================================
+
+- Esta microfase queda cerrada.
+- No reabrir como deuda activa:
+  - `replacement_prevention_min`
+  - `linked_ability_min`
+  - `continuous_layers_min` v1 ya congelado
+- Antes de introducir cambios metodológicos en otra conversación, conviene
+  congelar documentalmente este estado técnico para no mezclar deltas.
+
+=====================================================================
+FIN DELTA REAL v33
+=====================================================================

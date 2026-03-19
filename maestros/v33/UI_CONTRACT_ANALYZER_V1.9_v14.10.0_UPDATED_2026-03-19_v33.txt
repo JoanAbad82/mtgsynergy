@@ -1,0 +1,2724 @@
+UI_CONTRACT_ANALYZER_V1.9 Fecha actualización: 2026-03-19
+
+=====================================================================
+CONTRATO FUNCIONAL ACUMULADO
+=====================================================================
+
+-   Analizador estructural MTG 100% client-side.
+-   Parser MTGA → DeckState → computeStructuralSummary.
+-   Share token ?s=TOKEN.
+-   Deep-link automático.
+-   Fallback JSON.
+
+=====================================================================
+ADENDA H7 — TAGGING / ROLES / EDGES
+=====================================================================
+
+La UI usa: analyzeMtgaExportAsync(input, { enableCardIndex: true })
+
+Issues estructurados: - TAGGING_ACTIVE - TAGGING_UNAVAILABLE -
+ROLES_DEFAULTED_TO_UTILITY (suprimido si tagging activo)
+
+UX: - Botón Analizar deshabilitado durante ejecución. - Edges ya
+calculados en DeckState (aún no renderizados).
+
+=====================================================================
+Estado: implementado y validado en main.
+=====================================================================
+=====================================================================
+ADENDA H7.1 — EDGES PANEL + WEIGHTS (VISIBILIDAD)
+=====================================================================
+
+- La UI del analizador renderiza un panel "Edges" si summary existe.
+- Contenido mínimo:
+  1) "Edges detectados: N"
+  2) Grupos por kind con contador: "<kind> (<n>)"
+  3) Lista: "from → to (xWEIGHT)"
+
+- Orden:
+  - Los grupos se ordenan por suma de weights desc.
+  - Dentro de cada grupo: edges por weight desc.
+
+- Datos:
+  - DeckState.edges proviene del motor (analyzeMtgaExportAsync) y puede incluir:
+    { kind, from, to, weight }
+
+Estado: Implementado y validado en main.
+
+=====================================================================
+ADENDA H7.2 — EDGES SCORE + EXPLAINABILITY (UI)
+=====================================================================
+
+Panel "Edges" mejorado (sin tocar el motor más allá de Edge.score ya expuesto):
+
+1) Render “bonito” de nombres
+- buildNameMapFromDeckState(deckState): Map(name_norm -> name)
+- formatEdgeLine(edge, nameMap): usa el nombre humano si existe.
+
+2) Explicación por tipo (una línea por grupo)
+- explainEdgeKind(kind) devuelve un texto breve por relación.
+
+3) Score visible y ordenación por score
+- Cada edge renderiza: "(xWEIGHT | score SCORE)"
+- groupEdgesForPanel ordena:
+  - edges dentro de kind: score desc
+  - kinds por score total desc
+
+4) Desglose de counts
+- Bajo cada edge (si hay counts en deckState.entries):
+  "counts: FROMCOUNT×TOCOUNT"
+
+Archivos (solo UI):
+- src/components/analyzer/AnalyzerApp.tsx
+- src/components/analyzer/tests/analyzer_edges_panel.test.tsx
+  - Tests “puros” (sin jsdom) para helpers:
+    explainEdgeKind, buildNameMapFromDeckState, formatEdgeLine, groupEdgesForPanel
+
+Estado: Implementado y validado en main.
+
+=====================================================================
+ACTUALIZACIÓN (2026-02-18) — UI Analyzer: Explainability + Rounding + Build Marker + SPS v1.1
+=====================================================================
+
+CAMBIOS UI (src/components/analyzer/AnalyzerApp.tsx)
+1) Edges Explainability v1 (panel “Edges”)
+- Nombres bonitos: se mapean `name_norm -> name` desde deckState.deck.entries (buildNameMapFromDeckState).
+- Línea edge unificada:
+  {"from"} → {"to"} (x{weight} | score {score})
+  usando `formatEdgeLine(e, nameMap)` (evita duplicidad).
+- Explicación por tipo de edge (1 línea por grupo):
+  `explainEdgeKind(kind)` devuelve texto corto; default: “Relación detectada por heurísticas (beta).”
+- Bloque counts (opcional) bajo cada edge si existen ambos counts: `counts: a×b`.
+
+2) Rounding / formato numérico estable (EdgeScore rounding v1)
+- Helper exportado para tests: `formatNumberCompact(n: unknown, decimals=1)`
+  - Si no es número finito → "0"
+  - Redondeo estable: Math.round(n * 10^decimals) / 10^decimals
+  - Trim de ceros: 28.0 -> "28", 28.8 -> "28.8"
+- `formatEdgeLine` usa:
+  - weight: formatNumberCompact(weight, 0)
+  - score:  formatNumberCompact(score, 1)
+
+3) Build marker (verificación producción)
+- Const exportada: `export const BUILD_SHA = "53944e7";`
+- Render en UI:
+  `<p className="muted">build: {BUILD_SHA}</p>`
+
+4) SPS v1.1 (render)
+- En panel UI se muestra:
+  - `Structural Power Score: {formatNumberCompact(summary.structuralPowerScore, 1)}`
+  - Breakdown (muted): `B=.. × dens=.. × roles=.. × util=..`
+
+TESTS UI (puros, sin jsdom)
+Archivo: src/components/analyzer/tests/analyzer_edges_panel.test.tsx
+- Cubre:
+  - explainEdgeKind (smoke)
+  - buildNameMapFromDeckState (mapeo name_norm->name)
+  - formatNumberCompact (rounding + trim + NaN/invalid)
+  - formatEdgeLine (usa nombres + rounding estable, incluyendo floats “ruidosos”)
+  - BUILD_SHA exportado y fijo a "53944e7"
+
+CONTRATO VISUAL (observables en UI)
+- Panel “Edges” ahora es legible (nombres reales, explicación por grupo).
+- Scores no muestran ruido flotante (ej. 28.8 en vez de 28.799999999999997).
+- Línea build visible para diagnóstico rápido en producción.
+
+
+
+
+================================================================================
+ADDENDUM — UI CONTRACT NOTE (v14.10.0)
+Generated: 2026-02-19 12:49 UTC
+Tag: v14.10.0
+
+Contract impact:
+- No breaking changes to Analyzer UI contract (inputs/outputs) introduced in v14.10.0.
+- Informational banner text enriched to include a diagnostic suffix when available:
+
+  "cards indexed count: N"
+
+Observed in production:
+- N = 35633
+- BUILD_SHA displayed: 53944e7
+
+Non-functional guarantees:
+- Analyzer remains 100% client-side.
+- Runtime does not fetch Scryfall endpoints; only static assets under:
+  /data/cards_index.json.gz
+  /data/cards_index.manifest.json
+
+================================================================================
+END ADDENDUM v14.10.0
+================================================================================
+
+===================================================================== ADDENDA H8 — MC‑SSL (Monte Carlo) panel experimental
+Fecha actualización: 2026-02-19
+=====================================================================
+
+Objetivo
+-   Exponer un panel experimental para estabilidad/robustez del Structural Power Score (SPS) vía MC‑SSL v1.
+-   100% client‑side, sin backend, determinista por seed.
+
+Feature flag (URL)
+-   Activación: mc=1.
+-   Overrides: mcN (iterations), mcSeed (seed).
+-   Defaults: iterations=1000, seed=1. robust_p=0.1 en el motor.
+
+Comportamiento UI
+-   Si mc=1: se muestra panel "Monte Carlo (experimental)".
+-   Estados: idle | running | done | error.
+-   SSR/hydration safe: no depende de window en el estado inicial; parseo en mount.
+-   Race‑safe: si cambian parámetros/mazo durante la ejecución, resultados antiguos se ignoran (runId guard).
+-   Actualización por navegación: escucha popstate para cambios de query params.
+
+Salida mostrada
+-   base SPS
+-   robust_sps (percentil robusto definido por motor)
+-   fragility
+-   effective_n / requested_n / no_op
+-   seed / iterations
+-   warnings (si existen)
+
+Contrato de cálculo (importante)
+-   En cada iteración, SPS se recomputa con el pipeline real:
+    generateEdges(entries) → computeStructuralSummary(DeckState) → computeStructuralPowerScore(summary, edges).
+-   Se aplica getSpsNumber(x) para soportar SPS como número o como objeto {sps}.
+
+=====================================================================
+ADDENDUM — UI CONTRACT v1.9 — B1.1 Friendly Labels + Quick Results
+Fecha actualización: 2026-02-21
+=====================================================================
+
+B1.1 (UI-only, sin breaking changes)
+- Nuevo panel visible cuando summary existe: “Resultado rápido”.
+  - Muestra SPS, relaciones (edges_total), densidad, roles dominantes y diagnóstico 1-línea (heurística UI-only).
+- Renombres de secciones (solo copy):
+  - “Resumen estructural”
+  - “Relaciones (sinergias)”
+- Tooltips mínimos via title=... para términos clave.
+
+No cambia:
+- Inputs del analizador (MTGA export / JSON / share token).
+- Motor estructural, scoring edges, SPS, MC-SSL.
+- Feature gating MC (mc=1) permanece igual.
+
+Nota de despliegue
+- Para validar B1.1 en producción: esperar Cloudflare Pages “Success” en el commit correspondiente y luego hacer probe anti-cache.
+
+=====================================================================
+END ADDENDUM — 2026-02-21
+=====================================================================
+# UPDATE 2026-02-28 — Analyzer UX (Spanish-only) + Semantic Overlay Panel
+
+## Cambios de UX (UI contract)
+
+### Panel: Superposición semántica (experimental)
+**Estado:** implementado (Fase 8 UI mínima, iterado). Experimental.
+
+**Renderiza:**
+- Título y copy en español (sin mezcla ES/EN)
+- Métricas:
+  - cobertura (% y conteos)
+  - SOS
+  - puntuación total de conexiones (total_edge_score)
+  - entradas del mazo / únicas resueltas / únicas faltantes
+- Secciones:
+  - Conexiones semánticas principales (top edges)
+  - Escuchas huérfanas (orphan listeners)
+  - Productores en exceso (excess producers)
+  - Grupos de redundancia (filtrado de firma vacía)
+- Glosario colapsable
+
+**Estados UI:**
+- Cargando…
+- Error: <mensaje>
+- Sin señal (total_edge_score==0): mensaje explicativo + causas probables
+
+### Reglas de compatibilidad
+- No afecta SPS ni motor estructural.
+- IDs deterministas del overlay: orden por name_norm + asignación incremental.
+
+### Verificación en producción
+Criterio de OK:
+- No hay error “edges is not defined”.
+- Botón Analizar termina; no queda colgado en “Analizando…”.
+- Network no muestra múltiples descargas repetidas de `cards_index.json.gz` dentro de una misma sesión.
+- Semantic Overlay carga y muestra métricas/edges (aunque cobertura pueda ser baja en decks con poca plantilla cubierta por v1).
+
+=====================================================================
+UPDATE (2026-03-01) — UI Contract Addenda (No Breaking Changes)
+=====================================================================
+
+## 1) Routes / Navigation (User-facing)
+- `/analyzer` and `/analyzer/` must redirect (301) to:
+  - `/es/analizador-de-mazos-mtg`
+  Rationale: single canonical entrypoint + consistent probes.
+
+## 2) Production verification markers (HTML-level, probe-friendly)
+Analyzer page `/es/analizador-de-mazos-mtg` includes:
+- `<meta name="git-sha" content="{full_commit_sha}">`
+- `<!-- git: {short_commit_sha} -->`
+
+These are **static HTML** markers (present before hydration) and are preferred over the runtime-only `build:` UI string.
+
+## 3) Build hygiene (non-functional)
+- Cloudflare Pages `prebuild` is verify-only (no Scryfall network).
+- Vite warning cleanup via `import type` (no behavior changes).
+
+## 4) Operational probes (PowerShell)
+(See MASTERLOG_WEB update for full probe blocks.)
+=====================================================================
+UPDATE (2026-03-02) — Build Label uses canonical git-sha (no drift)
+=====================================================================
+
+PROBLEM
+- UI displayed `build:` using a legacy constant, which could drift from the actual deployed commit.
+- HTML probe markers already existed (`meta name="git-sha"`), but the UI label was confusing when mismatched.
+
+CHANGE (UI-only)
+- Analyzer page passes the canonical commit SHA (from build meta / `CF_PAGES_COMMIT_SHA`) into `AnalyzerApp` as `buildSha`.
+- UI renders `build: <short(buildSha)>` (7 chars).
+- Fallback: `build: unknown` if SHA is not available (local/dev edge).
+
+FILES (UI-only)
+- src/pages/es/analizador-de-mazos-mtg.astro  (pass buildSha prop)
+- src/components/analyzer/AnalyzerApp.tsx     (render build label from prop; helper to short format)
+- src/components/analyzer/tests/analyzer_edges_panel.test.tsx (updated tests for new build label behavior)
+
+VALIDATION
+- Local: npm test ✅, npm run build ✅.
+- Production (View Source) must satisfy:
+  - `<meta name="git-sha" content="{FULL_SHA}">`
+  - UI shows `build: {FULL_SHA[:7]}`
+  where the build label prefix equals the first 7 chars of the meta sha.
+
+INVARIANTS
+- No changes to analyzer inputs/outputs, SPS, structural engine, MC-SSL, or semantic overlay.
+- 100% client-side behavior preserved.
+
+=====================================================================
+END UPDATE (2026-03-02)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-02) — UI Contract Addenda (Semantic Overlay v1.1/v1.2 + Ops markers)
+=====================================================================
+
+A) Production markers (HTML-level, probe-friendly) — canonical
+Analyzer page `/es/analizador-de-mazos-mtg` must include static markers (present before hydration):
+- `<meta name="git-sha" content="{full_commit_sha}">`
+- `<!-- git: {full_commit_sha} -->`
+Notes:
+- The comment uses the FULL SHA (not just short). Probes may compare by short prefix.
+
+B) Semantic Overlay panel — v1.1 UX (experimental, no engine template expansion)
+The “Superposición semántica (experimental)” panel now additionally renders:
+
+1) Status (traffic light)
+- If SOS > 0:
+  - `✅ Señal encontrada (experimental)`
+- If SOS == 0:
+  - `⚠️ Sin señal (experimental)` + a calm explanatory line indicating that v1 templates may not cover the deck yet.
+
+2) Coverage
+- A line: `Cobertura: X/Y (Z%)`
+- X/Y must be derived deterministically from semantic overlay summary fields.
+- Percent rounding must be stable.
+
+3) Reasons (non-coverage)
+- A small list of top reasons with counts, deterministic ordering:
+  - ordering rule: fixed priority order, then count desc, then label asc (or an equivalent stable tie-break).
+- The panel must not render noisy/unstable text.
+
+C) Semantic Overlay panel — v1.2 copy hygiene (UI-only)
+- Spanish-first headings (no EN headings like “Coverage/Orphan/Excess”).
+- No duplicated labels/sections.
+- Lightweight tests must enforce:
+  - No English headings in rendered output.
+  - Coverage label appears once.
+  - Section headings do not duplicate.
+
+INVARIANTS
+- No changes to analyzer inputs/outputs, SPS, structural engine, edge scoring, or MC‑SSL.
+- 100% client-side preserved.
+- Determinism preserved (ordering/ids).
+
+=====================================================================
+END UPDATE (2026-03-02)
+=====================================================================
+# 2026-03-03 — Cambios relevantes para UI Contract (Analyzer v1.9)
+
+## Entrada de mazo (parser MTGA export) — dedupe case-insensitive
+- Se endurece el dedupe de líneas de carta para ignorar diferencias de mayúsculas/minúsculas.
+- Expectativa: si el input contiene la misma línea de carta repetida solo cambiando el case,
+  el parser debe producir UNA sola entrada (count preservado) sin introducir issues adicionales.
+
+## Diagnóstico de build/deploy (git-sha)
+- Continúa el contrato operativo:
+  - `<meta name="git-sha" content="<40-hex>">`
+  - `<!-- git: <40-hex> -->`
+- Probe recomendado en PowerShell extrae ambos y puede detectar mismatch meta/comment.
+
+=====================================================================
+UPDATE (2026-03-04)
+=====================================================================
+# 2026-03-04 — UI Contract — Semantic Overlay panel (Audit uncoveredNonLand)
+
+## Nueva sección (UI-only): "Audit (no-Land)"
+Objetivo: exponer al usuario (y a QA) la lista de cartas *no LAND* que el coverage report marca como “no cubiertas” por templates v1.
+
+### Condición de render
+- Se renderiza si `coverageReport.uncoveredNonLand` existe y tiene longitud > 0.
+- Si está vacío/undefined: la sección NO aparece (evita ruido).
+
+### UX (estructura)
+- Sección colapsable en `SemanticOverlayPanel` con título exacto:
+  - `Audit (no-Land)`
+- Estado por defecto: **colapsada** (para no ensuciar el panel).
+- Al expandir:
+  - Lista de items con:
+    - `cardName` (texto) + `reasonId` (label ES-friendly si existe mapping; si no, mostrar `reasonId` literal).
+  - Orden estable y determinista (igual que el report).
+
+### No-regression
+- UI-only. No modifica:
+  - parsing MTGA, `analyzeMtgaExportAsync`, SPS, edges, scoring, ni determinismo de resultados.
+
+### Tests UI
+- Test de panel actualizado para verificar que:
+  - El heading "Audit (no-Land)" aparece cuando hay `uncoveredNonLand`.
+  - Los elementos se renderizan (al menos nombres) y en orden estable.
+=====================================================================
+END UPDATE (2026-03-04)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-05/06) — Semantic Overlay / Coverage uplift train (A2.7-B2 → B6)
+=====================================================================
+
+A) No breaking changes de contrato UI
+- No se modifican inputs del analizador, share token, deep-link, SPS, structural engine ni MC-SSL.
+- La UI sigue 100% client-side.
+- El flujo visible permanece:
+  - parse input
+  - index lookup
+  - structural summary
+  - semantic overlay
+  - MC-SSL opcional vía mc=1
+
+B) Semantic Overlay — efectos observables acumulados
+Tras los uplifts A2.7-B2/B3/B4/B5/B6, la capa “Superposición semántica (experimental)” debe reflejar cobertura incremental sin cambiar el contrato visual base.
+
+Nuevos casos cubiertos (esperados en coverage / audit):
+- Archpriest of Iona (B2: hardening/regresión)
+- Icy Manipulator (B3: tap-target)
+- Crystal Ball (B4: scry)
+- Elvish Mystic (B5: produce mana verde)
+- Millstone (B6: mill target player)
+
+Expectativa observable:
+- Estas cartas ya no deberían aparecer en `Audit (no-Land)` con reasonId `NO_MATCH_V1_TEMPLATES` cuando el mazo/lookup las incluye correctamente.
+
+C) Shortlist determinista de próximos uplifts
+- La UI no renderiza explícitamente la shortlist, pero el contrato de audit/coverage depende de una priorización estable en tests.
+- Estado histórico fijado:
+  - A2.7-C formaliza shortlist: Crystal Ball / Elvish Mystic / Millstone.
+- Tras B4/B5/B6, los siguientes candidatos seguros pasan a ser artefactos de producción de maná simples (p.ej. Darksteel Ingot / Gilded Lotus / Worn Powerstone), siempre sin impacto visual directo salvo la disminución progresiva de `uncoveredNonLand`.
+
+D) Validación funcional visible en producción (builds relevantes)
+- build `e1b7d57`:
+  - share link del deck Rakdos hidrata correctamente.
+  - `mc=1` muestra Monte Carlo “activado, listo para ejecutarse”; no autoejecuta al abrir el enlace.
+- build `4bb2d7b`:
+  - deck de lifegain/elfos analizado correctamente.
+  - Semantic Overlay muestra:
+    - `✅ Señal encontrada (experimental)`
+    - Cobertura 78.6% (11/14)
+    - SOS 2.83
+  - Elvish Mystic no aparece ya como `NO_MATCH_V1_TEMPLATES` y queda integrado en patrones de producción de maná / efectos repetidos.
+
+E) Observación UX importante
+- Puede ocurrir que la parte estructural siga mostrando SPS bajo o incluso 0 para ciertos mazos donde la semántica ya detecta señal útil.
+- Esto NO se considera regresión UI: la lectura semántica se está comportando como capa complementaria y explica mejor arquetipos concretos (p.ej. lifegain) aunque la heurística estructural aún no puntúe alto.
+
+F) Invariantes confirmadas
+- `Audit (no-Land)` sigue siendo colapsable y solo aparece cuando hay `uncoveredNonLand`.
+- Coverage / Reasons / status siguen ordenándose/renderizándose de forma determinista.
+- Sin mezcla ES/EN accidental añadida durante esta fase.
+
+=====================================================================
+END UPDATE (2026-03-05/06)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-06) — UI Contract Addenda — A2.7-B7 Darksteel Ingot + validación visible en producción
+=====================================================================
+
+A) No breaking changes de contrato UI
+- No se modifican:
+  - inputs del analizador
+  - parser MTGA export / share token
+  - structural engine
+  - SPS
+  - edge scoring
+  - MC-SSL
+- La UI sigue siendo 100% client-side.
+
+B) Semantic Overlay — expectativa observable tras A2.7-B7
+Nueva carta cubierta por templates v1:
+- `Darksteel Ingot`
+  - texto objetivo:
+    - `{T}: Add one mana of any color.`
+  - efecto visible esperado:
+    - ya NO debe aparecer en `Audit (no-Land)` / `uncoveredNonLand` con reasonId `NO_MATCH_V1_TEMPLATES` cuando el lookup la resuelve correctamente
+
+C) Verificación funcional visible en producción (build `c3f7244`)
+Deck de diagnóstico usado:
+- 4 Darksteel Ingot
+- 4 Elvish Mystic
+- 4 Crystal Ball
+- 4 Millstone
+- 2 Gilded Lotus
+- 2 Worn Powerstone
+- 22 Forest
+- 22 Plains
+
+Salida observable esperada/validada:
+- build visible:
+  - `build: c3f7244`
+- panel semántico:
+  - `⚠️ Sin señal (experimental)`
+  - `Cobertura: 50% (4/8)`
+- motivos:
+  - `Texto vacío tras normalización` → `Forest`, `Plains`
+  - `Texto aún no reconocido (v1)` → `Gilded Lotus`, `Worn Powerstone`
+- implicación de contrato:
+  - `Darksteel Ingot` ya NO aparece entre los misses v1 de no-LAND
+  - `Elvish Mystic`, `Crystal Ball` y `Millstone` siguen cubiertos
+
+D) Secciones / contadores visibles asociados
+Con el deck de diagnóstico anterior, el panel puede mostrar:
+- `Generas más de lo que usas`
+  - `Action · PRODUCE_MANA · 2`
+  - `Action · MILL_CARDS · 1`
+  - `Action · SCRY · 1`
+- `Efectos repetidos`
+  - `tamaño 2: Darksteel Ingot, Elvish Mystic`
+
+Esto se interpreta como comportamiento correcto de la capa semántica, aunque:
+- `Conexiones semánticas principales` siga vacío
+- la parte estructural muestre SPS 0 / sin relaciones
+- Monte Carlo permanezca en estado “listo para ejecutar”
+
+E) Monte Carlo (experimental)
+- Validación visible acumulada:
+  - `mc=1` sigue activando el panel
+  - no se autoejecuta al abrir share links o decks de prueba
+  - estado “MC listo para ejecutar” sigue siendo comportamiento correcto / esperado
+
+F) Audit (no-Land) y frontera siguiente
+- La sección `Audit (no-Land)` sigue siendo colapsable y solo aparece cuando hay `uncoveredNonLand`.
+- Tras B7, en la validación web concreta permanecen visibles como misses v1:
+  - `Gilded Lotus`
+  - `Worn Powerstone`
+- En tests deterministas de coverage, la shortlist post-B7 pasa a reflejar:
+  - `Gilded Lotus`
+  - `Worn Powerstone`
+  - `Howling Mine`
+
+G) Invariantes confirmadas
+- Orden determinista de Coverage / Reasons / Audit preservado.
+- Sin mezcla accidental ES/EN añadida en esta fase.
+- El build label visible y el commit de producción siguen sirviendo como referencia operativa de validación.
+
+=====================================================================
+END UPDATE (2026-03-06)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-06) — UI Contract Addenda — A2.7-B8 → B10 + fix runtime Howling Mine
+=====================================================================
+
+A) No breaking changes de contrato UI
+- No se modifican:
+  - inputs del analizador
+  - parser MTGA export / share token
+  - structural engine
+  - SPS
+  - edge scoring
+  - MC-SSL
+- La UI sigue siendo 100% client-side.
+
+B) Semantic Overlay — expectativa observable tras A2.7-B8
+Nueva carta cubierta por templates v1:
+- `Gilded Lotus`
+  - texto objetivo:
+    - `{T}: Add three mana of any one color.`
+  - efecto visible esperado:
+    - ya NO debe aparecer en `Audit (no-Land)` / `Texto aún no reconocido (v1)`
+
+Verificación funcional visible en producción (build `a67cc6e`)
+Deck de validación:
+- 4 Elvish Mystic
+- 4 Darksteel Ingot
+- 4 Gilded Lotus
+- 4 Worn Powerstone
+- 4 Crystal Ball
+- 4 Millstone
+- 18 Forest
+- 18 Plains
+
+Salida observable esperada/validada:
+- `build: a67cc6e`
+- panel semántico:
+  - `⚠️ Sin señal (experimental)`
+  - `Cobertura: 62.5% (5/8)`
+- motivos:
+  - `Texto vacío tras normalización` → `Forest`, `Plains`
+  - `Texto aún no reconocido (v1)` → `Worn Powerstone`
+- secciones asociadas:
+  - `Generas más de lo que usas`
+    - `Action · PRODUCE_MANA · 3`
+    - `Action · MILL_CARDS · 1`
+    - `Action · SCRY · 1`
+  - `Efectos repetidos`
+    - `tamaño 3: Darksteel Ingot, Elvish Mystic, Gilded Lotus`
+
+C) Semantic Overlay — expectativa observable tras A2.7-B9
+Nueva carta cubierta por templates v1:
+- `Worn Powerstone`
+  - scope intencional:
+    - SOLO su línea de maná `{T}: Add {C}{C}.`
+    - NO la cláusula `enters the battlefield tapped`
+
+Verificación funcional visible en producción (build `9642929`)
+Deck de validación integral:
+- 4 Elvish Mystic
+- 4 Darksteel Ingot
+- 4 Gilded Lotus
+- 4 Worn Powerstone
+- 4 Crystal Ball
+- 4 Millstone
+- 4 Howling Mine
+- 18 Forest
+- 18 Plains
+
+Salida observable esperada/validada:
+- `build: 9642929`
+- panel semántico:
+  - `⚠️ Sin señal (experimental)`
+  - `Cobertura: 66.7% (6/9)`
+- motivos:
+  - `Texto vacío tras normalización` → `Forest`, `Plains`
+  - `Texto aún no reconocido (v1)` → `Howling Mine`
+- secciones asociadas:
+  - `Generas más de lo que usas`
+    - `Action · PRODUCE_MANA · 4`
+    - `Action · MILL_CARDS · 1`
+    - `Action · SCRY · 1`
+  - `Efectos repetidos`
+    - `tamaño 4: Darksteel Ingot, Elvish Mystic, Gilded Lotus, Worn Powerstone`
+
+D) Semantic Overlay — A2.7-B10 (versión inicial) y gap de runtime
+- Se añadió cobertura teórica para `Howling Mine`, pero la primera validación funcional en web (build `aa74186`) mostró una discrepancia:
+  - la UI seguía mostrando `Howling Mine` bajo `Texto aún no reconocido (v1)`
+  - la cobertura permanecía en `66.7% (6/9)`
+- Interpretación de contrato:
+  - deploy y tests verdes NO garantizan por sí solos alineación con runtime si el payload sintético del test difiere del Oracle real de `cards_index`
+
+E) Fix de contrato / runtime para Howling Mine
+Causa raíz:
+- el runtime real sirve:
+  - `At the beginning of each player's draw step, if this artifact is untapped, that player draws an additional card.`
+- el test inicial usaba:
+  - `if Howling Mine is untapped`
+
+Fix aplicado:
+- la plantilla exacta de Howling Mine acepta ambas variantes, manteniendo wording estrecho
+- el test de coverage se alinea con el Oracle real de runtime (`this artifact`)
+
+Verificación funcional visible en producción (build `4cdccdb`)
+Deck de validación integral:
+- 4 Elvish Mystic
+- 4 Darksteel Ingot
+- 4 Gilded Lotus
+- 4 Worn Powerstone
+- 4 Crystal Ball
+- 4 Millstone
+- 4 Howling Mine
+- 18 Forest
+- 18 Plains
+
+Salida observable esperada/validada:
+- `build: 4cdccdb`
+- panel semántico:
+  - `⚠️ Sin señal (experimental)` sigue siendo posible si no emergen conexiones fuertes
+  - `Cobertura: 77.8% (7/9)`
+  - `únicas resueltas: 9`
+  - `únicas faltantes: 0`
+- `Texto aún no reconocido (v1)`:
+  - ya NO debe mostrar cartas
+- nuevas huellas funcionales esperadas:
+  - `Robas cartas adicionales en el turno (experimental) · 1`
+  - `Action · DRAW_CARDS · 1`
+  - `Resource · CARD · 1`
+- se mantienen sin regresión:
+  - `Action · PRODUCE_MANA · 4`
+  - `Action · MILL_CARDS · 1`
+  - `Action · SCRY · 1`
+
+F) Interpretación de contrato al cierre de microfase
+- La microfrontera B4–B10 queda absorbida funcionalmente.
+- La sección `Audit (no-Land)` puede quedar vacía o no renderizarse si no hay misses no-LAND.
+- El contrato visible del overlay confirma ya:
+  - producers de maná simples
+  - scry
+  - mill
+  - draw exacto de Howling Mine
+- Esto NO implica que el motor haya terminado; solo que la microfase de validación del template engine v1 queda cerrada.
+
+G) Invariantes confirmadas
+- Orden determinista de Coverage / Reasons / Audit preservado.
+- Sin mezcla accidental ES/EN añadida en esta fase.
+- El build label visible y el commit de producción siguen siendo referencia operativa de validación.
+- Lección contractual importante:
+  - cuando se añadan nuevos templates v1, los tests de coverage deben usar wording alineado con el Oracle real servido por `cards_index`.
+
+=====================================================================
+END UPDATE (2026-03-06)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-07) — UI Contract Addenda — cierre local de A2.8 sin cambios visibles todavía
+=====================================================================
+
+A) Estado de contrato UI tras A2.8
+- Durante esta sesión se cerró localmente en `main` la microfase A2.8:
+  - corpus canónico
+  - ontología mínima
+  - AbilityIR mínima
+  - lowering mínimo
+  - reglas relacionales mínimas
+  - métricas mínimas de mazo
+  - política anti-drift
+- Importante:
+  - en esta sesión NO se hizo despliegue nuevo a Cloudflare
+  - por tanto, el contrato UI visible en producción NO cambia todavía respecto al último estado desplegado conocido
+
+B) No breaking changes de contrato UI
+- Se mantienen intactos:
+  - inputs del analizador
+  - parser MTGA export / share token
+  - structural engine
+  - SPS
+  - edge scoring
+  - MC-SSL
+  - semantic overlay visible actual
+- La UI sigue siendo:
+  - 100% client-side
+  - determinista
+  - con marcadores HTML/probe ya vigentes
+
+C) Relación entre A2.8 y la UI
+- Lo incorporado en A2.8 es, por ahora, infraestructura y contrato interno de motor:
+  - `sem_anchor_corpus_matrix_v1.json`
+  - `sem_ontology_min_v1.json`
+  - `sem_ability_ir_min_v1.json`
+  - `sem_relation_rules_min_v1.json`
+  - `sem_deck_relation_metrics_min_v1.json`
+  - `sem_validation_policy_min_v1.json`
+  - `lower_to_ability_ir_min_v1.ts`
+  - `sem_lower_to_ability_ir_min_v1.test.ts`
+- Ninguno de estos cambios introduce aún una obligación de cambio visible inmediato en el panel del analizador.
+
+D) Invariante contractual reafirmado
+- Sigue vigente y reforzado por A2.8:
+  - el wording real servido por `cards_index` prevalece sobre fixtures sintéticos
+- La lección de Howling Mine pasa a consolidarse no solo como corrección puntual, sino como regla metodológica para futuras capas semánticas.
+
+E) Qué NO debe inferirse de A2.8
+- NO implica aún:
+  - nuevo panel visible de AbilityIR
+  - nuevas métricas visibles al usuario final
+  - cambios en `Coverage / Reasons / Audit`
+  - cambios en el wording visible del overlay
+- Todo eso requerirá:
+  - integración explícita en runtime visible
+  - y validación postdeploy si afecta comportamiento observable
+
+F) Consecuencia operativa para el contrato UI
+- La frontera correcta queda así:
+  - A2.8 cerrada como base interna del motor
+  - contrato UI estable y sin breaking changes
+  - futura visibilidad de A2.8 solo cuando se abra una fase específica de integración visible
+
+=====================================================================
+END UPDATE (2026-03-07)
+=====================================================================
+=====================================================================
+ACTUALIZACIÓN (2026-03-08) — UI/OVERLAY TRAS BRIDGE MÍNIMO V1
+=====================================================================
+
+ESTADO GENERAL
+- A diferencia del estado 2026-03-07, ya NO estamos solo ante infraestructura interna de motor.
+- Ahora existe una mejora visible en el comportamiento del overlay semántico experimental tras desplegar `77bb2e5` en producción.
+- Importante:
+  - sigue sin haber panel nuevo específico de bridge
+  - sigue sin haber AbilityIR visible como panel dedicado
+  - el cambio visible se produce dentro de la superposición semántica existente
+
+NO BREAKING CHANGES PRESERVADAS
+- Se mantienen intactos:
+  - input del analizador
+  - parser MTGA / share token
+  - structural summary
+  - SPS
+  - edge scoring estructural
+  - MC-SSL
+  - PDF export
+- La UI sigue siendo 100% client-side.
+
+CAMBIO VISIBLE CONFIRMADO EN PRODUCCIÓN
+- build desplegada y validada:
+  - `77bb2e5`
+- En el mazo Rakdos deliberado de validación, la UI ya refleja:
+  - señal encontrada (experimental)
+  - `SOS = 3.43`
+  - `puntuación total de conexiones = 30`
+  - conexiones principales por `Event · SACRIFICE`
+- Esto confirma que el overlay ya no está dominado únicamente por `ENTERS_BATTLEFIELD` para ese slice de prueba.
+
+LO QUE LA UI TODAVÍA NO DEBE PROMETER
+- No debe afirmarse todavía:
+  - que la familia `CREATURE_DIES` esté plenamente resuelta
+  - que el overlay ya capture toda la cadena sacrifice/dies/payoff
+  - que exista un score semántico global definitivo o competitivo
+- El análisis visible actual sigue mostrando:
+  - `CREATURE_DIES` en “Efectos sin pareja” para el mazo Rakdos validado
+
+CONTRATO UI ACTUALIZADO (lectura correcta)
+A partir de esta actualización, el contrato visible correcto es:
+- la capa semántica experimental ya puede mostrar mejoras visibles derivadas de bridges internos mínimos del overlay
+- esas mejoras pueden cambiar el ranking/top de conexiones semánticas sin tocar la UI estructural del analizador
+- cualquier cambio futuro que altere:
+  - coverage
+  - audit
+  - ordering visible
+  - o conexiones principales del overlay
+  exigirá nueva validación postdeploy según `sem_validation_policy_min_v1.json`
+
+ARTEFACTOS DE BASE RELEVANTES (sin render dedicado propio)
+- `sem_overlay_bridge_min_v1.json`
+- `sem_bridge_evidence.ts`
+- `sem_overlay_bridge_min_v1.test.ts`
+- `sem_overlay_rakdos_signal_diagnose.test.ts`
+
+FRONTERA UI REAFIRMADA
+- El bridge mínimo v1 NO introduce:
+  - nuevo panel
+  - nueva interacción de usuario
+  - nuevo input
+  - nuevo modo de análisis visible separado
+- Sí introduce una mejora observable de resultados dentro del overlay semántico experimental ya existente.
+
+SIGUIENTE FRENTE UI/OVERLAY
+- Lo siguiente que podría afectar la UI visible no es un panel nuevo, sino una mejora del cierre de:
+  - `CREATURE_DIES -> payoff`
+- Antes de tocar copy o UI, debe aislarse ese cuello de botella en el motor/overlay.
+
+=====================================================================
+END UPDATE (2026-03-08)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-08) — UI Contract / Overlay visible tras bridge mínimo CREATURE_DIES -> payoff
+=====================================================================
+
+ESTADO UI / PRODUCTO
+- La UI del analizador NO cambia de paneles ni de interacción.
+- No se ha añadido:
+  - nuevo panel
+  - nuevo input
+  - nuevo toggle
+  - nuevo modo semántico separado
+- Sí cambia el comportamiento visible del overlay semántico experimental en resultados concretos.
+
+CAMBIO VISIBLE ESPERADO EN UI
+- En escenarios Rakdos con perfiles tipo:
+  - `Blood Artist`
+  - `Serrated Scorpion`
+- el overlay puede mostrar ya conexiones locales explícitas del tipo:
+  - `CREATURE_DIES`
+  - + `LOSE_LIFE`
+  - + `GAIN_LIFE`
+  - o `DEAL_DAMAGE`
+- La explicación visible de razones debe reflejar esas huellas como parte de la conexión.
+
+VALIDACIÓN WEB CONFIRMADA
+Build visible en producción:
+- `eba09f6`
+
+Observaciones UI reales:
+- aparece:
+  - `Blood Artist -> Blood Artist`
+  con razones de:
+    - `Event · CREATURE_DIES`
+    - `Action · GAIN_LIFE`
+    - `Action · LOSE_LIFE`
+- aparece:
+  - `Serrated Scorpion -> Serrated Scorpion`
+  con razones de:
+    - `Event · CREATURE_DIES`
+    - `Action · DEAL_DAMAGE`
+    - `Action · GAIN_LIFE`
+- `CREATURE_DIES` deja de verse como efecto sin pareja en ese deck de validación
+
+LECTURA CORRECTA DEL CONTRATO UI
+- La UI no promete todavía:
+  - cierre cross-card
+  - causalidad multi-hop
+  - jerarquía visible dominante de estas nuevas conexiones
+- La UI sí puede prometer ya:
+  - cierre local explícito intra-profile para la familia mínima aprobada
+  - explicación visible de razones coherentes con el bridge
+
+IMPLICACIÓN SOBRE DIAGNÓSTICOS VISIBLES
+- Los tests/lecturas de overlay que antes asumían:
+  - `CREATURE_DIES` fuera de top edges
+  - `LIFE_GAIN` fuera de top edges
+  ya no deben tratarse como invariantes UI post-bridge
+- El estado correcto post-bridge es:
+  - `CREATURE_DIES` puede entrar en top edges
+  - `LIFE_GAIN` puede entrar en top edges
+  - `ENTERS_BATTLEFIELD` puede seguir dominando la jerarquía visible global
+
+FRONTERA UI REAFIRMADA
+- La microfase cerrada es de motor/overlay, no de rediseño visual.
+- El siguiente frente UI, si se abre, sería:
+  - mejorar prominencia/lectura del resultado semántico post-bridge
+  - no rehacer la mecánica causal recién cerrada
+
+=====================================================================
+END UPDATE (2026-03-08)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-09) — UI Contract / prominencia visible mínima post-bridge validada en producción
+=====================================================================
+
+ESTADO UI / PRODUCTO
+- No se añadieron paneles nuevos.
+- No se añadió toggle nuevo.
+- No cambió la interacción base del analizador.
+- La intervención fue estrictamente de lectura visible del overlay ya existente.
+
+CAMBIO VISIBLE APROBADO
+- El overlay experimental visible puede reservar de forma estrecha una plaza mínima para closures locales relevantes de la familia:
+  - `CREATURE_DIES -> payoff`
+- La UI visible sigue consumiendo el top de conexiones, pero ya no entierra completamente esa familia cuando existe un closure local fuerte.
+
+BUILD VALIDADA EN PRODUCCIÓN
+- `04dae4b`
+
+OBSERVACIONES UI REALES EN PRODUCCIÓN
+En el deck Rakdos deliberado de validación visible aparecen ya en “Conexiones semánticas principales”:
+- `Blood Artist -> Blood Artist`
+- `Serrated Scorpion -> Serrated Scorpion`
+- `Zulaport Cutthroat -> Zulaport Cutthroat`
+
+Razones visibles observables:
+- `Event · CREATURE_DIES`
+- `Action · GAIN_LIFE`
+- `Action · LOSE_LIFE`
+- `Action · DEAL_DAMAGE`
+
+LECTURA CORRECTA DEL CONTRATO UI
+- La UI ya puede prometer:
+  - visibilidad mínima real de closures locales post-bridge relevantes
+  - explicación visible de razones coherentes intra-profile
+  - selección determinista del representante visible cuando compiten varios candidatos elegibles
+- La UI NO promete todavía:
+  - jerarquía global rediseñada
+  - scoring global nuevo
+  - cierre cross-card
+  - desaparición completa de todo residuo `CREATURE_DIES` en buckets de huérfanos
+
+FRONTERA UI REAFIRMADA
+- Esta microfase sigue siendo de overlay visible, no de rediseño visual.
+- No hay:
+  - nuevo bloque visual dedicado
+  - nueva sección separada para edges locales
+  - nuevo ordenamiento global general del producto
+- La mejora es mínima, localizada y compatible con la arquitectura UI actual.
+
+NOTA EXPLÍCITA DE SEGUIMIENTO UI
+- En el mazo de validación más cargado sigue apareciendo:
+  - `Event · CREATURE_DIES · 5` en “Efectos sin pareja”.
+- Lectura correcta del producto:
+  - esto NO invalida la mejora visible lograda en conexiones principales
+  - esto NO reabre la microfase v1.1.1
+  - esto queda registrado como posible futura microfase separada de coverage/bucketing
+
+DECISIÓN UI AL CIERRE
+- La microfase v1.1 / v1.1.1 queda cerrada en UI/producto con:
+  - cambio visible real en producción
+  - sin panel nuevo
+  - sin contrato visual inflado
+- Cualquier trabajo futuro sobre “Efectos sin pareja” debe abrirse como frente separado y con objetivo propio.
+
+=====================================================================
+END UPDATE (2026-03-09)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-09) — UI CONTRACT / ORPHAN BUCKETING REFINEMENT CLOSED
+=====================================================================
+
+ESTADO PREVIO DEL CONTRATO UI
+- La UI ya podía prometer:
+  - visibilidad mínima real de closures locales post-bridge
+  - representación visible coherente de `Blood Artist`, `Serrated Scorpion`, `Zulaport Cutthroat`
+- Seguía observado en el mazo heavy Rakdos:
+  - `Event · CREATURE_DIES · 5` en “Efectos sin pareja”
+
+NUEVA MICROFASE CERRADA
+Se ejecutó y cerró una microfase separada de bucketing/orphan classification para `CREATURE_DIES`.
+
+LECTURA CORRECTA DEL CONTRATO UI TRAS ec6ca93
+La UI ahora puede prometer, para esta familia:
+- conservación de closures locales visibles ya cerrados
+- reducción del bucket visible de `CREATURE_DIES` cuando parte del residuo ya estaba absorbido por cierres locales válidos
+- preservación de residuo legítimo cuando siguen existiendo listeners sin payoff local válido
+
+LO QUE LA UI SIGUE SIN PROMETER
+- desaparición completa de todo `CREATURE_DIES` en “Efectos sin pareja”
+- contabilidad semántica perfecta evento-a-evento a nivel de producto
+- rediseño visual global del overlay
+- scoring global nuevo
+- cross-card
+
+EVIDENCIA VISIBLE EN PRODUCCIÓN
+Build:
+- `ec6ca93`
+
+Deck heavy Rakdos de validación:
+- mantiene visibles:
+  - `Blood Artist -> Blood Artist`
+  - `Serrated Scorpion -> Serrated Scorpion`
+  - `Zulaport Cutthroat -> Zulaport Cutthroat`
+- “Efectos sin pareja”:
+  - antes: `Event · CREATURE_DIES · 5`
+  - después: `Event · CREATURE_DIES · 2`
+
+LECTURA UI CORRECTA DEL CAMBIO
+- La UI muestra ahora mejor la separación entre:
+  - cierre local ya absorbido
+  - residuo todavía huérfano
+- El producto no “barre” el bucket a cero de forma artificial.
+- El resultado visible es más fiel y más sobrio.
+
+FRONTERA UI REAFIRMADA
+- No hay:
+  - panel nuevo
+  - nueva zona visual especializada
+  - rediseño del ranking general
+- El cambio sigue estando detrás del mismo contrato visual existente.
+
+DECISIÓN UI AL CIERRE
+- La microfase de bucketing para `CREATURE_DIES` queda cerrada también a nivel de contrato UI.
+- No abrir más trabajo de producto aquí salvo nuevo síntoma diferente y explícitamente formulado.
+
+=====================================================================
+END UPDATE (2026-03-09)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-09) — No UI contract change from A2.9 initial scaffolding
+=====================================================================
+
+ESTADO REAL
+- A2.9 inicial añadió infraestructura semántica interna en feature branch:
+  - contrato A2.9
+  - tipos
+  - servicio
+  - AbilityIR `semantic_hints`
+  - wiring mínimo en lowering
+- No hubo merge a `main`.
+- No hubo deploy a Cloudflare Pages.
+- No hubo validación visible de producto para esta subfase.
+
+LECTURA CORRECTA DEL CONTRATO UI
+- El contrato UI público del analyzer NO cambia en este punto.
+- No se añaden:
+  - paneles nuevos
+  - textos visibles nuevos
+  - nuevas promesas de interpretación al usuario
+  - nueva explicación visible de zone/LKI en producto
+- `semantic_hints` es infraestructura interna de motor / IR.
+- `semantic_hints` NO forma parte del contrato visual/promesa pública del analyzer.
+
+LO QUE LA UI SIGUE PUDIENDO PROMETER
+- Lo ya prometido y validado previamente en producción.
+- Nada adicional por A2.9 inicial hasta:
+  - merge a `main`
+  - deploy
+  - validación visible correspondiente
+
+LO QUE LA UI TODAVÍA NO DEBE PROMETER
+- comprensión visible de:
+  - zone identity
+  - LKI
+  - leaves-the-battlefield semantics
+- mejora visible en coverage o explainability derivada de A2.9
+- cambio de comportamiento observable del analyzer en producción
+
+DECISIÓN DE CONTRATO
+- Se actualiza esta fuente solo para dejar constancia de:
+  - ausencia de cambio UI
+  - separación entre infraestructura interna y contrato visible
+- No abrir una nueva versión funcional del contrato UI a partir de este avance aislado.
+
+=====================================================================
+END UPDATE (2026-03-09)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-10) — UI contract post-merge/post-deploy de A2.9 inicial
+=====================================================================
+
+ESTADO REAL DEL CONTRATO UI
+- A2.9 inicial ya no está solo en feature branch:
+  - quedó mergeada a `main`
+  - quedó desplegada en producción
+  - quedó validada visualmente en la web real
+- Aun así, NO se produjo un rediseño amplio del contrato UI.
+- La familia de contrato público sigue siendo la misma (`UI_CONTRACT_ANALYZER_V1.9`), con una actualización de estado y de lectura visible del overlay ya existente.
+
+LO QUE SÍ CAMBIA EN LA LECTURA DEL CONTRATO
+- El analyzer desplegado acepta ya como comportamiento visible correcto que:
+  - `local_only` siga siendo visible por defecto en la lectura semántica relevante
+  - edges `local_only` puedan representarse como self-loop visible
+  - `edgesTop` pueda contener un closure local `CREATURE_DIES` cuando ese representante visible es semánticamente el adecuado
+- Esto no introduce una nueva UI; introduce una lectura contractual más precisa del overlay visible ya existente.
+
+LO QUE NO CAMBIA
+- No hay:
+  - panel nuevo
+  - toggle nuevo
+  - nueva sección dedicada a zone/LKI
+  - nueva interacción base del usuario
+  - nueva versión pública del analyzer distinta en inputs/outputs
+- `semantic_hints` y la infraestructura A2.9 siguen siendo internas al motor / IR, no contrato visual directo.
+
+CONTRATO VISIBLE CORRECTO TRAS LA CONVERGENCIA
+A partir del estado desplegado `73d9ac8`, la UI puede prometer correctamente:
+- que el overlay experimental visible puede mostrar closures locales explícitos de la familia `CREATURE_DIES -> payoff`
+- que esos closures pueden aparecer como self-loops `local_only` visibles
+- que la presencia de esos edges visibles NO debe interpretarse como bug gráfico ni como violación genérica del contrato
+- que la prominencia mínima de esa familia puede reservar una plaza visible en `edgesTop` cuando el contrato interno así lo exige
+
+EJEMPLOS VISIBLES YA VALIDADOS EN PRODUCCIÓN
+- `Blood Artist -> Blood Artist`
+- `Serrated Scorpion -> Serrated Scorpion`
+- `Zulaport Cutthroat -> Zulaport Cutthroat`
+
+Razones visibles observadas/aceptadas:
+- `Event · CREATURE_DIES`
+- `Action · GAIN_LIFE`
+- `Action · LOSE_LIFE`
+- `Action · DEAL_DAMAGE`
+
+IMPLICACIÓN CONTRACTUAL IMPORTANTE
+- La regla pública correcta ya no es:
+  - “ningún edge visible puede ser self-loop”
+- La regla correcta pasa a ser:
+  - self-loops siguen prohibidos para edges normales
+  - self-loops visibles sí son aceptables para `local_only`
+- Esto alinea UI, tests residuales y contrato real del overlay.
+
+RELACIÓN ENTRE A2.9 Y UI
+- A2.9 aporta infraestructura dura para zone/identity/LKI.
+- Esa infraestructura no se expone como panel propio ni como texto nuevo al usuario.
+- Su efecto UI directo en esta entrega es indirecto:
+  - permite que la convergencia semántica del overlay cierre sin romper el contrato visible ya desplegado.
+
+VALIDACIÓN EN PRODUCCIÓN
+- Build visible validada:
+  - `73d9ac8`
+- PR `#46` mergeada con checks verdes.
+- Cloudflare Production desplegada correctamente.
+- Prueba web funcional completada en el analizador público.
+
+DECISIÓN DE CONTRATO
+- No abrir nueva versión mayor/minor del contrato UI.
+- Mantener la familia `UI_CONTRACT_ANALYZER_V1.9`.
+- Registrar solo esta actualización acumulativa de lectura visible post-merge/post-deploy.
+
+FRONTERA UI REAFIRMADA
+- El cambio sigue siendo de overlay/semántica visible, no de rediseño visual.
+- El siguiente frente UI, si se abre, deberá ser por un cambio visible nuevo y explícito, no por volver a documentar A2.9 inicial.
+
+=====================================================================
+END UPDATE (2026-03-10)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-11) — UI contract post-merge/post-deploy de A2.10
+=====================================================================
+
+ESTADO REAL DEL CONTRATO UI
+- A2.10 (cost / target / legality minimal semantics) ya no está solo en
+  feature branch:
+  - quedó mergeada a `main`
+  - quedó desplegada en producción desde `main`
+  - la PR `#47` quedó cerrada correctamente
+- Aun así, NO se abre una nueva versión pública del contrato UI.
+- La familia visible sigue siendo `UI_CONTRACT_ANALYZER_V1.9`.
+
+LO QUE SÍ CAMBIA DOCUMENTALMENTE
+- Se acepta como parte del estado real del producto que el motor ya
+  incorpora, de forma interna y no disruptiva, una capa mínima para:
+  - separar coste de efecto
+  - separar target formal de referencia textual
+  - separar legality gate de efecto
+- Esa capa mínima queda conectada al lowering a través de
+  `semantic_hints.cost_target_legality_min`.
+- Esta adición es interna al motor / AbilityIR mínimo y NO cambia el
+  contrato visual base del analizador.
+
+LO QUE NO CAMBIA
+- No hay:
+  - panel nuevo
+  - toggle nuevo
+  - nueva sección dedicada a cost/target/legality
+  - cambio de inputs del analizador
+  - cambio de formato visible del resultado público
+  - cambio explícito de scoring o explainability UI derivado de A2.10
+- La UI sigue leyendo el producto como el mismo analizador público, con
+  la misma familia contractual visible ya documentada.
+
+CAMBIO INTERNO RELEVANTE PARA LA LECTURA DEL CONTRATO
+- El contrato visible correcto puede asumir desde ahora que el motor ya
+  dispone de un mínimo scaffolding interno para coste / target /
+  legality, pero sin exponerlo todavía como surface UX.
+- Esto significa que una futura microfase sí podrá reutilizar esta base
+  sin volver a tocar la versión pública del contrato, salvo que aparezca
+  un cambio visual nuevo y explícito.
+
+VALIDACIÓN RELEVANTE DE ESTA ENTREGA
+- PR `#47` mergeada y cerrada.
+- Checks de PR verdes.
+- Cloudflare Pages Production desplegada correctamente sobre `main` en:
+  - `c86419e`
+- No se documenta en esta entrega una nueva verificación manual de UX
+  visual específica, porque A2.10 no introdujo superficie UI nueva.
+- La validación principal de esta fase fue:
+  - anilla semántica ampliada verde
+  - test de overlay coverage cercano verde
+  - `npm run build` verde
+  - deploy de producción correcto
+
+DECISIÓN DE CONTRATO
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- Registrar A2.10 como actualización acumulativa interna del motor, no
+  como revisión visible de la interfaz pública.
+- Reservar un eventual cambio de contrato UI para una microfase futura
+  que realmente cambie la surface del producto.
+
+ESTADO OPERATIVO CORRECTO TRAS A2.10
+- `main` alineada con producción en:
+  - `c86419e`
+- branch feature `feat/a2.10-cost-target-legality-min`:
+  - mergeada
+  - eliminada en remoto
+  - eliminada en local
+- repo GitHub pasado a privado por decisión operativa del proyecto.
+
+=====================================================================
+ADENDA A2.10 FOLLOW-UP — BRIDGE MÍNIMO DEAL_DAMAGE -> LOSE_LIFE
+=====================================================================
+
+LECTURA DE CONTRATO
+- No se abre una nueva versión pública de UI.
+- Se mantiene `UI_CONTRACT_ANALYZER_V1.9`.
+- El cambio relevante se registra como actualización acumulativa de la
+  surface experimental de overlay semántico, no como rediseño visible
+  general del analizador.
+
+CAMBIO FUNCIONAL ACUMULADO
+- La superficie experimental de `Superposición semántica` puede ahora
+  reflejar, dentro de un scope mínimo y conservador, un self-edge local
+  para cartas con texto explícito de daño a jugador/oponente que induce
+  `LOSE_LIFE`.
+- Esto no significa una ontología general nueva de targets en la UI.
+- Sigue siendo una capacidad estrecha y contractual, alineada con el
+  motor:
+  - `DEAL_DAMAGE -> LOSE_LIFE`
+  - `local_only`
+  - intra-profile
+  - score base `0`
+
+LO QUE NO CAMBIA EN CONTRATO UI
+- No se añade un panel nuevo.
+- No cambia el layout del analizador.
+- No se introduce semántica visible general de target-player.
+- No se cambia el ordenamiento global del informe ni su scoring.
+- No se promete al usuario que cualquier carta con `any target` vaya a
+  mostrar el mismo comportamiento.
+
+VALIDACIÓN RELEVANTE DE SURFACE
+- La evidencia visible concluyente se obtuvo con el slice mínimo:
+  - `4 Boltwave`
+  - `56 Mountain`
+- En producción (`build: c142b81`) la exportación web/PDF mostró:
+  - `Boltwave -> Boltwave (puntuación 0)`
+  - razones:
+    - `Action · DEAL_DAMAGE × 1`
+    - `Action · LOSE_LIFE × 1`
+- Esto prueba que la surface actual puede exponer el bridge local cuando
+  el grafo no queda dominado por ruido adicional.
+
+INTERPRETACIÓN CORRECTA
+- Este follow-up no obliga a subir versión de contrato UI.
+- Sí obliga a registrar que la surface experimental ya puede hacer
+  visible una nueva familia mínima de bridge bajo condiciones
+  explícitamente estrechas.
+- La prominencia visible en mazos más grandes sigue siendo una cuestión
+  aparte y no queda cerrada por esta entrega.
+
+ESTADO OPERATIVO TRAS EL FOLLOW-UP
+- PR `#48` mergeada y cerrada.
+- `main` alineada con producción en:
+  - `c142b81`
+- Branch feature `feat/diagnose-damage-to-player-life-lost-bridge-v1`:
+  - mergeada
+  - eliminada en remoto
+  - eliminada en local
+- Deploy de Cloudflare Pages Production correcto.
+
+DECISIÓN DE CONTRATO
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- Registrar este cambio como capacidad acumulativa de la surface
+  experimental del overlay semántico.
+- Reservar una futura revisión de contrato UI solo si una microfase
+  posterior cambia de manera explícita la prominencia, el ordenamiento o
+  nuevos bloques visibles del informe.
+
+=====================================================================
+END UPDATE (2026-03-11)
+=====================================================================
+
+
+=====================================================================
+ADENDA (2026-03-12) — UI contract / bridge mínimo LIFE_GAIN -> ADD_COUNTERS visible en producción
+=====================================================================
+
+LECTURA DE CONTRATO
+- No se abre una nueva versión pública de UI.
+- Se mantiene `UI_CONTRACT_ANALYZER_V1.9`.
+- El cambio relevante se registra como actualización acumulativa de la
+  surface experimental del overlay semántico.
+
+CAMBIO FUNCIONAL ACUMULADO
+- La surface experimental de `Superposición semántica` puede ahora
+  reflejar, dentro de un scope mínimo y conservador, un self-edge local
+  para cartas con payoff explícito de life gain que añade counters.
+- Esto no significa una ontología global nueva de “counters matter”.
+- Sigue siendo una capacidad estrecha y contractual, alineada con el
+  motor:
+  - `LIFE_GAIN -> ADD_COUNTERS`
+  - `local_only`
+  - intra-profile
+  - score base `0`
+
+LO QUE NO CAMBIA EN CONTRATO UI
+- No se añade un panel nuevo.
+- No cambia el layout del analizador.
+- No se introduce taxonomía visible general de counters.
+- No se cambia el ordenamiento global del informe ni su scoring.
+- No se promete al usuario que cualquier carta con counters o life gain
+  vaya a mostrar el mismo comportamiento fuera del alcance contractual.
+
+VALIDACIÓN RELEVANTE DE SURFACE
+- La evidencia visible concluyente se obtuvo con el slice mínimo:
+  - `4 Ajani's Pridemate`
+  - `4 Revitalize`
+  - `52 Plains`
+- En producción (`build: 417496d`) la exportación web/PDF mostró:
+  - `Revitalize -> Ajani's Pridemate (puntuación 1)`
+    - `Event · LIFE_GAIN × 1`
+  - `Ajani's Pridemate -> Ajani's Pridemate (puntuación 0)`
+    - `Event · LIFE_GAIN × 1`
+    - `Action · ADD_COUNTERS × 1`
+- `Efectos sin pareja` quedó vacío en esa prueba.
+- Esto prueba que la surface actual puede exponer esta nueva familia de
+  bridge local cuando el grafo se valida con un slice pequeño y limpio.
+
+INTERPRETACIÓN CORRECTA
+- Esta microfase no obliga a subir versión de contrato UI.
+- Sí obliga a registrar que la surface experimental ya puede hacer
+  visible una tercera familia mínima de bridge bajo condiciones
+  explícitamente estrechas.
+- La prominencia visible en mazos más grandes sigue siendo una cuestión
+  aparte y no queda cerrada por esta entrega.
+
+ESTADO OPERATIVO TRAS LA MICROFASE
+- `main` alineada con producción en:
+  - `417496d`
+- Deploy de Cloudflare Pages Production:
+  - correcto
+- La validación visible mínima ya existe para:
+  - `CREATURE_DIES -> payoff`
+  - `DEAL_DAMAGE -> LOSE_LIFE`
+  - `LIFE_GAIN -> ADD_COUNTERS`
+
+DECISIÓN DE CONTRATO
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- Registrar este cambio como capacidad acumulativa adicional de la
+  surface experimental del overlay semántico.
+- Reservar una futura revisión de contrato UI solo si una microfase
+  posterior cambia de manera explícita la prominencia, el ordenamiento o
+  nuevos bloques visibles del informe.
+
+=====================================================================
+END UPDATE (2026-03-12)
+=====================================================================
+
+
+=====================================================================
+ADENDA (2026-03-12) — UI contract / bridge mínimo DAMAGE_WITH_LIFELINK -> LIFE_GAIN visible en producción
+=====================================================================
+
+LECTURA DE CONTRATO
+- No se abre una nueva versión pública de UI.
+- Se mantiene `UI_CONTRACT_ANALYZER_V1.9`.
+- El cambio relevante se registra como actualización acumulativa de la
+  surface experimental del overlay semántico.
+
+CAMBIO FUNCIONAL ACUMULADO
+- La surface experimental de `Superposición semántica` puede ahora
+  reflejar, dentro de un scope mínimo y conservador, un self-edge local
+  para cartas que hacen daño y tienen evidencia explícita de `lifelink`,
+  cerrando localmente hacia `LIFE_GAIN`.
+- Esto no significa una ontología visible global nueva de lifelink,
+  damage de combate o gain-life.
+- Sigue siendo una capacidad estrecha y contractual, alineada con el
+  motor:
+  - `DAMAGE_WITH_LIFELINK -> LIFE_GAIN`
+  - `local_only`
+  - intra-profile
+  - score base `0`
+
+LO QUE NO CAMBIA EN CONTRATO UI
+- No se añade un panel nuevo.
+- No cambia el layout del analizador.
+- No se introduce taxonomía visible general de lifelink.
+- No se cambia el ordenamiento global del informe ni su scoring.
+- No se promete al usuario que cualquier carta con lifelink vaya a
+  mostrar el mismo comportamiento fuera del alcance contractual.
+
+VALIDACIÓN RELEVANTE DE SURFACE
+- La evidencia visible concluyente se obtuvo con el slice mínimo:
+  - `4 Archangel of Wrath`
+  - `56 Plains`
+- En producción (`build: c41912f`) la exportación web/PDF mostró:
+  - `Archangel of Wrath -> Archangel of Wrath (puntuación 0)`
+    - `Event · LIFE_GAIN × 1`
+    - `Action · DEAL_DAMAGE × 1`
+- `Efectos sin pareja` siguió mostrando:
+  - `Event · ENTERS_BATTLEFIELD · 1`
+- Esto prueba que la surface actual puede exponer esta nueva familia de
+  bridge local cuando el grafo se valida con un slice pequeño y limpio.
+
+INTERPRETACIÓN CORRECTA
+- Esta microfase no obliga a subir versión de contrato UI.
+- Sí obliga a registrar que la surface experimental ya puede hacer
+  visible una cuarta familia mínima de bridge bajo condiciones
+  explícitamente estrechas.
+- La prominencia visible en mazos más grandes sigue siendo una cuestión
+  aparte y no queda cerrada por esta entrega.
+
+FOLLOW-UP EXPLÍCITO DE UI / SUMMARY
+- Se registra una inconsistencia de surface pendiente:
+  - el banner `⚠️ Sin señal (experimental)` y `SOS: 0.00` pueden
+    coexistir con conexiones `local_only` visibles en el listado de
+    `Conexiones semánticas principales`.
+- La interpretación correcta es:
+  - el bridge nuevo sí está funcionando y ya aflora en surface
+  - la discrepancia está en la lógica de summary/prominence
+- Este follow-up debe tratarse como microfase separada de UI/summary y
+  no como reapertura de la familia semántica ya validada.
+
+ESTADO OPERATIVO TRAS LA MICROFASE
+- `main` alineada con producción en:
+  - `c41912f`
+- Deploy de Cloudflare Pages Production:
+  - correcto
+- La validación visible mínima ya existe para:
+  - `CREATURE_DIES -> payoff`
+  - `DEAL_DAMAGE -> LOSE_LIFE`
+  - `LIFE_GAIN -> ADD_COUNTERS`
+  - `DAMAGE_WITH_LIFELINK -> LIFE_GAIN`
+
+DECISIÓN DE CONTRATO
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- Registrar este cambio como capacidad acumulativa adicional de la
+  surface experimental del overlay semántico.
+- Reservar una futura revisión de contrato UI solo si una microfase
+  posterior cambia de manera explícita la prominencia, el ordenamiento,
+  el banner de resumen o nuevos bloques visibles del informe.
+
+=====================================================================
+END UPDATE (2026-03-12)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-12) — UI Contract Addenda — UI summary status v1 post-merge/post-deploy
+=====================================================================
+
+ESTADO REAL DEL CONTRATO UI
+- La deuda explícita de summary/UI detectada tras el cierre de
+  `DAMAGE_WITH_LIFELINK -> LIFE_GAIN` ya no queda abierta en su forma
+  principal:
+  - cuando el overlay muestra conexiones visibles en
+    `Conexiones semánticas principales`,
+    el banner superior ya no debe decir:
+    `⚠️ Sin señal (experimental)`
+- La familia visible sigue siendo:
+  - `UI_CONTRACT_ANALYZER_V1.9`
+- No se abre nueva versión mayor/minor del contrato UI
+
+CAMBIO VISIBLE ACUMULADO
+- El estado del banner superior del overlay se interpreta ahora así:
+  - `✅ Señal encontrada (experimental)` si:
+    - `SOS > 0`
+    - o existen edges visibles en el listado principal
+  - `⚠️ Sin señal (experimental)` solo si:
+    - `SOS == 0`
+    - y no hay edges visibles
+- Esta lectura visible se aplica solo al summary principal del overlay
+
+LO QUE NO CAMBIA EN CONTRATO UI
+- `SOS` sigue significando:
+  - magnitud logarítmica del total de conexiones detectadas
+- `puntuación total de conexiones` sigue mostrando el valor real del
+  motor
+- No cambia:
+  - scoring
+  - ordenación
+  - layout del analizador
+  - shape de `edgesTop`
+  - shape de `metrics`
+  - paneles estructurales
+  - parser MTGA export / share token
+
+ARTEFACTOS UI TOCADOS
+- `src/components/analyzer/SemanticOverlayPanel.tsx`
+- `src/components/analyzer/tests/semantic_overlay_panel.test.ts`
+
+VALIDACIÓN CONTRACTUAL RELEVANTE
+- Suite focal verde:
+  - `npx vitest run src/components/analyzer/tests/semantic_overlay_panel.test.ts`
+- Build verde:
+  - `npm run build`
+- Producción validada:
+  - commit visible `d270ac7`
+- Slice visible validado:
+  - `4 Archangel of Wrath`
+  - `56 Plains`
+
+SALIDA VISIBLE CORRECTA EN PRODUCCIÓN (`build: d270ac7`)
+- Banner:
+  - `✅ Señal encontrada (experimental)`
+- Métricas intactas:
+  - `SOS: 0.00`
+  - `puntuación total de conexiones: 0`
+- Conexión visible:
+  - `Archangel of Wrath -> Archangel of Wrath (puntuación 0)`
+    - `Event · LIFE_GAIN × 1`
+    - `Action · DEAL_DAMAGE × 1`
+
+INTERPRETACIÓN CONTRACTUAL CORRECTA
+- La surface experimental ya no debe inducir una lectura falsa de
+  ausencia total de señal cuando el propio panel está mostrando una
+  conexión semántica visible
+- Esta corrección:
+  - no redefine qué es `SOS`
+  - no redefine qué es score
+  - no convierte edges `local_only` en edges puntuados
+- Simplemente alinea:
+  - banner principal
+  - evidencia visible ya presente en el panel
+
+PENDIENTE MENOR RESIDUAL DE SURFACE
+- Sigue observándose en este slice:
+  - `Efectos repetidos`
+    - `No aplicable (sin señal).`
+- Esa línea ya no queda perfectamente alineada con el banner superior
+- Se registra como deuda menor residual de copy/summary secundaria
+- No bloquea este cierre ni obliga a subir versión de contrato UI
+
+DECISIÓN DE CONTRATO
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`
+- Registrar esta microfase como actualización acumulativa de lectura
+  visible del overlay semántico
+- Reservar cualquier revisión posterior solo si se decide tocar:
+  - el copy residual de bloques secundarios
+  - la prominence
+  - el ordenamiento
+  - o nuevos estados visibles adicionales del overlay
+
+=====================================================================
+END UPDATE (2026-03-12)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-12) — UI repeated-effects status alignment v1
+=====================================================================
+
+OBJETO CONTRACTUAL DE ESTA MICROFASE
+- Alinear la sección secundaria `Efectos repetidos` con el estado visible
+  ya corregido por `UI summary status v1`
+- Resolver la incoherencia:
+  - banner principal:
+    - `✅ Señal encontrada (experimental)`
+  - bloque secundario:
+    - `No aplicable (sin señal).`
+
+CAMBIO VISIBLE CONTRACTUAL
+- La línea fallback de `Efectos repetidos` pasa a ser:
+  - `No se detectaron efectos repetidos relevantes.`
+- La sección deja de usar un copy de ausencia global (`sin señal`)
+- El empty-state se interpreta ahora como ausencia local de grupos
+  de redundancia relevantes
+
+LO QUE NO CAMBIA EN CONTRATO UI
+- El banner principal sigue regido por la microfase anterior:
+  - `✅ Señal encontrada (experimental)` si:
+    - `SOS > 0`
+    - o existen edges visibles en el listado principal
+  - `⚠️ Sin señal (experimental)` solo si:
+    - `SOS == 0`
+    - y no hay edges visibles
+- No cambia:
+  - `SOS`
+  - `puntuación total de conexiones`
+  - scoring
+  - ordenación
+  - layout del overlay
+  - shape de `edgesTop`
+  - shape de `metrics`
+  - paneles estructurales
+  - parser MTGA export / share token
+
+ARTEFACTOS UI TOCADOS
+- `src/components/analyzer/SemanticOverlayPanel.tsx`
+- `src/components/analyzer/tests/semantic_overlay_panel.test.ts`
+
+VALIDACIÓN CONTRACTUAL RELEVANTE
+- Suite focal verde:
+  - `npx vitest run src/components/analyzer/tests/semantic_overlay_panel.test.ts`
+  - `7 tests passed`
+- Build verde:
+  - `npm run build`
+- Producción validada:
+  - commit visible `465ed0c`
+- Slice visible validado:
+  - `4 Archangel of Wrath`
+  - `56 Plains`
+
+SALIDA VISIBLE CORRECTA EN PRODUCCIÓN (`build: 465ed0c`)
+- Banner:
+  - `✅ Señal encontrada (experimental)`
+- Métricas intactas:
+  - `SOS: 0.00`
+  - `puntuación total de conexiones: 0`
+- Conexión visible:
+  - `Archangel of Wrath -> Archangel of Wrath (puntuación 0)`
+    - `Event · LIFE_GAIN × 1`
+    - `Action · DEAL_DAMAGE × 1`
+- Bloque `Efectos repetidos`:
+  - `No se detectaron efectos repetidos relevantes.`
+
+INTERPRETACIÓN CONTRACTUAL CORRECTA
+- La surface experimental queda ahora alineada también en este bloque
+  secundario con la evidencia visible ya presente en el panel
+- Esta corrección:
+  - no redefine qué es `SOS`
+  - no redefine qué es score
+  - no convierte edges `local_only` en edges puntuados
+  - no cambia la semántica del overlay
+- Simplemente alinea:
+  - banner principal
+  - bloque secundario de redundancia
+  - evidencia visible ya presente en el panel
+
+DECISIÓN DE CONTRATO
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`
+- Registrar esta microfase como actualización acumulativa de lectura
+  visible del overlay semántico
+- El residual explícito de este mismo slice queda resuelto
+- Reservar cualquier revisión posterior solo si se decide tocar:
+  - nuevos bloques secundarios
+  - prominence adicional
+  - ordenamiento
+  - o nuevos estados visibles del overlay
+
+=====================================================================
+END UPDATE (2026-03-12)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-12) — Acumulación contractual visible de LEAVES_BATTLEFIELD -> CREATE_TOKEN local bridge
+=====================================================================
+
+OBJETO CONTRACTUAL DE ESTA ACTUALIZACIÓN
+- Registrar un nuevo estado visible del overlay semántico sin cambiar la
+  versión del contrato UI.
+- La microfase no fue de surface/copy; fue de motor semántico mínimo.
+- Aun así, genera una nueva evidencia visible estable en producción.
+
+NUEVA EVIDENCIA VISIBLE ADMITIDA POR EL CONTRATO ACTUAL
+- Cuando una misma carta combina explícitamente:
+  - watch `LEAVES_BATTLEFIELD`
+  - action `CREATE_TOKEN`
+- El overlay puede mostrar un self-edge local con:
+  - `puntuación 0`
+  - razones:
+    - `Event · LEAVES_BATTLEFIELD × 1`
+    - `Action · CREATE_TOKEN × 1`
+
+ALCANCE CONTRACTUAL DE ESTA VISIBILIDAD
+- El caso queda admitido como:
+  - edge `local_only`
+  - derivado de matching producido/consumido intra-profile
+  - sin promoción a conexión estructural ponderada
+- No cambia:
+  - `SOS`
+  - `puntuación total de conexiones`
+  - scoring
+  - ordenación visible general
+  - layout del overlay
+  - copy de banner
+  - copy de `Efectos repetidos`
+  - shape de `edgesTop`
+  - shape de `metrics`
+
+SLICE VISIBLE VALIDADO EN PRODUCCIÓN
+- Mazo:
+  - `4 Experimental Synthesizer`
+  - `56 Mountain`
+- Build:
+  - `c289b6b`
+- Resultado visible correcto:
+  - `✅ Señal encontrada (experimental)`
+  - `SOS: 0.00`
+  - `puntuación total de conexiones: 0`
+  - `Experimental Synthesizer -> Experimental Synthesizer (puntuación 0)`
+    - `Event · LEAVES_BATTLEFIELD × 1`
+    - `Action · CREATE_TOKEN × 1`
+  - `Efectos repetidos`
+    - `No se detectaron efectos repetidos relevantes.`
+
+INTERPRETACIÓN CONTRACTUAL CORRECTA
+- El contrato UI ya soportaba mostrar edges `local_only` visibles aunque
+  `SOS == 0`.
+- Esta microfase no modifica esa regla; simplemente añade un nuevo caso
+  semántico que cae dentro del mismo marco contractual.
+- También es contractual que sigan visibles buckets auxiliares como:
+  - `Efectos sin pareja`
+  - `Generas más de lo que usas`
+  porque la microfase no resolvía una familia completa de balance de
+  buckets, solo el edge local mínimo.
+
+DECISIÓN DE CONTRATO
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- Registrar este cierre como actualización acumulativa del overlay
+  experimental.
+- No abrir nueva versión de contrato UI por esta microfase.
+- Reservar revisión futura solo si se decide tocar:
+  - prominence del edge local
+  - buckets secundarios
+  - o reglas visibles nuevas de summary/ordering.
+
+=====================================================================
+END UPDATE (2026-03-12)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-13) — Reconfirmación contractual visible del slice DEAL_DAMAGE -> LOSE_LIFE sin cambios de UI
+=====================================================================
+
+OBJETO CONTRACTUAL DE ESTA ACTUALIZACIÓN
+- Registrar una nueva validación visible de overlay semántico sin cambiar
+  la versión del contrato UI.
+- La microfase no fue de surface/copy.
+- Tampoco hubo cambios en componentes, layout, copy ni reglas visibles.
+- Sí hubo una ampliación contractual de cobertura test + validación
+  visible sobre un caso ya soportado por el contrato actual.
+
+ESTADO CONTRACTUAL RECONFIRMADO
+- El contrato UI sigue admitiendo edges `local_only` visibles aunque:
+  - `SOS == 0`
+  - `puntuación total de conexiones == 0`
+- Esta microfase vuelve a confirmar esa lectura con el slice:
+  - `DEAL_DAMAGE -> LOSE_LIFE`
+- El caso visible continúa siendo un self-edge local con:
+  - `puntuación 0`
+  - razones:
+    - `Action · DEAL_DAMAGE × 1`
+    - `Action · LOSE_LIFE × 1`
+
+NUEVA EVIDENCIA VISIBLE ADMITIDA / RECONFIRMADA
+Casos positivos explícitos que permanecen dentro del marco contractual:
+- `target player`
+- `an opponent`
+- `each opponent`
+- `each player`
+
+Guardrail visible reconfirmado:
+- `any target` sigue fuera de este slice mínimo
+- por tanto, es contractual que un deck de control como `Chain of Plasma`
+  no muestre ese self-edge local por esta microfase
+
+ALCANCE CONTRACTUAL DE ESTA RECONFIRMACIÓN
+- No cambia:
+  - `SOS`
+  - `puntuación total de conexiones`
+  - scoring
+  - ordenación visible general
+  - layout del overlay
+  - copy de banner
+  - copy de `Efectos repetidos`
+  - shape de `edgesTop`
+  - shape de `metrics`
+  - surface estructural general
+
+SLICE VISIBLE VALIDADO EN PRODUCCIÓN
+Mazo positivo:
+- `4 Flame Rift`
+- `56 Mountain`
+- Build:
+  - `ec2986d`
+- Resultado visible correcto:
+  - `✅ Señal encontrada (experimental)`
+  - `SOS: 0.00`
+  - `puntuación total de conexiones: 0`
+  - `Flame Rift -> Flame Rift (puntuación 0)`
+    - `Action · DEAL_DAMAGE × 1`
+    - `Action · LOSE_LIFE × 1`
+
+Mazo negativo de control:
+- `4 Chain of Plasma`
+- `56 Mountain`
+- Build:
+  - `ec2986d`
+- Resultado visible correcto:
+  - `⚠️ Sin señal (experimental)`
+  - sin conexión semántica principal de este slice
+
+INTERPRETACIÓN CONTRACTUAL CORRECTA
+- El contrato UI ya soportaba mostrar señal visible cuando hay edge local
+  aunque el score agregado permanezca en 0.
+- También soporta que un deck negativo siga mostrando ausencia de señal
+  principal si el phrasing queda fuera del gate semántico.
+- Esta microfase no modifica esas reglas; solo las reconfirma con una
+  validación visible más estricta del perímetro:
+  - positivo explícito admitido
+  - negativo `any target` excluido
+
+ARTEFACTOS UI TOCADOS
+- Ninguno.
+- No hubo cambios en:
+  - `SemanticOverlayPanel.tsx`
+  - tests de panel
+  - copy
+  - layout
+
+DECISIÓN DE CONTRATO
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- Registrar `ec2986d` como actualización acumulativa de validación
+  visible del overlay experimental.
+- No abrir nueva versión de contrato UI por esta microfase.
+
+=====================================================================
+END UPDATE (2026-03-13)
+=====================================================================
+=====================================================================
+UPDATE (2026-03-13) — A2.9 minimal service coverage: sin cambio de contrato UI
+=====================================================================
+
+OBJETO CONTRACTUAL DE ESTA ACTUALIZACIÓN
+- Registrar que la microfase `392babd` es test-only y no modifica la
+  promesa visible del analyzer.
+- La actualización pertenece a:
+  - semántica interna de servicio A2.9
+  - validación de regresión
+- No pertenece a:
+  - surface
+  - copy
+  - layout
+  - métricas visibles
+  - nuevas reglas de presentación
+
+ESTADO CONTRACTUAL RECONFIRMADO
+- `UI_CONTRACT_ANALYZER_V1.9` permanece sin cambios.
+- No cambia el shape visible de:
+  - `SemanticOverlayPanel`
+  - `edgesTop`
+  - `metrics`
+  - buckets auxiliares
+  - banner principal
+  - summary rápido
+  - ordering visible
+- `semantic_hints` y la infraestructura A2.9 siguen siendo internas al
+  motor / IR y no forman parte del contrato visual público.
+
+ARTEFACTOS UI TOCADOS
+- Ninguno.
+
+Artefactos UI explícitamente no tocados:
+- `src/components/analyzer/SemanticOverlayPanel.tsx`
+- tests de panel
+- copy visible
+- layout visible
+- reglas de banner / summary
+- Monte Carlo surface
+
+VALIDACIÓN VISIBLE RELEVANTE
+Build validada:
+- `392babd`
+
+Mazo positivo de regresión:
+- `4 Doomed Dissenter`
+- `4 Bastion of Remembrance`
+- `52 Swamp`
+
+Lectura visible correcta:
+- `✅ Señal encontrada (experimental)`
+- `SOS: 0.69`
+- `puntuación total de conexiones: 1`
+- conexión principal visible:
+  - `Doomed Dissenter -> Bastion of Remembrance (puntuación 1)`
+- self-edge adicional visible:
+  - `Bastion of Remembrance -> Bastion of Remembrance (puntuación 0)`
+    - `Event · CREATURE_DIES × 1`
+    - `Action · GAIN_LIFE × 1`
+    - `Action · LOSE_LIFE × 1`
+
+Mazo negativo / no-overclaim:
+- `4 Banisher Priest`
+- `56 Plains`
+
+Lectura visible correcta:
+- `⚠️ Sin señal (experimental)`
+- `SOS: 0.00`
+- `puntuación total de conexiones: 0`
+- no aparecen conexiones semánticas principales
+- no aparece `CREATURE_DIES` por este caso de exile / leave
+
+INTERPRETACIÓN CONTRACTUAL CORRECTA
+- La microfase valida que el contrato UI actual sigue comportándose de
+  forma honesta frente a un cambio de cobertura interna A2.9.
+- Un caso positivo de regresión sigue viéndose bien.
+- Un caso negativo de no-overclaim sigue sin forzar señal visible falsa.
+- No existe base para abrir `UI_CONTRACT_ANALYZER_V2.0` ni para subir
+  versión del contrato por esta microfase.
+
+DECISIÓN DE CONTRATO
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- Registrar `392babd` como validación acumulativa sin cambio de contrato.
+- El siguiente frente UI, si se abre, deberá provenir de un cambio
+  visible nuevo y explícito, no de esta microfase A2.9 test-only.
+
+=====================================================================
+END UPDATE (2026-03-13)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-14) — UI CONTRACT VALIDATION NOTE (no version bump)
+=====================================================================
+
+ARTEFACTOS UI TOCADOS
+- Ninguno.
+
+Artefactos UI explícitamente no tocados:
+- `src/components/analyzer/SemanticOverlayPanel.tsx`
+- tests de panel
+- copy visible
+- layout visible
+- reglas de banner / summary
+- Monte Carlo surface
+- panel structural / SPS
+
+BUILD VALIDADA
+- `a5b6dc3`
+
+VALIDACIÓN VISIBLE RELEVANTE
+Mazo:
+- `4 Guttersnipe`
+- `4 Opt`
+- `4 Shock`
+- `4 Lightning Bolt`
+- `4 Consider`
+- `40 Mountain`
+
+Lectura visible correcta:
+- `✅ Señal encontrada (experimental)`
+- `Cobertura: 83.3% (5/6)`
+- `SOS: 1.95`
+- `puntuación total de conexiones: 6`
+
+Conexiones visibles correctas:
+- `Lightning Bolt -> Guttersnipe`
+- `Shock -> Guttersnipe`
+- `Consider -> Guttersnipe`
+- `Opt -> Guttersnipe`
+
+Self-edges visibles correctos:
+- `Guttersnipe -> Guttersnipe`
+  - `Action · DEAL_DAMAGE × 1`
+  - `Action · LOSE_LIFE × 1`
+- `Guttersnipe -> Guttersnipe`
+  - `Lanzas instantáneo o conjuro (experimental) × 1`
+  - `Action · DEAL_DAMAGE × 1`
+
+LECTURA CONTRACTUAL CORRECTA
+- La microfase introduce nueva señal visible en overlay semántico sin requerir cambio de contrato UI.
+- El contrato actual sigue siendo honesto:
+  - la build visible coincide con el commit desplegado
+  - la UI muestra la mejora semántica real
+  - la capa structural sigue separada y no sobrepromete arquetipo completo
+- No existe base para abrir `UI_CONTRACT_ANALYZER_V2.0`.
+
+DECISIÓN DE CONTRATO
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- Registrar `a5b6dc3` como validación acumulativa sin cambio de versión.
+- Si se desea que `Guttersnipe` pase a reflejarse como `PAYOFF` en structural/SPS, eso debe abrirse como microfase separada de roles/tagging, no como cambio UI.
+
+=====================================================================
+END UPDATE (2026-03-14)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-14) — UI CONTRACT ADDENDA: STRUCTURAL SPELLS-MATTER VISIBLE WITHOUT UI CHANGES
+=====================================================================
+
+CONTEXTO
+- Este bloque no abre una nueva versión de contrato UI.
+- Registra evidencia visible nueva producida por cambios de motor estructural ya desplegados, sin cambios de surface.
+
+SIN BREAKING CHANGES DE UI
+- No hubo cambios en:
+  - layout
+  - surface
+  - navegación
+  - copy principal
+  - componentes del analizador
+- La novedad visible viene del motor estructural, no de una revisión de UI.
+
+EVIDENCIA VISIBLE NUEVA ADMITIDA POR EL CONTRATO
+- Para shells spells-matter válidos, el mismo panel “Resultado rápido” puede pasar de:
+  - `SPS = 0`
+  - `Relaciones = 0`
+  - `Densidad = 0.000`
+- a:
+  - `SPS = 77.1`
+  - `Sinergias detectadas = 7`
+  - `Relaciones = 7`
+  - `Densidad = 0.125`
+  - `Roles dominantes = DRAW, REMOVAL, PAYOFF`
+- Esto es contractual y honesto porque deriva de un cambio real del motor, no de UI cosmética.
+
+PANEL DE RELACIONES / EDGES
+- El contrato visible actual admite ya que el grupo:
+  - `spells_support_prowess`
+  pueda renderizar relaciones hacia un target `PAYOFF` spell-matter como `Guttersnipe`.
+- Ejemplos visibles observados en producción:
+  - `Lightning Bolt -> Guttersnipe (x16 | score 26.4)`
+  - `Play with Fire -> Guttersnipe (x16 | score 26.4)`
+  - `Shock -> Guttersnipe (x16 | score 26.4)`
+  - `Consider -> Guttersnipe (x16 | score 17.6)`
+  - `Crash Through -> Guttersnipe (x16 | score 17.6)`
+  - `Opt -> Guttersnipe (x16 | score 17.6)`
+  - `Sleight of Hand -> Guttersnipe (x16 | score 17.6)`
+
+SUPERPOSICIÓN SEMÁNTICA
+- La superposición semántica sigue visible y coherente.
+- En los shells validados se observó:
+  - `Cobertura = 88.9% (8/9)` en la lista laboratorio de 9 entradas únicas
+  - `SOS = 2.40`
+  - conexiones semánticas principales coherentes con el mismo plan spells-matter
+- Lectura contractual correcta:
+  - overlay y structural ahora convergen sobre el mismo plan
+  - sin haber cambiado el contrato de UI
+
+MONTE CARLO (EXPERIMENTAL)
+- El contrato visible actual admite también, para este mismo shell, un diagnóstico experimental de fragilidad:
+  - `SPS robusto vs SPS base: 0 / 77.1`
+  - `Fragilidad: 50`
+- Esto no obliga a una nueva versión UI.
+- Sí obliga a registrar que el mismo surface ahora puede exponer esta lectura sobre un plan spells-matter ya detectado estructuralmente.
+
+DECISIÓN CONTRACTUAL CORRECTA
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- No abrir `V2.0` porque no hubo cambio de surface ni ruptura de contrato.
+- Registrar como evidencia acumulativa validada:
+  - commit desplegado `42bb3b6`
+  - build marker visible `42bb36b`
+  - structural spells-matter visible sin cambio de UI
+
+DEUDA ABIERTA RELEVANTE PARA CONTRATO
+- La deuda siguiente no es UI.
+- La deuda siguiente es del motor:
+  - robustez / redundancia / segundo motor
+- La UI actual ya es suficiente para mostrar honestamente ese siguiente problema sin necesidad de nueva versión de contrato.
+
+=====================================================================
+END UPDATE (2026-03-14)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-15) — UI CONTRACT ADDENDA: SECOND DAMAGE PAYOFF VISIBLE WITHOUT UI CHANGES
+=====================================================================
+
+SIN CAMBIOS DE SURFACE
+- No hubo cambios de layout, componentes, copy principal ni surface de interacción.
+- Se mantiene:
+  - `UI_CONTRACT_ANALYZER_V1.9`
+- La novedad visible deriva del motor estructural, no de un rediseño UI.
+
+EVIDENCIA VISIBLE NUEVA ADMITIDA POR EL CONTRATO
+- Para un shell spells-matter con:
+  - `Firebrand Archer`
+  - `Guttersnipe`
+  - `Third Path Iconoclast`
+  - soporte denso de noncreature spells
+el mismo panel “Resultado rápido” puede mostrar ahora:
+  - `SPS = 122`
+  - `Sinergias detectadas = 27`
+  - `Relaciones = 27`
+  - `Densidad = 0.482`
+  - `Roles dominantes = DRAW, REMOVAL, PAYOFF`
+  - `ENGINE = 4`
+  - `PAYOFF = 8`
+- Esto es contractual y honesto porque deriva de un cambio real del motor.
+
+PANEL DE ROLES
+- El contrato visible actual admite ya que un shell spells-matter de este tipo muestre simultáneamente:
+  - `PAYOFF = 8`
+  - `ENGINE = 4`
+- Lectura visible correcta:
+  - `Guttersnipe` y `Firebrand Archer` entran como `PAYOFF`
+  - `Third Path Iconoclast` permanece en el lado de motor/engine
+- Esto refuerza el contrato actual sin requerir nueva versión UI.
+
+PANEL DE RELACIONES / EDGES
+- El contrato visible actual admite ya bloques combinados como:
+  - `spells_support_prowess (24)`
+  - `burn_supports_threat (3)`
+- También admite que en el mismo deck convivan relaciones hacia:
+  - `Firebrand Archer`
+  - `Guttersnipe`
+  - `Third Path Iconoclast`
+- Lectura contractual correcta:
+  - que `Third Path Iconoclast` aparezca en relaciones no obliga a tratarla como `PAYOFF`
+  - el contract surface puede mostrar esa mezcla sin contradicción semántica visible
+
+MONTE CARLO (EXPERIMENTAL)
+- El mismo surface sigue pudiendo mostrar, sin cambio de contrato UI:
+  - `SPS robusto vs SPS base: 0 / 122`
+  - `Fragilidad: 50`
+- La UI actual es suficiente para exponer honestamente que el plan detectado mejora, pero sigue siendo frágil.
+
+DECISIÓN CONTRACTUAL CORRECTA
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- No abrir `V2.0` porque no hubo ruptura de surface.
+- Registrar como evidencia acumulativa validada:
+  - commit desplegado `65cdf37`
+  - build visible `65cdf37`
+  - segundo payoff damage-trigger visible sin cambios de UI
+
+DEUDA ABIERTA RELEVANTE PARA CONTRATO
+- La deuda siguiente sigue sin ser UI.
+- La deuda siguiente sigue siendo del motor:
+  - robustez / redundancia / estabilidad
+- La UI actual ya es suficiente para mostrar también esta nueva foto del problema.
+
+=====================================================================
+END UPDATE (2026-03-15)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-15) — UI CONTRACT ADDENDA: TOKEN-ENGINE VISIBLE WITHOUT UI CHANGES
+=====================================================================
+
+CONTEXTO
+- Este bloque no abre una nueva versión de contrato UI.
+- Registra evidencia visible nueva producida por un cambio de motor estructural ya desplegado.
+- No hubo cambios de surface.
+
+SIN BREAKING CHANGES DE UI
+- No hubo cambios en:
+  - layout
+  - surface
+  - navegación
+  - copy principal
+  - componentes del analizador
+- La novedad visible viene del motor estructural, no de una revisión de UI.
+
+EVIDENCIA VISIBLE NUEVA ADMITIDA POR EL CONTRATO
+- Para un shell spells-matter con redundancia explícita de motor, el mismo panel “Resultado rápido” puede mostrar ahora:
+  - `SPS = 148.7`
+  - `Sinergias detectadas = 60`
+  - `Relaciones = 60`
+  - `Densidad = 1.071`
+  - `Roles dominantes = ENGINE, REMOVAL, DRAW`
+- Esto es contractual y honesto porque deriva de un cambio real del motor estructural, no de UI cosmética.
+
+LECTURA VISIBLE DE ROLES
+- El contrato visible actual admite que en el mismo deck aparezcan como `ENGINE`:
+  - `Young Pyromancer`
+  - `Third Path Iconoclast`
+  - `Talrand, Sky Summoner`
+  - `Saheeli, Sublime Artificer`
+- Y que conviva a la vez:
+  - `Guttersnipe` como `PAYOFF`
+- Lectura contractual correcta:
+  - que `Third Path Iconoclast` aparezca en relaciones y en motor no obliga a mostrarla como `PAYOFF`
+  - la surface actual ya soporta esa lectura sin contradicción visible
+
+PANEL DE RELACIONES / EDGES
+- El contrato visible actual admite ya que el grupo:
+  - `spells_support_prowess`
+  pueda renderizar un volumen más alto de relaciones dentro del mismo shell.
+- Ejemplos visibles observados en producción:
+  - `Consider -> Third Path Iconoclast (x16 | score 17.6)`
+  - `Consider -> Young Pyromancer (x16 | score 17.6)`
+  - `Lightning Strike -> Third Path Iconoclast (x16 | score 17.6)`
+  - `Lightning Strike -> Young Pyromancer (x16 | score 17.6)`
+  - relaciones también hacia:
+    - `Talrand, Sky Summoner`
+    - `Saheeli, Sublime Artificer`
+    - `Guttersnipe`
+- Lectura contractual correcta:
+  - la UI puede mostrar más targets del mismo shell sin necesidad de nueva versión del contrato
+
+SUPERPOSICIÓN SEMÁNTICA
+- La superposición semántica sigue visible y coherente.
+- En el shell validado se observó:
+  - `Cobertura = 77.3% (17/22)`
+  - `SOS = 3.66`
+  - `puntuación total de conexiones = 38`
+  - señales de:
+    - `Action · CREATE_TOKEN`
+    - `Event · TOKEN_CREATED`
+- Lectura contractual correcta:
+  - structural y overlay convergen razonablemente sobre el mismo plan
+  - sin haber cambiado el contrato de UI
+
+MONTE CARLO (EXPERIMENTAL)
+- El mismo surface sigue pudiendo mostrar, sin cambio de contrato UI:
+  - `SPS robusto vs SPS base: 0 / 148.7`
+  - `Fragilidad: 50`
+- La UI actual es suficiente para exponer honestamente:
+  - que la redundancia visible de motor sí mejora
+  - pero que la robustez MC todavía no queda resuelta
+
+DECISIÓN CONTRACTUAL CORRECTA
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- No abrir `V2.0` porque no hubo ruptura de surface.
+- Registrar como evidencia acumulativa validada:
+  - commit desplegado `da8370f`
+  - build visible `da8370f`
+  - redundancia visible de motor spells-matter sin cambios de UI
+
+DEUDA ABIERTA RELEVANTE PARA CONTRATO
+- La deuda siguiente sigue sin ser UI.
+- La deuda siguiente sigue siendo del motor:
+  - robustez / redundancia / estabilidad bajo perturbación
+- La UI actual ya es suficiente para mostrar esta nueva foto del problema.
+
+=====================================================================
+END UPDATE (2026-03-15)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-15) — UI CONTRACT / OVERLAY: DRAW-SECOND TOKEN BRIDGE YA DISTINGUIBLE EN SURFACE
+=====================================================================
+
+ESTADO UI / PRODUCTO
+- No se añade:
+  - nuevo panel
+  - nuevo input
+  - nuevo toggle
+  - nuevo modo semántico separado
+- Sí cambia el comportamiento visible del overlay semántico experimental:
+  - un bridge compuesto concreto de draw-second deja de colapsarse siempre al label genérico
+  - y puede aparecer en “Conexiones semánticas principales”
+
+CAMBIOS VISIBLES ACUMULADOS EN ESTA CADENA
+1) `e280b42`
+- Prioriza el label específico de:
+  - `DRAW_EXTRA_CARD_TURN + CREATE_TOKEN`
+- frente al label genérico de draw-second
+
+2) `6253dd5`
+- Promueve visibilidad del bridge específico en `edgesTop`
+- replicando el patrón ya existente de prominencia local usado en otras familias semánticas
+
+CONTRATO UI ACTUALIZADO
+A partir de esta actualización, la lectura visible correcta del overlay es:
+- si existe un bridge compuesto específico y elegible de:
+  - `DRAW_EXTRA_CARD_TURN -> CREATE_TOKEN`
+- la surface puede mostrar un label específico del estilo:
+  - `Robas tu segunda carta del turno -> creas una ficha`
+- y ese cierre puede entrar en “Conexiones semánticas principales” aunque sea un self-edge `local_only` con `score = 0`
+
+LO QUE EL CONTRATO UI SÍ ADMITE YA
+- La web y el PDF pueden mostrar simultáneamente:
+  - señal genérica de draw-second
+  - y un closure específico visible de `DRAW_EXTRA_CARD_TURN -> CREATE_TOKEN`
+- Esa coexistencia no es contradictoria con el contrato actual.
+- La lectura contractual correcta es:
+  - el caso compuesto ya es distinguible en surface
+  - no se promete todavía que desaparezcan todas las señales genéricas vecinas
+
+VALIDACIÓN VISIBLE CONFIRMADA EN PRODUCCIÓN
+- Commit desplegado validado:
+  - `6253dd5`
+- En el deck focal de validación se observa en producción:
+  - `Improbable Alliance -> Improbable Alliance (puntuación 0)`
+  - label visible:
+    - `Robas tu segunda carta del turno -> creas una ficha`
+  - además:
+    - `Action · CREATE_TOKEN`
+- Esto confirma que el overlay ya diferencia en surface el bridge compuesto específico del draw-second genérico, al menos en el top visible.
+
+FRONTERA UI REAFIRMADA
+- No se ha tocado:
+  - scoring
+  - paneles
+  - navegación
+  - estructura del analyzer
+- La mejora visible proviene de:
+  - motor/overlay compute
+  - humanización de razones
+- no de UI cosmética
+
+DECISIÓN CONTRACTUAL CORRECTA
+- Mantener `UI_CONTRACT_ANALYZER_V1.9`.
+- No abrir `V2.0`.
+- Registrar como evidencia acumulativa validada:
+  - commit desplegado `6253dd5`
+  - build visible `6253dd5`
+  - bridge específico visible en overlay surface
+
+DEUDA ABIERTA RELEVANTE PARA CONTRATO
+- La deuda siguiente sigue sin ser UI.
+- La deuda siguiente no es “hacer bonito el overlay”, sino elegir el siguiente bridge semántico estrecho si se abre otra familia.
+- En esta familia concreta, el objetivo visible contractual queda cumplido.
+
+=====================================================================
+END UPDATE (2026-03-15)
+=====================================================================
+
+
+=====================================================================
+ADENDA POST-v27 — DRAW-SECOND DAMAGE OVERLAY VISIBILITY
+=====================================================================
+
+ALCANCE CONTRACTUAL CERRADO
+- Se mantiene `UI_CONTRACT_ANALYZER_V1.9`.
+- No se abre `V2.0`.
+- No se modifica la estructura del analyzer.
+- No se tocan paneles ni navegación.
+- La mejora visible procede de:
+  - humanización específica en overlay
+  - selección/prominencia estrecha en `edgesTop`
+
+CADENA REAL CERRADA
+1) Bridge local de motor:
+- Commit:
+  - `e1547cd`
+- Mensaje:
+  - `feat(semantic): add minimal draw-second to damage local bridge`
+
+2) Surface visible:
+- Commit:
+  - `1d39ae9`
+- Mensaje:
+  - `feat(semantic): surface draw-second damage bridge in overlay`
+
+VALIDACIÓN VISIBLE CONFIRMADA EN PRODUCCIÓN
+- Commit desplegado final validado:
+  - `1d39ae9`
+- En el deck focal de validación se observa en producción:
+  - `Irencrag Pyromancer -> Irencrag Pyromancer (puntuación 0)`
+  - label visible:
+    - `Robas tu segunda carta del turno -> haces daño`
+  - además:
+    - `Action · DEAL_DAMAGE × 1`
+- Y se preserva:
+  - `Improbable Alliance -> Improbable Alliance (puntuación 0)`
+  - label visible:
+    - `Robas tu segunda carta del turno -> creas una ficha`
+  - además:
+    - `Action · CREATE_TOKEN × 1`
+
+FRONTERA UI REAFIRMADA
+- No se ha tocado:
+  - scoring
+  - layout
+  - navegación
+  - estructura general del analyzer
+- La mejora visible viene de:
+  - overlay compute
+  - humanización de razones
+- no de UI cosmética
+
+DECISIÓN CONTRACTUAL CORRECTA
+- Registrar como evidencia acumulativa validada:
+  - commit desplegado `1d39ae9`
+  - build visible `1d39ae9`
+  - bridge damage específico visible en overlay surface
+  - no-regresión de token
+
+DEUDA ABIERTA RELEVANTE PARA CONTRATO
+- La deuda inmediata ya no está en esta cadena concreta.
+- No reabrir:
+  - el label damage específico
+  - su prominencia visible mínima
+  - la rama token ya cerrada
+- La siguiente deuda, si se abre, debe volver a ser:
+  - otro bridge semántico estrecho
+  - o una familia causal igual de acotada
+- no UI cosmética
+
+=====================================================================
+END UPDATE (2026-03-16)
+=====================================================================
+
+
+=====================================================================
+ADENDA POST-v28 — triggered abilities + zone-change semantics v1 (sin cambio visible de contrato)
+=====================================================================
+
+LECTURA CONTRACTUAL CORRECTA
+- Se mantiene `UI_CONTRACT_ANALYZER_V1.9`.
+- No se abre `V2.0`.
+- No se introduce nuevo panel visible.
+- No se modifica navegación, layout ni copy principal.
+- La microfase cerrada en `a1d0bea` es interna al motor/lowering.
+
+COMMIT / BUILD / PRODUCCIÓN
+- Commit desplegado y validado:
+  - `a1d0bea`
+- Build visible en producción:
+  - `a1d0bea`
+
+QUÉ SÍ PUEDE PROMETER CORRECTAMENTE LA UI TRAS ESTA MICROFASE
+- El analizador sigue siendo estable y 100% client-side.
+- El overlay semántico sigue analizando el mazo sin regresión visible introducida por esta microfase.
+- La exportación y lectura web/PDF siguen alineadas bajo el build desplegado.
+
+QUÉ NO DEBE PROMETER TODAVÍA LA UI
+- No debe prometer exposición visible de:
+  - `NORMAL`
+  - `INTERVENING_IF`
+  - `ZONE_CHANGE`
+  - `REFLEXIVE`
+  - `DELAYED`
+  - `LINKED`
+- Esa clasificación nueva queda en esta entrega como hint interno de lowering, no como copy/label/panel público.
+
+VALIDACIÓN VISIBLE EN PRODUCCIÓN
+Deck de verificación usado:
+- shell con `Ajani's Pridemate`, `Resplendent Angel`, `Doomed Dissenter`, `Blood Artist`, `Heart-Piercer Manticore`, `Oblivion Ring`
+
+Resultado observado en producción:
+- build visible:
+  - `a1d0bea`
+- structural:
+  - `SPS = 0`
+  - `Relaciones = 0`
+- semántica:
+  - `Cobertura = 75% (12/16)`
+  - `SOS = 3.09`
+  - `puntuación total de conexiones = 21`
+- lectura correcta:
+  - la UI no debía enseñar un elemento nuevo
+  - sí debía mantener el comportamiento visible estable
+  - ese criterio quedó cumplido
+
+FRONTERA UI REAFIRMADA
+- Esta microfase no debe leerse como cambio de surface.
+- Debe leerse como:
+  - endurecimiento interno de semántica
+  - sin expansión visible del contrato público
+- El siguiente cambio de contrato UI, si se abre, deberá venir de una mejora visible y explícita, no de esta infraestructura interna.
+
+=====================================================================
+END UPDATE (2026-03-16)
+=====================================================================
+
+=====================================================================
+UPDATE (2026-03-16) — UI contract / sin cambios visibles por delayed triggered abilities v1
+=====================================================================
+
+RESUMEN
+- No hay cambio de contrato visible del analizador para esta microfase.
+- La microfase `delayed triggered abilities v1` es interna y no visible.
+- No cambia:
+  - rendering de overlay
+  - labels visibles
+  - ordering visible
+  - scoring visible
+  - contrato público de salida UI
+
+NOTA OPERATIVA
+- El endurecimiento afecta solo a `semantic_hints.triggered_ability_min`
+  a nivel interno:
+  - `DELAYED` pasa a clase explícita mínima
+  - `REFLEXIVE` y `LINKED` permanecen como fallback
+- Esto NO introduce todavía una exposición nueva en surface.
+
+LECTURA CORRECTA
+- UI contract: sin cambios visibles
+- motor semántico interno: sí endurecido
+- producción visible: estable y sin regresión esperable
+
+=====================================================================
+END UPDATE (2026-03-16)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-16) — UI contract / sin cambios visibles por reflexive triggered abilities v1
+=====================================================================
+
+RESUMEN
+- No hay cambio de contrato visible del analizador para esta microfase.
+- La microfase `reflexive triggered abilities v1` es interna y no visible.
+- No cambia:
+  - rendering de overlay
+  - labels visibles
+  - ordering visible
+  - scoring visible
+  - contrato público de salida UI
+
+NOTA OPERATIVA
+- El endurecimiento afecta solo a `semantic_hints.triggered_ability_min`
+  a nivel interno:
+  - `REFLEXIVE` pasa a clase explícita mínima
+  - `LINKED` queda como fallback restante
+- Esto NO introduce todavía una exposición nueva en surface.
+
+VALIDACIÓN VISIBLE EN PRODUCCIÓN
+Deck de verificación usado:
+- shell Izzet spells / draw-second con `Third Path Iconoclast`,
+  `Young Pyromancer`, `Improbable Alliance`, `Irencrag Pyromancer`,
+  `Guttersnipe`, `Firebrand Archer`, `Opt`, `Consider`,
+  `Chart a Course`, `Of One Mind`, `Quick Study`
+
+Resultado observado:
+- build visible:
+  - `f22ed65`
+- structural:
+  - `SPS = 99.1`
+  - `Relaciones = 20`
+  - `Densidad = 0.357`
+- semántica:
+  - `Cobertura = 70.6% (12/17)`
+  - `SOS = 3.22`
+  - `puntuación total de conexiones = 24`
+- lectura correcta:
+  - la UI no debía enseñar un elemento nuevo
+  - sí debía mantener el comportamiento visible estable
+  - ese criterio quedó cumplido
+
+LECTURA CORRECTA
+- UI contract: sin cambios visibles
+- motor semántico interno: sí endurecido
+- producción visible: estable y sin regresión observable en el deck de validación
+
+=====================================================================
+END UPDATE (2026-03-16)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-18) — UI contract / sin cambios visibles por replacement-prevention v1
+=====================================================================
+
+RESUMEN
+- No hay cambio de contrato visible del analizador para esta microfase.
+- La microfase `replacement / prevention v1` es interna y no visible.
+- No cambia:
+  - rendering de overlay
+  - labels visibles
+  - ordering visible
+  - scoring visible
+  - contrato público de salida UI
+
+NOTA OPERATIVA
+- El endurecimiento afecta solo a `semantic_hints.replacement_prevention_min`
+  a nivel interno:
+  - `REPLACEMENT`
+  - `PREVENTION`
+- Esto NO introduce todavía una exposición nueva en surface.
+
+VALIDACIÓN VISIBLE EN PRODUCCIÓN
+Deck de verificación usado:
+- shell Izzet spells / draw-second con `Third Path Iconoclast`,
+  `Young Pyromancer`, `Improbable Alliance`, `Irencrag Pyromancer`,
+  `Guttersnipe`, `Firebrand Archer`, `Howling Mine`, `Rest in Peace`,
+  `Fog`
+
+Resultado observado:
+- build visible:
+  - `31863e8`
+- structural:
+  - `SPS = 105.2`
+  - `Relaciones = 25`
+  - `Densidad = 0.446`
+- semántica:
+  - `Cobertura = 73.7% (14/19)`
+  - `SOS = 3.56`
+  - `puntuación total de conexiones = 34`
+- lectura correcta:
+  - la UI no debía enseñar un elemento nuevo
+  - sí debía mantener el comportamiento visible estable
+  - ese criterio quedó cumplido
+
+LECTURA CORRECTA
+- UI contract: sin cambios visibles
+- motor semántico interno: sí endurecido
+- producción visible: estable y sin regresión observable en el deck de validación
+
+=====================================================================
+END UPDATE (2026-03-18)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-18) — UI contract / sin cambios visibles por linked abilities v1
+=====================================================================
+
+RESUMEN
+- No hay cambio de contrato visible del analizador para esta microfase.
+- La microfase `linked abilities v1` es interna y no visible.
+- No cambia:
+  - rendering de overlay
+  - labels visibles
+  - ordering visible
+  - scoring visible
+  - contrato público de salida UI
+
+NOTA OPERATIVA
+- El endurecimiento afecta solo a `semantic_hints.linked_ability_min`
+  a nivel interno:
+  - `LINKED`
+- Esto NO introduce todavía una exposición nueva en surface.
+
+VALIDACIÓN VISIBLE EN PRODUCCIÓN
+Deck de verificación usado:
+- shell Jeskai spells / draw-second + linked anchors con
+  `Third Path Iconoclast`, `Young Pyromancer`, `Improbable Alliance`,
+  `Irencrag Pyromancer`, `Guttersnipe`, `Firebrand Archer`,
+  `Oblivion Ring`, `Banishing Light`, `Fiend Hunter`,
+  `Elite Spellbinder`
+
+Resultado observado:
+- build visible:
+  - `e12e210`
+- structural:
+  - `SPS = 99.9`
+  - `Relaciones = 22`
+  - `Densidad = 0.393`
+- semántica:
+  - `Cobertura = 69.6% (16/23)`
+  - `SOS = 3.74`
+  - `puntuación total de conexiones = 41`
+- lectura correcta:
+  - la UI no debía enseñar un elemento nuevo
+  - sí debía mantener el comportamiento visible estable
+  - ese criterio quedó cumplido
+
+LECTURA CORRECTA
+- UI contract: sin cambios visibles
+- motor semántico interno: sí endurecido
+- producción visible: estable y sin regresión observable en el deck de validación
+
+=====================================================================
+END UPDATE (2026-03-18)
+=====================================================================
+
+
+=====================================================================
+UPDATE (2026-03-19) — UI contract / sin cambios visibles por continuous effects / layers / dependency / timestamp v1
+=====================================================================
+
+RESUMEN
+- No hay cambio de contrato visible del analizador para esta microfase.
+- La microfase `continuous effects / layers / dependency / timestamp v1` es
+  interna y no visible.
+- No cambia:
+  - rendering de overlay
+  - labels visibles
+  - ordering visible
+  - scoring visible
+  - contrato público de salida UI
+
+NOTA OPERATIVA
+- El endurecimiento afecta solo a `semantic_hints.continuous_layers_min`
+  a nivel interno:
+  - `class`
+  - `ordering_risk`
+- Esto NO introduce todavía una exposición nueva en surface.
+
+VALIDACIÓN VISIBLE EN PRODUCCIÓN
+Deck de verificación usado:
+- shell Jeskai spells / draw-second + continuous anchors con
+  `Third Path Iconoclast`, `Young Pyromancer`, `Guttersnipe`,
+  `Firebrand Archer`, `Irencrag Pyromancer`, `Improbable Alliance`,
+  `Howling Mine`, `Glorious Anthem`, `Humility`, `Blood Moon`,
+  `Rest in Peace`, `Oblivion Ring`, `Urborg, Tomb of Yawgmoth`
+
+Resultado observado:
+- build visible:
+  - `7dd05e7`
+- structural:
+  - `SPS = 104.5`
+  - `Relaciones = 24`
+  - `Densidad = 0.429`
+- semántica:
+  - `Cobertura = 51.9% (14/27)`
+  - `SOS = 3.58`
+  - `puntuación total de conexiones = 35`
+- lectura correcta:
+  - la UI no debía enseñar un elemento nuevo
+  - sí debía mantener el comportamiento visible estable
+  - el overlay podía seguir marcando `Blood Moon`, `Glorious Anthem` y
+    `Humility` como no reconocidos en surface v1 sin invalidar la microfase
+  - ese criterio quedó cumplido
+
+LECTURA CORRECTA
+- UI contract: sin cambios visibles
+- motor semántico interno: sí endurecido
+- producción visible: estable y sin regresión observable en el deck de validación
+
+=====================================================================
+END UPDATE (2026-03-19)
+=====================================================================

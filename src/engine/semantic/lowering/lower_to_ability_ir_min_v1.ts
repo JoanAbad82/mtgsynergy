@@ -1,10 +1,12 @@
 import { ActionId, FrameKind } from "../contract";
 import {
   parseSemanticIrV0,
+  classifyCostMinV1,
   classifyTriggeredAbilityMinV1,
   classifyReplacementPreventionMinV1,
   classifyLinkedAbilityMinV1,
   classifyContinuousLayersDependencyTimestampMinV1,
+  type CostMinClassificationMinV1,
   type ContinuousLayersClassMinV1,
   type ContinuousLayersOrderingRiskMinV1,
   type LinkedAbilityClassMinV1,
@@ -42,6 +44,7 @@ export type AbilityIrMin = {
       class: ContinuousLayersClassMinV1;
       ordering_risk: ContinuousLayersOrderingRiskMinV1;
     };
+    cost_min_v1?: CostMinClassificationMinV1;
     cost_target_legality_min?: {
       cost_kinds: string[];
       target_kinds: string[];
@@ -233,6 +236,11 @@ function buildSemanticHints(
   const continuousLayersMin = classifyContinuousLayersDependencyTimestampMinV1(oracleText);
   if (continuousLayersMin) {
     hints.continuous_layers_min = continuousLayersMin;
+  }
+
+  const costMinV1 = classifyCostMinV1(oracleText);
+  if (costMinV1) {
+    hints.cost_min_v1 = costMinV1;
   }
 
   const costTargetLegalityHint = buildCostTargetLegalityHint(oracleText);

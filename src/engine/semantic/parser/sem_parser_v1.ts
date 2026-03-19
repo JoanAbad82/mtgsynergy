@@ -67,6 +67,10 @@ export type TriggeredAbilityClassificationMinV1 = {
   class: TriggeredAbilityClassMinV1;
   fallback: TriggeredAbilityFallbackMinV1 | null;
 };
+export type CostMinClassV1 = "MANA" | "TAP" | "SACRIFICE" | "DISCARD" | "PAY_LIFE";
+export type CostMinClassificationMinV1 = {
+  classes: CostMinClassV1[];
+};
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
 export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
@@ -152,6 +156,52 @@ function hasAbilityChangeContinuousPattern(text: string): boolean {
 
 function hasMultiLayerContinuousPattern(text: string): boolean {
   return hasAbilityChangeContinuousPattern(text) && /\bhave base power and toughness\b/i.test(text);
+}
+
+const COST_MIN_ORDER: ReadonlyArray<CostMinClassV1> = ["MANA", "TAP", "SACRIFICE", "DISCARD", "PAY_LIFE"];
+
+function getActivatedCostPrefix(text: string): string | null {
+  const colonIndex = text.indexOf(":");
+  if (colonIndex <= 0) return null;
+
+  const prefix = text.slice(0, colonIndex).trim();
+  if (!prefix) return null;
+
+  if (/^\s*(?:when|whenever|at)\b/i.test(prefix)) {
+    return null;
+  }
+
+  return prefix;
+}
+
+function sortedCostClasses(classes: CostMinClassV1[]): CostMinClassV1[] {
+  const unique = Array.from(new Set(classes));
+  return unique.sort((a, b) => COST_MIN_ORDER.indexOf(a) - COST_MIN_ORDER.indexOf(b));
+}
+
+export function classifyCostMinV1(oracleText: string): CostMinClassificationMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+
+  const costPrefix = getActivatedCostPrefix(text);
+  if (!costPrefix) return null;
+
+  const symbolMatches = costPrefix.match(/\{[^}]+\}/g) ?? [];
+  const hasTap = symbolMatches.some((symbol) => /^\{T\}$/i.test(symbol));
+  const hasMana = symbolMatches.some((symbol) => !/^\{T\}$/i.test(symbol) && !/^\{Q\}$/i.test(symbol));
+  const hasSacrifice = /\bsacrifice\b/i.test(costPrefix);
+  const hasDiscard = /\bdiscard\b/i.test(costPrefix);
+  const hasPayLife = /\bpay\s+(?:x|\d+|a|an|one|two|three|four)\s+life\b/i.test(costPrefix);
+
+  const classes: CostMinClassV1[] = [];
+  if (hasMana) classes.push("MANA");
+  if (hasTap) classes.push("TAP");
+  if (hasSacrifice) classes.push("SACRIFICE");
+  if (hasDiscard) classes.push("DISCARD");
+  if (hasPayLife) classes.push("PAY_LIFE");
+
+  if (classes.length === 0) return null;
+  return { classes: sortedCostClasses(classes) };
 }
 
 export function classifyContinuousLayersDependencyTimestampMinV1(

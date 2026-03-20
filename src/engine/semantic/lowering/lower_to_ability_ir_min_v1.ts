@@ -24,6 +24,8 @@ type AbilityIrEffect = {
   detail: string;
 };
 
+type LegalityActionBindingMinV1 = "CAST_ONLY";
+
 export type AbilityIrMin = {
   kind: "Activated" | "ConditionalTriggered";
   cost: string[] | null;
@@ -37,6 +39,9 @@ export type AbilityIrMin = {
     corpus_group: "base";
     ability_slot: 1;
   };
+  legality?: (Record<string, unknown> & {
+    action_context?: LegalityActionBindingMinV1;
+  });
   semantic_hints?: {
     possible_zone_change?: boolean;
     possible_lki_required?: boolean;
@@ -51,6 +56,7 @@ export type AbilityIrMin = {
     cost_min_v1?: CostMinClassificationMinV1;
     target_min_v1?: TargetMinSpecMinV1;
     legality_gate_min_v1?: LegalityGateMinV1;
+    legality_action_binding_min?: LegalityActionBindingMinV1;
     cost_target_legality_min?: {
       cost_kinds: string[];
       target_kinds: string[];
@@ -194,6 +200,7 @@ function buildCostTargetLegalityHint(oracleText: string): NonNullable<AbilityIrM
 
 function buildSemanticHints(
   oracleText: string,
+  legalityActionBindingMinV1?: LegalityActionBindingMinV1,
 ): AbilityIrMin["semantic_hints"] | undefined {
   const normalized = oracleText.toLowerCase();
   const hasDiesWord = /\bdies\b/.test(normalized);
@@ -264,6 +271,10 @@ function buildSemanticHints(
     hints.cost_target_legality_min = costTargetLegalityHint;
   }
 
+  if (legalityActionBindingMinV1) {
+    hints.legality_action_binding_min = legalityActionBindingMinV1;
+  }
+
   if (Object.keys(hints).length === 0) {
     return undefined;
   }
@@ -280,6 +291,9 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
     oracle_text: input.oracle_text,
     type_line: input.type_line ?? null,
   });
+  const parsedSemanticHints = (Reflect.get(ir, "semantic_hints") as
+    | { legality_action_binding_min?: LegalityActionBindingMinV1 }
+    | undefined);
   const frame = ir.frames[0];
   if (!frame || !kindMatchesFrame(template, frame.kind)) {
     return null;
@@ -302,13 +316,26 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
     },
   };
 
-  const semanticHints = buildSemanticHints(input.oracle_text);
+  const legalityActionBindingMinV1 = parsedSemanticHints?.legality_action_binding_min;
+  const semanticHints = buildSemanticHints(input.oracle_text, legalityActionBindingMinV1);
+  let ability: AbilityIrMin = lowered;
+
   if (semanticHints) {
-    return {
-      ...lowered,
+    ability = {
+      ...ability,
       semantic_hints: semanticHints,
     };
   }
 
-  return lowered;
+  if (semanticHints?.legality_action_binding_min) {
+    ability = {
+      ...ability,
+      legality: {
+        ...(ability.legality ?? {}),
+        action_context: semanticHints.legality_action_binding_min,
+      },
+    };
+  }
+
+  return ability;
 }

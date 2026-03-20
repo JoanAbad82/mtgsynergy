@@ -190,6 +190,18 @@ const TARGET_MIN_PATTERNS: ReadonlyArray<{ regex: RegExp; kinds: string[] }> = [
   { regex: /\btarget\s+artifact\b/i, kinds: ["artifact"] },
   { regex: /\btarget\s+land\b/i, kinds: ["land"] },
 ];
+type LegalityActionBindingMinV1 = "CAST_ONLY";
+
+function detectLegalityActionBindingMinV1(text: string): LegalityActionBindingMinV1 | null {
+  const normalized = normalizeOracleTextV1(text ?? "");
+  if (!normalized) return null;
+
+  if (/\bcast this spell only\b/i.test(normalized)) return "CAST_ONLY";
+  if (/\bcast only if\b/i.test(normalized)) return "CAST_ONLY";
+  if (/\byou may cast this spell only\b/i.test(normalized)) return "CAST_ONLY";
+
+  return null;
+}
 
 function getActivatedCostPrefix(text: string): string | null {
   const colonIndex = text.indexOf(":");
@@ -683,6 +695,19 @@ export function parseSemanticIrV0(input: {
     confidence = "med";
   }
   Object.defineProperty(ir, "confidence", { value: confidence, enumerable: false });
+
+  const legalityActionBindingMinV1 = detectLegalityActionBindingMinV1(text);
+  if (legalityActionBindingMinV1) {
+    const existingSemanticHints =
+      (Reflect.get(ir, "semantic_hints") as Record<string, unknown> | undefined) ?? {};
+    Object.defineProperty(ir, "semantic_hints", {
+      value: {
+        ...existingSemanticHints,
+        legality_action_binding_min: legalityActionBindingMinV1,
+      },
+      enumerable: false,
+    });
+  }
 
   return ir;
 }

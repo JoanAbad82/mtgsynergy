@@ -82,8 +82,15 @@ export type TargetMinSpecMinV1 = {
   controllerConstraint: TargetControllerConstraintMinV1 | null;
   sourceSpan: string;
 };
-export type LegalityGateMinTypeV1 = "ACTIVATE_ONLY_IF" | "ACTIVATE_ONLY_AS_SORCERY" | "CAST_ONLY_IF" | "OTHER";
-export type LegalityGateMinTimingV1 = "SORCERY_SPEED";
+export type LegalityGateMinTypeV1 =
+  | "ACTIVATE_ONLY_IF"
+  | "ACTIVATE_ONLY_AS_SORCERY"
+  | "ACTIVATE_ONLY_AS_INSTANT"
+  | "ACTIVATE_ONLY_DURING_YOUR_TURN"
+  | "ACTIVATE_ONLY_ONCE_EACH_TURN"
+  | "CAST_ONLY_IF"
+  | "OTHER";
+export type LegalityGateMinTimingV1 = "SORCERY_SPEED" | "INSTANT_SPEED";
 export type LegalityGateMinV1 = {
   type: LegalityGateMinTypeV1;
   condition?: string;
@@ -253,6 +260,27 @@ export function classifyTargetMinV1(oracleText: string): TargetMinSpecMinV1 | nu
 export function classifyLegalityGateMinV1(oracleText: string): LegalityGateMinV1 | null {
   const text = normalizeOracleTextV1(oracleText ?? "");
   if (!text) return null;
+
+  if (/\bactivate only once each turn\b/i.test(text)) {
+    return {
+      type: "ACTIVATE_ONLY_ONCE_EACH_TURN",
+      condition: "once each turn",
+    };
+  }
+
+  if (/\bactivate only during your turn\b/i.test(text)) {
+    return {
+      type: "ACTIVATE_ONLY_DURING_YOUR_TURN",
+      condition: "during your turn",
+    };
+  }
+
+  if (/\bactivate only as an instant\b/i.test(text)) {
+    return {
+      type: "ACTIVATE_ONLY_AS_INSTANT",
+      timing: "INSTANT_SPEED",
+    };
+  }
 
   if (/\bactivate only as a sorcery\b/i.test(text)) {
     return {

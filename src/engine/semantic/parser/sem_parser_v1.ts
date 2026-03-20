@@ -96,6 +96,12 @@ export type LegalityGateMinV1 = {
   condition?: string;
   timing?: LegalityGateMinTimingV1;
 };
+export type ZonePermissionMinTypeV1 = "ALLOW_FROM_ZONE" | "ONLY_FROM_ZONE";
+export type ZonePermissionMinZoneV1 = "GRAVEYARD" | "EXILE";
+export type ZonePermissionMinV1 = {
+  type: ZonePermissionMinTypeV1;
+  zone: ZonePermissionMinZoneV1;
+};
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
 export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
@@ -208,6 +214,24 @@ function detectLegalityActionBindingMinV1(
   if (/\bactivate only as a sorcery\b/i.test(normalized)) return "ACTIVATE_ONLY";
   if (/\bactivate only during your turn\b/i.test(normalized)) return "ACTIVATE_ONLY";
   if (/\bactivate only once each turn\b/i.test(normalized)) return "ACTIVATE_ONLY";
+
+  return null;
+}
+
+function classifyZonePermissionMinV1(oracleText: string): ZonePermissionMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+  if (!/\bcast\b/i.test(text) || !/\bfrom\b/i.test(text)) return null;
+
+  if (/\byou may cast this card from your graveyard\b/i.test(text)) {
+    return { type: "ALLOW_FROM_ZONE", zone: "GRAVEYARD" };
+  }
+  if (/\byou may cast this card from exile\b/i.test(text)) {
+    return { type: "ALLOW_FROM_ZONE", zone: "EXILE" };
+  }
+  if (/\bcast this card only from your graveyard\b/i.test(text)) {
+    return { type: "ONLY_FROM_ZONE", zone: "GRAVEYARD" };
+  }
 
   return null;
 }
@@ -706,14 +730,19 @@ export function parseSemanticIrV0(input: {
   Object.defineProperty(ir, "confidence", { value: confidence, enumerable: false });
 
   const legalityActionBindingMinV1 = detectLegalityActionBindingMinV1(text, kind);
-  if (legalityActionBindingMinV1) {
+  const zonePermissionMinV1 = classifyZonePermissionMinV1(text);
+  if (legalityActionBindingMinV1 || zonePermissionMinV1) {
     const existingSemanticHints =
       (Reflect.get(ir, "semantic_hints") as Record<string, unknown> | undefined) ?? {};
+    const nextSemanticHints: Record<string, unknown> = { ...existingSemanticHints };
+    if (legalityActionBindingMinV1) {
+      nextSemanticHints.legality_action_binding_min = legalityActionBindingMinV1;
+    }
+    if (zonePermissionMinV1) {
+      nextSemanticHints.zone_permission_min = zonePermissionMinV1;
+    }
     Object.defineProperty(ir, "semantic_hints", {
-      value: {
-        ...existingSemanticHints,
-        legality_action_binding_min: legalityActionBindingMinV1,
-      },
+      value: nextSemanticHints,
       enumerable: false,
     });
   }

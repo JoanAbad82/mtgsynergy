@@ -24,7 +24,7 @@ type AbilityIrEffect = {
   detail: string;
 };
 
-type LegalityActionBindingMinV1 = "CAST_ONLY";
+type LegalityActionBindingMinV1 = "CAST_ONLY" | "ACTIVATE_ONLY";
 
 export type AbilityIrMin = {
   kind: "Activated" | "ConditionalTriggered";

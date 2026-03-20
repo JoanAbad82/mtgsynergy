@@ -190,15 +190,24 @@ const TARGET_MIN_PATTERNS: ReadonlyArray<{ regex: RegExp; kinds: string[] }> = [
   { regex: /\btarget\s+artifact\b/i, kinds: ["artifact"] },
   { regex: /\btarget\s+land\b/i, kinds: ["land"] },
 ];
-type LegalityActionBindingMinV1 = "CAST_ONLY";
+type LegalityActionBindingMinV1 = "CAST_ONLY" | "ACTIVATE_ONLY";
 
-function detectLegalityActionBindingMinV1(text: string): LegalityActionBindingMinV1 | null {
+function detectLegalityActionBindingMinV1(
+  text: string,
+  kind: FrameKind,
+): LegalityActionBindingMinV1 | null {
   const normalized = normalizeOracleTextV1(text ?? "");
   if (!normalized) return null;
 
   if (/\bcast this spell only\b/i.test(normalized)) return "CAST_ONLY";
   if (/\bcast only if\b/i.test(normalized)) return "CAST_ONLY";
   if (/\byou may cast this spell only\b/i.test(normalized)) return "CAST_ONLY";
+  if (kind !== FrameKind.ACTIVATED) return null;
+
+  if (/\bactivate only if\b/i.test(normalized)) return "ACTIVATE_ONLY";
+  if (/\bactivate only as a sorcery\b/i.test(normalized)) return "ACTIVATE_ONLY";
+  if (/\bactivate only during your turn\b/i.test(normalized)) return "ACTIVATE_ONLY";
+  if (/\bactivate only once each turn\b/i.test(normalized)) return "ACTIVATE_ONLY";
 
   return null;
 }
@@ -696,7 +705,7 @@ export function parseSemanticIrV0(input: {
   }
   Object.defineProperty(ir, "confidence", { value: confidence, enumerable: false });
 
-  const legalityActionBindingMinV1 = detectLegalityActionBindingMinV1(text);
+  const legalityActionBindingMinV1 = detectLegalityActionBindingMinV1(text, kind);
   if (legalityActionBindingMinV1) {
     const existingSemanticHints =
       (Reflect.get(ir, "semantic_hints") as Record<string, unknown> | undefined) ?? {};

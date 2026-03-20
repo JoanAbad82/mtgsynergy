@@ -1,0 +1,108 @@
+MTGSynergy — DELTA REAL MICROFASE — LEGALITY ACTION BINDING MINIMUM V1
+Fecha de cierre: 2026-03-20
+Versión operativa: v37
+
+=====================================================================
+MICROFASE CERRADA
+=====================================================================
+
+Nombre operativo:
+- legality_action_binding_min_v1
+
+Ubicación:
+- A2.10 — phase 5
+
+=====================================================================
+OBJETIVO CONTRACTUAL
+=====================================================================
+
+Cerrar una microfase mínima, estricta y local para:
+
+- introducir binding explícito entre:
+  - semantic_hints.legality_action_binding_min
+  - ability.legality.action_context
+
+- distinguir semánticamente:
+  - restricciones de tipo CAST_ONLY
+
+Sin abrir:
+- casting completo (CR 601/602)
+- sistema de timing global
+- stack / priority
+- resolution legality
+
+=====================================================================
+CONTEXTO INMEDIATO
+=====================================================================
+
+Pipeline mínimo:
+Cost → Target → Legality (incluye timing local mínimo)
+
+Gap detectado:
+- ausencia de binding explícito entre tipo de acción (cast vs activate)
+  y restricciones de legalidad
+
+=====================================================================
+PATCH REAL CERRADO
+=====================================================================
+
+Commit:
+- 8ec6998
+
+Mensaje:
+- feat(semantic): add minimal legality action binding (CAST_ONLY)
+
+Archivos tocados:
+- src/engine/semantic/contract/sem_ability_ir_min_v1.json
+- src/engine/semantic/parser/sem_parser_v1.ts
+- src/engine/semantic/lowering/lower_to_ability_ir_min_v1.ts
+- src/engine/semantic/tests/sem_legality_action_binding_min_v1.test.ts
+
+=====================================================================
+CAMBIO TÉCNICO REAL
+=====================================================================
+
+Contrato:
+- nuevo hint:
+  legality_action_binding_min = ["CAST_ONLY", "ACTIVATE_ONLY"]
+
+Parser:
+- helper detectLegalityActionBindingMinV1
+- matching:
+  - "cast this spell only"
+  - "cast only if"
+  - "you may cast this spell only"
+
+Lowering:
+- projection:
+  ability.legality.action_context = "CAST_ONLY"
+
+=====================================================================
+VALIDACIÓN
+=====================================================================
+
+Anillo A:
+- test focal verde
+
+Anillo B:
+- triggered / linked / continuous / lowering → todos verdes
+
+Anillo C:
+- no aplica
+
+=====================================================================
+ESTADO FINAL
+=====================================================================
+
+Commit:
+- 8ec6998
+
+Push:
+- correcto a origin/main
+
+Estado:
+- working tree limpio
+
+=====================================================================
+END DELTA (v37)
+=====================================================================

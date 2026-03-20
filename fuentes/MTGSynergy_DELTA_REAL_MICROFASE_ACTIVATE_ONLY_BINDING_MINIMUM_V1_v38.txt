@@ -1,0 +1,183 @@
+======================================================================
+MTGSYNERGY — DELTA REAL POST-COMMIT / POST-PUSH
+MICROFASE: A2.10 PHASE 6 — ACTIVATE_ONLY BINDING MINIMUM V1
+VERSIÓN DOCUMENTAL: v38
+FECHA: 2026-03-20
+======================================================================
+
+ESTADO REAL CONSOLIDADO
+
+La microfase A2.10 phase 6 queda cerrada correctamente en main y publicada en GitHub.
+
+Commit local validado:
+- a9d8f36 — A2.10 phase 6 — ACTIVATE_ONLY binding minimum v1 (parser + lowering + test, delta v37 included)
+
+Push validado:
+- origin/main avanza de 8ec6998 a a9d8f36
+- rama remota main alineada con el commit de cierre de esta microfase
+
+----------------------------------------------------------------------
+OBJETIVO REAL CERRADO
+----------------------------------------------------------------------
+
+Se cierra el gap funcional que quedaba tras v37:
+- CAST_ONLY ya estaba implementado
+- ACTIVATE_ONLY estaba definido en contrato pero no implementado en parser/lowering
+
+Resultado real tras esta microfase:
+- semantic_hints.legality_action_binding_min ya puede emitir ACTIVATE_ONLY
+- lowering proyecta ACTIVATE_ONLY hacia ability.legality.action_context
+- el binding queda restringido a habilidades activadas mediante guardrail estructural
+
+----------------------------------------------------------------------
+CAMBIO REAL APLICADO
+----------------------------------------------------------------------
+
+Archivos modificados en código:
+- src/engine/semantic/parser/sem_parser_v1.ts
+- src/engine/semantic/lowering/lower_to_ability_ir_min_v1.ts
+- src/engine/semantic/tests/sem_legality_action_binding_min_v1.test.ts
+
+Archivo documental incluido en el commit:
+- fuentes/MTGSynergy_DELTA_REAL_MICROFASE_LEGALITY_ACTION_BINDING_MINIMUM_V1_v37.txt
+
+Cambio semántico real:
+- ampliación del tipo local de legality action binding:
+  - de: CAST_ONLY
+  - a: CAST_ONLY | ACTIVATE_ONLY
+- detección explícita de restricciones locales de activación mínimas soportadas
+- proyección correcta al lowering existente
+- preservación explícita de CAST_ONLY sin regresión
+
+Restricciones locales de activación cubiertas por el cierre:
+- Activate only as a sorcery
+- Activate only during your turn
+- Activate only once each turn
+- Activate only if ...
+
+Guardrail real consolidado:
+- ACTIVATE_ONLY no se emite por texto superficial aislado
+- ACTIVATE_ONLY solo se emite cuando la frame ya está reconocida como ACTIVATED
+
+Ajuste final de limpieza aplicado antes del commit:
+- se eliminó el matcher y el caso de test para:
+  - Activate only as an instant
+- razón: mantener la microfase en su forma mínima y estrictamente necesaria
+
+----------------------------------------------------------------------
+NO CAMBIA
+----------------------------------------------------------------------
+
+Esta microfase NO introduce:
+- CR 601/602 completo
+- runtime engine de activación
+- stack / priority
+- legality de resolución
+- timing global por fases
+- target avanzado
+- expansión de costes
+- permisos globales de zona
+- restricciones generales de controller
+- UI / overlay / scoring / SPS
+
+Tampoco reabre:
+- cost_min_v1
+- target_min_v1
+- legality_gate_min_v1
+- legality_timing_windows_min_v1
+- legality_action_binding_min_v1 v37 como CAST_ONLY base
+
+----------------------------------------------------------------------
+VALIDACIÓN REAL EJECUTADA
+----------------------------------------------------------------------
+
+Validación focal y de no regresión confirmada:
+- sem_legality_action_binding_min_v1.test.ts
+- sem_legality_gate_min_v1.test.ts
+- sem_legality_timing_windows_min_v1.test.ts
+- sem_lower_to_ability_ir_min_v1.test.ts
+- sem_cost_target_legality_min_v1.test.ts
+
+Lectura correcta de la validación:
+- ACTIVATE_ONLY queda incorporado sin widening lateral
+- CAST_ONLY permanece intacto
+- lowering sigue siendo aditivo y estrecho
+- el pipeline Cost -> Target -> Legality gana coherencia interna local
+
+----------------------------------------------------------------------
+ESTADO OPERATIVO TRAS v38
+----------------------------------------------------------------------
+
+Microfases cerradas a esta altura:
+- replacement / prevention v1
+- linked abilities v1
+- continuous effects / layers / dependency / timestamp v1
+- cost minimal semantics v1
+- target formal minimum semantics v1
+- legality gate minimum v1
+- legality timing windows minimum v1
+- legality action binding minimum v1 (v37, CAST_ONLY)
+- ACTIVATE_ONLY binding minimum v1 (v38)
+
+Estado real del pipeline mínimo consolidado:
+- Cost -> Target -> Legality
+
+Estado real de legality tras v38:
+- restricciones mínimas estructurales
+- timing local explícito
+- action binding local:
+  - CAST_ONLY
+  - ACTIVATE_ONLY
+- proyección a ability.legality.action_context
+
+----------------------------------------------------------------------
+LECTURA CORRECTA DEL CIERRE
+----------------------------------------------------------------------
+
+Este cierre no convierte MTGSynergy en un engine jugable.
+
+Lo que sí hace es reforzar la semántica declarativa previa al anuncio/activación:
+- coste separado
+- target separado
+- legalidad local separada
+- binding de acción ya coherente para cast y activate
+
+La ganancia real es de arquitectura y coherencia contractual, no de surface visible.
+
+----------------------------------------------------------------------
+SIGUIENTE SLICE ESTRECHO RECOMENDADO
+----------------------------------------------------------------------
+
+Siguiente microfase propuesta:
+- A2.10 phase 7 — local explicit zone permission minimum v1
+
+Definición estrecha del siguiente slice:
+- modelar SOLO permisos locales y explícitos de zona para casteo
+- centrado SOLO en textos del tipo:
+  - You may cast this card from your graveyard
+  - You may cast this card from exile
+- serialización declarativa mínima en legality / semantic_hints
+- sin abrir sistema global de permisos por zona
+- sin flashback completo
+- sin escape completo
+- sin permissions engine general
+- sin runtime
+
+Razón de continuidad:
+- tras cerrar action binding, el siguiente eje mínimo coherente de legalidad local es el origen de zona explícitamente permitido para la acción de cast
+- sigue siendo local, declarativo, testable y estrecho
+
+----------------------------------------------------------------------
+REGLA DE CONTINUIDAD
+----------------------------------------------------------------------
+
+No reabrir esta microfase salvo bug real.
+
+La siguiente conversación debe abrir un único frente nuevo y estrecho, apoyado en:
+- el estado real ya consolidado tras a9d8f36
+- el protocolo post-v33
+- la disciplina A/B/C
+
+======================================================================
+END DELTA REAL v38
+======================================================================

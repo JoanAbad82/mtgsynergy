@@ -102,6 +102,7 @@ export type ZonePermissionMinV1 = {
   type: ZonePermissionMinTypeV1;
   zone: ZonePermissionMinZoneV1;
 };
+export type LegalityActorConstraintMinV1 = "ANY_PLAYER" | "YOU_ONLY" | "OPPONENT_ONLY" | "OWNER_ONLY";
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
 export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
@@ -232,6 +233,18 @@ function classifyZonePermissionMinV1(oracleText: string): ZonePermissionMinV1 | 
   if (/\bcast this card only from your graveyard\b/i.test(text)) {
     return { type: "ONLY_FROM_ZONE", zone: "GRAVEYARD" };
   }
+
+  return null;
+}
+
+function classifyLegalityActorConstraintMinV1(oracleText: string): LegalityActorConstraintMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+
+  if (/\bany player may activate\b/i.test(text)) return "ANY_PLAYER";
+  if (/\bonly an opponent may activate\b/i.test(text)) return "OPPONENT_ONLY";
+  if (/\bits owner may cast\b/i.test(text)) return "OWNER_ONLY";
+  if (/\byou may cast\b/i.test(text)) return "YOU_ONLY";
 
   return null;
 }
@@ -731,7 +744,8 @@ export function parseSemanticIrV0(input: {
 
   const legalityActionBindingMinV1 = detectLegalityActionBindingMinV1(text, kind);
   const zonePermissionMinV1 = classifyZonePermissionMinV1(text);
-  if (legalityActionBindingMinV1 || zonePermissionMinV1) {
+  const legalityActorConstraintMinV1 = classifyLegalityActorConstraintMinV1(text);
+  if (legalityActionBindingMinV1 || zonePermissionMinV1 || legalityActorConstraintMinV1) {
     const existingSemanticHints =
       (Reflect.get(ir, "semantic_hints") as Record<string, unknown> | undefined) ?? {};
     const nextSemanticHints: Record<string, unknown> = { ...existingSemanticHints };
@@ -740,6 +754,9 @@ export function parseSemanticIrV0(input: {
     }
     if (zonePermissionMinV1) {
       nextSemanticHints.zone_permission_min = zonePermissionMinV1;
+    }
+    if (legalityActorConstraintMinV1) {
+      nextSemanticHints.legality_actor_constraint_min = legalityActorConstraintMinV1;
     }
     Object.defineProperty(ir, "semantic_hints", {
       value: nextSemanticHints,

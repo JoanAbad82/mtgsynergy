@@ -16,6 +16,7 @@ import {
   type LegalityConditionMinV1,
   type LegalityStaticAbilityRestrictionMinV1,
   type LoyaltyAbilityMinV1,
+  type LoyaltySymbolCostMinV1,
   type ManaAbilityMinV1,
   type TriggeredManaAbilityMinV1,
   type LinkedAbilityClassMinV1,
@@ -35,6 +36,7 @@ type AbilityIrEffect = {
 type LegalityActionBindingMinV1 = "CAST_ONLY" | "ACTIVATE_ONLY";
 type LoyaltyActivationRestrictionKindMinV1 = "ACTIVATE_ONLY_AS_SORCERY";
 type LoyaltyOnceEachTurnRestrictionMinV1 = "ONCE_EACH_TURN";
+type LoyaltySymbolCostTokenMinV1 = "LOYALTY_PLUS" | "LOYALTY_MINUS" | "LOYALTY_ZERO";
 
 export type AbilityIrMin = {
   kind: "Activated" | "ConditionalTriggered";
@@ -83,6 +85,7 @@ export type AbilityIrMin = {
     legality_static_ability_restrictions_min_v1?: LegalityStaticAbilityRestrictionMinV1;
     loyalty_ability_min?: LoyaltyAbilityMinV1;
     loyalty_once_each_turn_restriction_min_v1?: LoyaltyOnceEachTurnRestrictionMinV1;
+    loyalty_symbol_cost_min_v1?: LoyaltySymbolCostMinV1;
     mana_ability_min?: ManaAbilityMinV1;
     triggered_mana_ability_min?: TriggeredManaAbilityMinV1;
     legality_summoning_sickness_tap_q_min?: SummoningSicknessTapQMin;
@@ -247,6 +250,7 @@ function buildSemanticHints(
   legalityConditionMinV1?: LegalityConditionMinV1,
   legalityStaticAbilityRestrictionsMinV1?: LegalityStaticAbilityRestrictionMinV1,
   loyaltyAbilityMinV1?: LoyaltyAbilityMinV1,
+  loyaltySymbolCostMinV1?: LoyaltySymbolCostMinV1,
   manaAbilityMinV1?: ManaAbilityMinV1,
   triggeredManaAbilityMinV1?: TriggeredManaAbilityMinV1,
 ): AbilityIrMin["semantic_hints"] | undefined {
@@ -341,6 +345,9 @@ function buildSemanticHints(
     hints.loyalty_ability_min = loyaltyAbilityMinV1;
     hints.loyalty_once_each_turn_restriction_min_v1 = "ONCE_EACH_TURN";
   }
+  if (loyaltySymbolCostMinV1) {
+    hints.loyalty_symbol_cost_min_v1 = loyaltySymbolCostMinV1;
+  }
   if (manaAbilityMinV1) {
     hints.mana_ability_min = manaAbilityMinV1;
   }
@@ -353,6 +360,14 @@ function buildSemanticHints(
   }
 
   return hints;
+}
+
+function mapLoyaltySymbolCostToTokenMinV1(
+  loyaltySymbolCost: LoyaltySymbolCostMinV1,
+): LoyaltySymbolCostTokenMinV1 {
+  if (loyaltySymbolCost.kind === "POSITIVE") return "LOYALTY_PLUS";
+  if (loyaltySymbolCost.kind === "NEGATIVE") return "LOYALTY_MINUS";
+  return "LOYALTY_ZERO";
 }
 
 export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
@@ -373,6 +388,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
       legality_static_ability_restrictions_min_v1?: LegalityStaticAbilityRestrictionMinV1;
       loyalty_ability_min?: LoyaltyAbilityMinV1;
       loyalty_once_each_turn_restriction_min_v1?: LoyaltyOnceEachTurnRestrictionMinV1;
+      loyalty_symbol_cost_min_v1?: LoyaltySymbolCostMinV1;
       mana_ability_min?: ManaAbilityMinV1;
       triggered_mana_ability_min?: TriggeredManaAbilityMinV1;
     }
@@ -405,6 +421,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
   const legalityConditionMinV1 = parsedSemanticHints?.legality_condition_min;
   const legalityStaticAbilityRestrictionsMinV1 = parsedSemanticHints?.legality_static_ability_restrictions_min_v1;
   const loyaltyAbilityMinV1 = parsedSemanticHints?.loyalty_ability_min;
+  const loyaltySymbolCostMinV1 = parsedSemanticHints?.loyalty_symbol_cost_min_v1;
   const manaAbilityMinV1 = parsedSemanticHints?.mana_ability_min;
   const triggeredManaAbilityMinV1 = parsedSemanticHints?.triggered_mana_ability_min;
   const semanticHints = buildSemanticHints(
@@ -416,6 +433,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
     legalityConditionMinV1,
     legalityStaticAbilityRestrictionsMinV1,
     loyaltyAbilityMinV1,
+    loyaltySymbolCostMinV1,
     manaAbilityMinV1,
     triggeredManaAbilityMinV1,
   );
@@ -495,6 +513,13 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
         ...(ability.legality ?? {}),
         loyalty_ability_min: semanticHints.loyalty_ability_min,
       },
+    };
+  }
+
+  if (semanticHints?.loyalty_symbol_cost_min_v1 && ability.kind === "Activated") {
+    ability = {
+      ...ability,
+      cost: [mapLoyaltySymbolCostToTokenMinV1(semanticHints.loyalty_symbol_cost_min_v1)],
     };
   }
 

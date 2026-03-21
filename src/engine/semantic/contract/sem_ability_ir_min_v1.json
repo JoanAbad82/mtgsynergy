@@ -51,7 +51,7 @@
       "guarded_follow_up: optional, null or minimal object",
       "opaque_remainder: optional, null or string",
       "metadata: required, minimal stable object",
-      "semantic_hints: optional, minimal object with optional boolean flags and optional triggered_ability_min / replacement_prevention_min / linked_ability_min / continuous_layers_min / cost_min_v1 / target_min_v1 / legality_gate_min_v1 / zone_permission_min / legality_actor_constraint_min / legality_condition_min / legality_static_ability_restrictions_min_v1 / loyalty_ability_min / loyalty_once_each_turn_restriction_min_v1 / mana_ability_min / triggered_mana_ability_min classifications",
+      "semantic_hints: optional, minimal object with optional boolean flags and optional triggered_ability_min / replacement_prevention_min / linked_ability_min / continuous_layers_min / cost_min_v1 / target_min_v1 / legality_gate_min_v1 / zone_permission_min / legality_actor_constraint_min / legality_condition_min / legality_static_ability_restrictions_min_v1 / loyalty_ability_min / loyalty_symbol_cost_min_v1 / loyalty_once_each_turn_restriction_min_v1 / mana_ability_min / triggered_mana_ability_min classifications",
       "legality: optional, minimal declarative object for normalized restrictions"
     ]
   },
@@ -66,7 +66,7 @@
       "field": "cost",
       "required": false,
       "shape": "null | string[]",
-      "notes": "Base corpus uses TAP or null; no rich cost model yet."
+      "notes": "Base corpus uses TAP or null; loyalty symbol cost minimum may project LOYALTY_PLUS|LOYALTY_MINUS|LOYALTY_ZERO as declarative cost-only tokens."
     },
     {
       "field": "trigger_event",
@@ -107,7 +107,7 @@
     {
       "field": "semantic_hints",
       "required": false,
-      "shape": "object {possible_zone_change?, possible_lki_required?, possible_creature_dies_derivation?, triggered_ability_min?, replacement_prevention_min?, linked_ability_min?, continuous_layers_min?, cost_min_v1?, target_min_v1?, legality_gate_min_v1?, zone_permission_min?, legality_actor_constraint_min?, legality_condition_min?, legality_static_ability_restrictions_min_v1?, loyalty_ability_min?, loyalty_once_each_turn_restriction_min_v1?, mana_ability_min?, triggered_mana_ability_min?}",
+      "shape": "object {possible_zone_change?, possible_lki_required?, possible_creature_dies_derivation?, triggered_ability_min?, replacement_prevention_min?, linked_ability_min?, continuous_layers_min?, cost_min_v1?, target_min_v1?, legality_gate_min_v1?, zone_permission_min?, legality_actor_constraint_min?, legality_condition_min?, legality_static_ability_restrictions_min_v1?, loyalty_ability_min?, loyalty_symbol_cost_min_v1?, loyalty_once_each_turn_restriction_min_v1?, mana_ability_min?, triggered_mana_ability_min?}",
       "legality_action_binding_min": [
         "CAST_ONLY",
         "ACTIVATE_ONLY"
@@ -165,6 +165,15 @@
           "ZERO"
         ]
       },
+      "loyalty_symbol_cost_min_v1": {
+        "kind": [
+          "POSITIVE",
+          "NEGATIVE",
+          "ZERO"
+        ],
+        "amount": "number",
+        "source_symbol": "string"
+      },
       "loyalty_once_each_turn_restriction_min_v1": [
         "ONCE_EACH_TURN"
       ],
@@ -198,7 +207,7 @@
           "NON_MANA_TRIGGER_CONTEXT"
         ]
       },
-      "notes": "Optional narrowing-only wiring metadata for A2.9/A2.10; triggered_ability_min.class accepts NONE|NORMAL|INTERVENING_IF|ZONE_CHANGE|DELAYED|REFLEXIVE and fallback accepts LINKED; replacement_prevention_min accepts REPLACEMENT|PREVENTION; linked_ability_min accepts LINKED; continuous_layers_min.class accepts TYPE_CHANGE|COLOR_CHANGE|ABILITY_CHANGE|PT_CHANGE|MULTI_LAYER and ordering_risk accepts NONE|TIMESTAMP_OR_DEPENDENCY; cost_min_v1.classes accepts MANA|TAP|SACRIFICE|DISCARD|PAY_LIFE over explicit activated cost prefixes only; target_min_v1 shape is {required,minTargets,maxTargets,targetKinds,zoneHint,controllerConstraint,sourceSpan} over explicit literal target patterns only; legality_gate_min_v1 shape is {type,condition?,timing?} where type accepts ACTIVATE_ONLY_IF|ACTIVATE_ONLY_AS_SORCERY|ACTIVATE_ONLY_AS_INSTANT|ACTIVATE_ONLY_DURING_YOUR_TURN|ACTIVATE_ONLY_ONCE_EACH_TURN|CAST_ONLY_IF|OTHER and timing accepts SORCERY_SPEED|INSTANT_SPEED; zone_permission_min shape is {type,zone} where type accepts ALLOW_FROM_ZONE|ONLY_FROM_ZONE and zone accepts GRAVEYARD|EXILE; legality_actor_constraint_min accepts ANY_PLAYER|YOU_ONLY|OPPONENT_ONLY|OWNER_ONLY over explicit local actor wording only; legality_condition_min shape is {appliesTo,hasCondition,conditionTextNormalized,conditionClass} where appliesTo accepts ACTIVATE|CAST and conditionClass accepts CONTROLS_X|OPPONENT_STATE|ATTACKED_THIS_TURN|OTHER_LEGALITY_TEXT over explicit only-if legality wording; legality_static_ability_restrictions_min_v1 shape is {hasRestriction,restrictionClass,sourceSpan} with restrictionClass ONLY_DURING_YOUR_TURN|ONLY_ONCE_EACH_TURN|OTHER_STATIC_ABILITY_RESTRICTION_TEXT over explicit activation-only restriction wording; loyalty_ability_min shape is {class,loyalty_cost_kind} where class accepts LOYALTY and loyalty_cost_kind accepts PLUS|MINUS|ZERO over explicit loyalty-cost activated prefix patterns only; loyalty_once_each_turn_restriction_min_v1 accepts ONCE_EACH_TURN only and is projected declaratively for loyalty abilities without runtime tracking; mana_ability_min shape is {class,reasons} where class accepts MANA_ABILITY|NON_MANA_ABILITY and reasons accepts NO_TARGET|ADDS_MANA|NOT_LOYALTY|HAS_TARGET|IS_LOYALTY|NO_EXPLICIT_MANA_ADD over explicit activated mana-ability classification constraints; triggered_mana_ability_min shape is {class,reasons} where class accepts NONE|TRIGGERED_MANA_ABILITY and reasons accepts IS_TRIGGERED|NO_TARGET|ADDS_MANA|MANA_RELATED_TRIGGER|HAS_TARGET|IS_LOYALTY|NO_EXPLICIT_MANA_ADD|NON_MANA_TRIGGER_CONTEXT over explicit triggered mana-ability classification constraints; does not replace metadata provenance; not full game semantics and not CR 613 full resolver."
+      "notes": "Optional narrowing-only wiring metadata for A2.9/A2.10; triggered_ability_min.class accepts NONE|NORMAL|INTERVENING_IF|ZONE_CHANGE|DELAYED|REFLEXIVE and fallback accepts LINKED; replacement_prevention_min accepts REPLACEMENT|PREVENTION; linked_ability_min accepts LINKED; continuous_layers_min.class accepts TYPE_CHANGE|COLOR_CHANGE|ABILITY_CHANGE|PT_CHANGE|MULTI_LAYER and ordering_risk accepts NONE|TIMESTAMP_OR_DEPENDENCY; cost_min_v1.classes accepts MANA|TAP|SACRIFICE|DISCARD|PAY_LIFE over explicit activated cost prefixes only; target_min_v1 shape is {required,minTargets,maxTargets,targetKinds,zoneHint,controllerConstraint,sourceSpan} over explicit literal target patterns only; legality_gate_min_v1 shape is {type,condition?,timing?} where type accepts ACTIVATE_ONLY_IF|ACTIVATE_ONLY_AS_SORCERY|ACTIVATE_ONLY_AS_INSTANT|ACTIVATE_ONLY_DURING_YOUR_TURN|ACTIVATE_ONLY_ONCE_EACH_TURN|CAST_ONLY_IF|OTHER and timing accepts SORCERY_SPEED|INSTANT_SPEED; zone_permission_min shape is {type,zone} where type accepts ALLOW_FROM_ZONE|ONLY_FROM_ZONE and zone accepts GRAVEYARD|EXILE; legality_actor_constraint_min accepts ANY_PLAYER|YOU_ONLY|OPPONENT_ONLY|OWNER_ONLY over explicit local actor wording only; legality_condition_min shape is {appliesTo,hasCondition,conditionTextNormalized,conditionClass} where appliesTo accepts ACTIVATE|CAST and conditionClass accepts CONTROLS_X|OPPONENT_STATE|ATTACKED_THIS_TURN|OTHER_LEGALITY_TEXT over explicit only-if legality wording; legality_static_ability_restrictions_min_v1 shape is {hasRestriction,restrictionClass,sourceSpan} with restrictionClass ONLY_DURING_YOUR_TURN|ONLY_ONCE_EACH_TURN|OTHER_STATIC_ABILITY_RESTRICTION_TEXT over explicit activation-only restriction wording; loyalty_ability_min shape is {class,loyalty_cost_kind} where class accepts LOYALTY and loyalty_cost_kind accepts PLUS|MINUS|ZERO over explicit loyalty-cost activated prefix patterns only; loyalty_symbol_cost_min_v1 shape is {kind,amount,source_symbol} where kind accepts POSITIVE|NEGATIVE|ZERO and represents loyalty symbol cost in CostIR only (not EffectIR and not legality runtime enforcement); loyalty_once_each_turn_restriction_min_v1 accepts ONCE_EACH_TURN only and is projected declaratively for loyalty abilities without runtime tracking; mana_ability_min shape is {class,reasons} where class accepts MANA_ABILITY|NON_MANA_ABILITY and reasons accepts NO_TARGET|ADDS_MANA|NOT_LOYALTY|HAS_TARGET|IS_LOYALTY|NO_EXPLICIT_MANA_ADD over explicit activated mana-ability classification constraints; triggered_mana_ability_min shape is {class,reasons} where class accepts NONE|TRIGGERED_MANA_ABILITY and reasons accepts IS_TRIGGERED|NO_TARGET|ADDS_MANA|MANA_RELATED_TRIGGER|HAS_TARGET|IS_LOYALTY|NO_EXPLICIT_MANA_ADD|NON_MANA_TRIGGER_CONTEXT over explicit triggered mana-ability classification constraints; does not replace metadata provenance; not full game semantics and not CR 613 full resolver."
     },
     {
       "field": "legality",

@@ -155,6 +155,12 @@ export type LoyaltyAbilityMinV1 = {
   class: "LOYALTY";
   loyalty_cost_kind: LoyaltyAbilityCostKindMinV1;
 };
+export type LoyaltySymbolCostKindMinV1 = "POSITIVE" | "NEGATIVE" | "ZERO";
+export type LoyaltySymbolCostMinV1 = {
+  kind: LoyaltySymbolCostKindMinV1;
+  amount: number;
+  source_symbol: string;
+};
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
 export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
@@ -403,6 +409,19 @@ function getActivatedCostPrefix(text: string): string | null {
 }
 
 export function classifyLoyaltyAbilityMinV1(oracleText: string): LoyaltyAbilityMinV1 | null {
+  const loyaltySymbolCost = classifyLoyaltySymbolCostMinV1(oracleText);
+  if (!loyaltySymbolCost) return null;
+
+  if (loyaltySymbolCost.kind === "POSITIVE") {
+    return { class: "LOYALTY", loyalty_cost_kind: "PLUS" };
+  }
+  if (loyaltySymbolCost.kind === "NEGATIVE") {
+    return { class: "LOYALTY", loyalty_cost_kind: "MINUS" };
+  }
+  return { class: "LOYALTY", loyalty_cost_kind: "ZERO" };
+}
+
+export function classifyLoyaltySymbolCostMinV1(oracleText: string): LoyaltySymbolCostMinV1 | null {
   const text = normalizeOracleTextV1(oracleText ?? "");
   if (!text) return null;
 
@@ -415,14 +434,32 @@ export function classifyLoyaltyAbilityMinV1(oracleText: string): LoyaltyAbilityM
       ? compactCostPrefix.slice(1, -1)
       : compactCostPrefix;
 
-  if (/^\+\d+$/.test(loyaltyToken)) {
-    return { class: "LOYALTY", loyalty_cost_kind: "PLUS" };
+  const normalizedSourceSymbol = compactCostPrefix.startsWith("[") ? compactCostPrefix : `[${loyaltyToken}]`;
+
+  const positiveMatch = /^\+(\d+)$/.exec(loyaltyToken);
+  if (positiveMatch) {
+    return {
+      kind: "POSITIVE",
+      amount: Number.parseInt(positiveMatch[1], 10),
+      source_symbol: normalizedSourceSymbol,
+    };
   }
-  if (/^-\d+$/.test(loyaltyToken)) {
-    return { class: "LOYALTY", loyalty_cost_kind: "MINUS" };
+
+  const negativeMatch = /^-(\d+)$/.exec(loyaltyToken);
+  if (negativeMatch) {
+    return {
+      kind: "NEGATIVE",
+      amount: Number.parseInt(negativeMatch[1], 10),
+      source_symbol: normalizedSourceSymbol,
+    };
   }
+
   if (/^0$/.test(loyaltyToken)) {
-    return { class: "LOYALTY", loyalty_cost_kind: "ZERO" };
+    return {
+      kind: "ZERO",
+      amount: 0,
+      source_symbol: normalizedSourceSymbol,
+    };
   }
 
   return null;
@@ -984,6 +1021,7 @@ export function parseSemanticIrV0(input: {
   const manaAbilityMinV1 = classifyManaAbilityMinV1(text);
   const triggeredManaAbilityMinV1 = classifyTriggeredManaAbilityMinV1(text);
   const loyaltyAbilityMinV1 = classifyLoyaltyAbilityMinV1(text);
+  const loyaltySymbolCostMinV1 = classifyLoyaltySymbolCostMinV1(text);
   if (
     legalityActionBindingMinV1 ||
     zonePermissionMinV1 ||
@@ -992,7 +1030,8 @@ export function parseSemanticIrV0(input: {
     legalityStaticAbilityRestrictionsMinV1 ||
     manaAbilityMinV1 ||
     triggeredManaAbilityMinV1.class === "TRIGGERED_MANA_ABILITY" ||
-    loyaltyAbilityMinV1
+    loyaltyAbilityMinV1 ||
+    loyaltySymbolCostMinV1
   ) {
     const existingSemanticHints =
       (Reflect.get(ir, "semantic_hints") as Record<string, unknown> | undefined) ?? {};
@@ -1020,6 +1059,9 @@ export function parseSemanticIrV0(input: {
     }
     if (loyaltyAbilityMinV1) {
       nextSemanticHints.loyalty_ability_min = loyaltyAbilityMinV1;
+    }
+    if (loyaltySymbolCostMinV1) {
+      nextSemanticHints.loyalty_symbol_cost_min_v1 = loyaltySymbolCostMinV1;
     }
     Object.defineProperty(ir, "semantic_hints", {
       value: nextSemanticHints,

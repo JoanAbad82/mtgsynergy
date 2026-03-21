@@ -34,6 +34,7 @@ type AbilityIrEffect = {
 
 type LegalityActionBindingMinV1 = "CAST_ONLY" | "ACTIVATE_ONLY";
 type LoyaltyActivationRestrictionKindMinV1 = "ACTIVATE_ONLY_AS_SORCERY";
+type LoyaltyOnceEachTurnRestrictionMinV1 = "ONCE_EACH_TURN";
 
 export type AbilityIrMin = {
   kind: "Activated" | "ConditionalTriggered";
@@ -50,6 +51,7 @@ export type AbilityIrMin = {
   };
   legality?: (Record<string, unknown> & {
     kind?: LoyaltyActivationRestrictionKindMinV1;
+    loyalty_once_each_turn_restriction_min_v1?: LoyaltyOnceEachTurnRestrictionMinV1;
     action_context?: LegalityActionBindingMinV1;
     zone_permission_min?: ZonePermissionMinV1;
     actor_constraint_min?: LegalityActorConstraintMinV1;
@@ -80,6 +82,7 @@ export type AbilityIrMin = {
     legality_condition_min?: LegalityConditionMinV1;
     legality_static_ability_restrictions_min_v1?: LegalityStaticAbilityRestrictionMinV1;
     loyalty_ability_min?: LoyaltyAbilityMinV1;
+    loyalty_once_each_turn_restriction_min_v1?: LoyaltyOnceEachTurnRestrictionMinV1;
     mana_ability_min?: ManaAbilityMinV1;
     triggered_mana_ability_min?: TriggeredManaAbilityMinV1;
     legality_summoning_sickness_tap_q_min?: SummoningSicknessTapQMin;
@@ -336,6 +339,7 @@ function buildSemanticHints(
   }
   if (loyaltyAbilityMinV1) {
     hints.loyalty_ability_min = loyaltyAbilityMinV1;
+    hints.loyalty_once_each_turn_restriction_min_v1 = "ONCE_EACH_TURN";
   }
   if (manaAbilityMinV1) {
     hints.mana_ability_min = manaAbilityMinV1;
@@ -368,6 +372,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
       legality_condition_min?: LegalityConditionMinV1;
       legality_static_ability_restrictions_min_v1?: LegalityStaticAbilityRestrictionMinV1;
       loyalty_ability_min?: LoyaltyAbilityMinV1;
+      loyalty_once_each_turn_restriction_min_v1?: LoyaltyOnceEachTurnRestrictionMinV1;
       mana_ability_min?: ManaAbilityMinV1;
       triggered_mana_ability_min?: TriggeredManaAbilityMinV1;
     }
@@ -499,6 +504,16 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
       legality: {
         ...(ability.legality ?? {}),
         kind: "ACTIVATE_ONLY_AS_SORCERY",
+      },
+    };
+  }
+
+  if (semanticHints?.loyalty_once_each_turn_restriction_min_v1 && ability.kind === "Activated") {
+    ability = {
+      ...ability,
+      legality: {
+        ...(ability.legality ?? {}),
+        loyalty_once_each_turn_restriction_min_v1: semanticHints.loyalty_once_each_turn_restriction_min_v1,
       },
     };
   }

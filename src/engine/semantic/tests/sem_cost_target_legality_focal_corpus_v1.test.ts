@@ -3,18 +3,20 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { analyzeCostTargetLegalityMinV1 } from "../services/sem_cost_target_legality_min_v1";
-import { CostKind, LegalityKind, TargetKind } from "../types/sem_cost_target_legality_types";
+import { CostKind, LegalityKind, SummoningSicknessTapQMin, TargetKind } from "../types/sem_cost_target_legality_types";
 
 type FocalAnchorRow = {
   card_name: string;
   corpus_group: string;
   status: string;
+  source_type_line: string | null;
   focus_text: string;
   expected_cost_kinds: CostKind[];
   expected_target_kinds: TargetKind[];
   expected_legality_kinds: LegalityKind[];
   expected_target_count: number;
   expected_legality_count: number;
+  expected_summoning_sickness_tap_q_min: SummoningSicknessTapQMin | null;
   notes_scope: string;
 };
 
@@ -49,7 +51,9 @@ describe("cost target legality focal corpus v1", () => {
     const rows = [...corpus.anchor_cards].sort((a, b) => a.card_name.localeCompare(b.card_name));
 
     for (const row of rows) {
-      const result = analyzeCostTargetLegalityMinV1(row.focus_text);
+      const result = analyzeCostTargetLegalityMinV1(row.focus_text, {
+        sourceTypeLine: row.source_type_line,
+      });
       const actualCostKinds = sortedUnique(result.costIr.items.map((item) => item.kind));
       const actualTargetKinds = sortedUnique(result.targetSpecs.flatMap((spec) => spec.targetKinds));
       const actualLegalityKinds = sortedUnique(result.legalityGates.map((gate) => gate.kind));
@@ -59,6 +63,7 @@ describe("cost target legality focal corpus v1", () => {
       expect(actualLegalityKinds).toEqual(sortedUnique(row.expected_legality_kinds));
       expect(result.targetSpecs).toHaveLength(row.expected_target_count);
       expect(result.legalityGates).toHaveLength(row.expected_legality_count);
+      expect(result.summoningSicknessTapQMin ?? null).toEqual(row.expected_summoning_sickness_tap_q_min);
     }
   });
 });

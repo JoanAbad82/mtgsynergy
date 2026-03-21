@@ -13,10 +13,26 @@ type AbilityIrMin = {
   guarded_follow_up: null;
   opaque_remainder: string | null;
   metadata: { source_card: string; corpus_group: string; ability_slot: number };
+  legality?: {
+    summoning_sickness_tap_q_min?: {
+      appliesTo: "ACTIVATE";
+      sourceKind: "CREATURE";
+      tapSymbolPresent: boolean;
+      untapSymbolPresent: boolean;
+      restrictionClass: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION";
+    };
+  };
   semantic_hints?: {
     possible_zone_change?: boolean;
     possible_lki_required?: boolean;
     possible_creature_dies_derivation?: boolean;
+    legality_summoning_sickness_tap_q_min?: {
+      appliesTo: "ACTIVATE";
+      sourceKind: "CREATURE";
+      tapSymbolPresent: boolean;
+      untapSymbolPresent: boolean;
+      restrictionClass: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION";
+    };
     cost_target_legality_min?: {
       cost_kinds: string[];
       target_kinds: string[];
@@ -172,5 +188,28 @@ describe("lowerToAbilityIrMinV1", () => {
     });
 
     expect(lowered?.semantic_hints?.cost_target_legality_min).toBeUndefined();
+  });
+
+  it("emits summoning sickness tap/q legality hint for creature activated ability with {T}", () => {
+    const lowered = lowerToAbilityIrMinV1({
+      name: "Elvish Mystic",
+      oracle_text: "{T}: Add {G}.",
+      type_line: "Creature — Elf Druid",
+    });
+
+    expect(lowered?.semantic_hints?.legality_summoning_sickness_tap_q_min).toEqual({
+      appliesTo: "ACTIVATE",
+      sourceKind: "CREATURE",
+      tapSymbolPresent: true,
+      untapSymbolPresent: false,
+      restrictionClass: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION",
+    });
+    expect(lowered?.legality?.summoning_sickness_tap_q_min).toEqual({
+      appliesTo: "ACTIVATE",
+      sourceKind: "CREATURE",
+      tapSymbolPresent: true,
+      untapSymbolPresent: false,
+      restrictionClass: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION",
+    });
   });
 });

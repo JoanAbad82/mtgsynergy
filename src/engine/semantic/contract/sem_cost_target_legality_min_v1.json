@@ -50,13 +50,25 @@
     "legalityGateIsDistinctFromTargetSpec": true,
     "initialLegalityCheckOccursBeforePaymentCompletion": true,
     "resolutionLegalityRecheckReserved": true,
+    "supportsSummoningSicknessTapQMin": true,
     "supportedLegalityKinds": [
       "ACTIVATE_ONLY_AS_SORCERY",
       "CONTROLS_PERMANENT_TYPE",
       "ATTACKED_THIS_TURN",
       "ONCE_EACH_TURN",
-      "SUMMONING_SICKNESS_TAP_RESTRICTION",
+      "SUMMONING_SICKNESS_TAP_Q_RESTRICTION",
       "OTHER_LEGALITY_TEXT"
+    ],
+    "summoningSicknessTapQMinShape": {
+      "appliesTo": "ACTIVATE",
+      "sourceKind": "CREATURE",
+      "tapSymbolPresent": "boolean",
+      "untapSymbolPresent": "boolean",
+      "restrictionClass": "SUMMONING_SICKNESS_TAP_Q_RESTRICTION"
+    },
+    "summoningSicknessTapQMinNotes": [
+      "This slice captures only explicit structural applicability for activated creature abilities with {T} and/or {Q}.",
+      "No runtime evaluation of haste, control duration, or current activation legality is performed."
     ]
   },
   "modeRules": {

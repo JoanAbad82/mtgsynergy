@@ -41,4 +41,56 @@ describe("cost target legality min v1 service", () => {
     expect(result.targetSpecs).toHaveLength(0);
     expect(result.legalityGates).toHaveLength(0);
   });
+
+  it("detects summoning sickness tap/q restriction for creature activated ability with {T}", () => {
+    const text = "{T}: Add {G}.";
+    const result = analyzeCostTargetLegalityMinV1(text, {
+      sourceTypeLine: "Creature — Elf Druid",
+    });
+
+    expect(result.summoningSicknessTapQMin).toEqual({
+      appliesTo: "ACTIVATE",
+      sourceKind: "CREATURE",
+      tapSymbolPresent: true,
+      untapSymbolPresent: false,
+      restrictionClass: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION",
+    });
+    expect(result.legalityGates.some((gate) => gate.kind === "SUMMONING_SICKNESS_TAP_Q_RESTRICTION")).toBe(true);
+  });
+
+  it("detects summoning sickness tap/q restriction for creature activated ability with {Q}", () => {
+    const text = "{Q}: Draw a card.";
+    const result = analyzeCostTargetLegalityMinV1(text, {
+      sourceTypeLine: "Creature — Human Wizard",
+    });
+
+    expect(result.summoningSicknessTapQMin).toEqual({
+      appliesTo: "ACTIVATE",
+      sourceKind: "CREATURE",
+      tapSymbolPresent: false,
+      untapSymbolPresent: true,
+      restrictionClass: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION",
+    });
+    expect(result.legalityGates.some((gate) => gate.kind === "SUMMONING_SICKNESS_TAP_Q_RESTRICTION")).toBe(true);
+  });
+
+  it("does not detect summoning sickness tap/q restriction for non-creature with {T}", () => {
+    const text = "{1}, {T}: Tap target artifact, creature, or land.";
+    const result = analyzeCostTargetLegalityMinV1(text, {
+      sourceTypeLine: "Artifact",
+    });
+
+    expect(result.summoningSicknessTapQMin).toBeUndefined();
+    expect(result.legalityGates.some((gate) => gate.kind === "SUMMONING_SICKNESS_TAP_Q_RESTRICTION")).toBe(false);
+  });
+
+  it("does not detect summoning sickness tap/q restriction for creature activated ability without {T}/{Q}", () => {
+    const text = "{1}: Scry 1.";
+    const result = analyzeCostTargetLegalityMinV1(text, {
+      sourceTypeLine: "Creature — Human Wizard",
+    });
+
+    expect(result.summoningSicknessTapQMin).toBeUndefined();
+    expect(result.legalityGates.some((gate) => gate.kind === "SUMMONING_SICKNESS_TAP_Q_RESTRICTION")).toBe(false);
+  });
 });

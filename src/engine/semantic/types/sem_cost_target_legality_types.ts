@@ -56,12 +56,21 @@ export type LegalityKind =
   | "ATTACKED_THIS_TURN"
   | "ONCE_EACH_TURN"
   | "SUMMONING_SICKNESS_TAP_RESTRICTION"
+  | "SUMMONING_SICKNESS_TAP_Q_RESTRICTION"
   | "OTHER_LEGALITY_TEXT";
 
 export interface LegalityGate {
   kind: LegalityKind;
   detail: string;
   sourceTextSpan?: string;
+}
+
+export interface SummoningSicknessTapQMin {
+  appliesTo: "ACTIVATE";
+  sourceKind: "CREATURE";
+  tapSymbolPresent: boolean;
+  untapSymbolPresent: boolean;
+  restrictionClass: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION";
 }
 
 export interface ModeSelectionSpec {

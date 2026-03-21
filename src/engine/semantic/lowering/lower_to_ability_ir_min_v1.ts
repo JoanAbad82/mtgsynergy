@@ -20,6 +20,7 @@ import {
   type TriggeredAbilityClassificationMinV1,
   type ZonePermissionMinV1,
 } from "../parser/sem_parser_v1";
+import { type SummoningSicknessTapQMin } from "../types/sem_cost_target_legality_types";
 import { analyzeCostTargetLegalityMinV1 } from "../services/sem_cost_target_legality_min_v1";
 
 type AbilityIrEffect = {
@@ -47,6 +48,7 @@ export type AbilityIrMin = {
     zone_permission_min?: ZonePermissionMinV1;
     actor_constraint_min?: LegalityActorConstraintMinV1;
     condition_min?: LegalityConditionMinV1;
+    summoning_sickness_tap_q_min?: SummoningSicknessTapQMin;
   });
   semantic_hints?: {
     possible_zone_change?: boolean;
@@ -66,6 +68,7 @@ export type AbilityIrMin = {
     zone_permission_min?: ZonePermissionMinV1;
     legality_actor_constraint_min?: LegalityActorConstraintMinV1;
     legality_condition_min?: LegalityConditionMinV1;
+    legality_summoning_sickness_tap_q_min?: SummoningSicknessTapQMin;
     cost_target_legality_min?: {
       cost_kinds: string[];
       target_kinds: string[];
@@ -180,35 +183,47 @@ function sortedUnique(items: string[]): string[] {
   return Array.from(new Set(items)).sort();
 }
 
-function buildCostTargetLegalityHint(oracleText: string): NonNullable<AbilityIrMin["semantic_hints"]>["cost_target_legality_min"] | undefined {
-  const analyzed = analyzeCostTargetLegalityMinV1(oracleText);
+type CostTargetLegalityHintsBundle = {
+  costTargetLegalityMin?: NonNullable<AbilityIrMin["semantic_hints"]>["cost_target_legality_min"];
+  legalitySummoningSicknessTapQMin?: SummoningSicknessTapQMin;
+};
+
+function buildCostTargetLegalityHints(
+  oracleText: string,
+  sourceTypeLine?: string | null,
+): CostTargetLegalityHintsBundle {
+  const analyzed = analyzeCostTargetLegalityMinV1(oracleText, { sourceTypeLine });
   const costKinds = sortedUnique(analyzed.costIr.items.map((item) => item.kind));
   const targetKinds = sortedUnique(analyzed.targetSpecs.flatMap((spec) => spec.targetKinds));
   const legalityKinds = sortedUnique(analyzed.legalityGates.map((gate) => gate.kind));
   const targetCount = analyzed.targetSpecs.length;
   const legalityCount = analyzed.legalityGates.length;
 
-  if (
+  const shouldEmitCostTargetLegalityMin = !(
     costKinds.length === 0 &&
     targetKinds.length === 0 &&
     legalityKinds.length === 0 &&
     targetCount === 0 &&
     legalityCount === 0
-  ) {
-    return undefined;
-  }
+  );
 
   return {
-    cost_kinds: costKinds,
-    target_kinds: targetKinds,
-    legality_kinds: legalityKinds,
-    target_count: targetCount,
-    legality_count: legalityCount
+    costTargetLegalityMin: shouldEmitCostTargetLegalityMin
+      ? {
+        cost_kinds: costKinds,
+        target_kinds: targetKinds,
+        legality_kinds: legalityKinds,
+        target_count: targetCount,
+        legality_count: legalityCount,
+      }
+      : undefined,
+    legalitySummoningSicknessTapQMin: analyzed.summoningSicknessTapQMin,
   };
 }
 
 function buildSemanticHints(
   oracleText: string,
+  sourceTypeLine?: string | null,
   legalityActionBindingMinV1?: LegalityActionBindingMinV1,
   zonePermissionMinV1?: ZonePermissionMinV1,
   legalityActorConstraintMinV1?: LegalityActorConstraintMinV1,
@@ -278,9 +293,12 @@ function buildSemanticHints(
     hints.legality_gate_min_v1 = legalityGateMinV1;
   }
 
-  const costTargetLegalityHint = buildCostTargetLegalityHint(oracleText);
-  if (costTargetLegalityHint) {
-    hints.cost_target_legality_min = costTargetLegalityHint;
+  const costTargetLegalityHints = buildCostTargetLegalityHints(oracleText, sourceTypeLine);
+  if (costTargetLegalityHints.costTargetLegalityMin) {
+    hints.cost_target_legality_min = costTargetLegalityHints.costTargetLegalityMin;
+  }
+  if (costTargetLegalityHints.legalitySummoningSicknessTapQMin) {
+    hints.legality_summoning_sickness_tap_q_min = costTargetLegalityHints.legalitySummoningSicknessTapQMin;
   }
 
   if (legalityActionBindingMinV1) {
@@ -348,6 +366,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
   const legalityConditionMinV1 = parsedSemanticHints?.legality_condition_min;
   const semanticHints = buildSemanticHints(
     input.oracle_text,
+    input.type_line ?? null,
     legalityActionBindingMinV1,
     zonePermissionMinV1,
     legalityActorConstraintMinV1,
@@ -398,6 +417,16 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
       legality: {
         ...(ability.legality ?? {}),
         condition_min: semanticHints.legality_condition_min,
+      },
+    };
+  }
+
+  if (semanticHints?.legality_summoning_sickness_tap_q_min) {
+    ability = {
+      ...ability,
+      legality: {
+        ...(ability.legality ?? {}),
+        summoning_sickness_tap_q_min: semanticHints.legality_summoning_sickness_tap_q_min,
       },
     };
   }

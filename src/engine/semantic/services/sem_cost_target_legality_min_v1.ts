@@ -4,6 +4,7 @@ import {
   CostTargetLegalitySemanticsReason,
   CostTargetLegalitySemanticsResult,
   LegalityGate,
+  SummoningSicknessTapQMin,
   TargetKind,
   TargetSpec
 } from "../types/sem_cost_target_legality_types";
@@ -12,7 +13,12 @@ export interface CostTargetLegalityMinProfile {
   costIr: CostIR;
   targetSpecs: TargetSpec[];
   legalityGates: LegalityGate[];
+  summoningSicknessTapQMin?: SummoningSicknessTapQMin;
   semantics: CostTargetLegalitySemanticsResult;
+}
+
+export interface AnalyzeCostTargetLegalityMinOptions {
+  sourceTypeLine?: string | null;
 }
 
 function detectAdditionalSpellCosts(text: string): CostItem[] {
@@ -29,14 +35,20 @@ function detectAdditionalSpellCosts(text: string): CostItem[] {
   ];
 }
 
-function detectActivatedAbilityCosts(text: string): CostItem[] {
+function getActivatedCostPrefix(text: string): string | null {
   const colonIndex = text.indexOf(":");
-  if (colonIndex < 0) return [];
+  if (colonIndex < 0) return null;
+  return text.slice(0, colonIndex).trim();
+}
 
-  const activationCostText = text.slice(0, colonIndex);
+function detectActivatedAbilityCosts(text: string): CostItem[] {
+  const activationCostText = getActivatedCostPrefix(text);
+  if (!activationCostText) return [];
+
   const symbolMatches = activationCostText.match(/\{[^}]+\}/g) ?? [];
   const manaSymbols = symbolMatches.filter((symbol) => !/^\{T\}$/i.test(symbol) && !/^\{Q\}$/i.test(symbol));
   const hasTap = symbolMatches.some((symbol) => /^\{T\}$/i.test(symbol));
+  const hasUntap = symbolMatches.some((symbol) => /^\{Q\}$/i.test(symbol));
 
   const items: CostItem[] = [];
   if (manaSymbols.length > 0) {
@@ -50,6 +62,13 @@ function detectActivatedAbilityCosts(text: string): CostItem[] {
     items.push({
       kind: "TAP",
       detail: "{T}",
+      sourceTextSpan: activationCostText.trim()
+    });
+  }
+  if (hasUntap) {
+    items.push({
+      kind: "UNTAP",
+      detail: "{Q}",
       sourceTextSpan: activationCostText.trim()
     });
   }
@@ -95,10 +114,33 @@ function detectLegalityGates(text: string): LegalityGate[] {
   ];
 }
 
+function detectSummoningSicknessTapQMin(
+  text: string,
+  options?: AnalyzeCostTargetLegalityMinOptions,
+): SummoningSicknessTapQMin | null {
+  if (!/\bcreature\b/i.test(options?.sourceTypeLine ?? "")) return null;
+
+  const activationCostText = getActivatedCostPrefix(text);
+  if (!activationCostText) return null;
+
+  const tapSymbolPresent = /\{T\}/i.test(activationCostText);
+  const untapSymbolPresent = /\{Q\}/i.test(activationCostText);
+  if (!tapSymbolPresent && !untapSymbolPresent) return null;
+
+  return {
+    appliesTo: "ACTIVATE",
+    sourceKind: "CREATURE",
+    tapSymbolPresent,
+    untapSymbolPresent,
+    restrictionClass: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION",
+  };
+}
+
 function buildSemantics(
   costItems: CostItem[],
   targetSpecs: TargetSpec[],
-  legalityGates: LegalityGate[]
+  legalityGates: LegalityGate[],
+  summoningSicknessTapQMin?: SummoningSicknessTapQMin,
 ): CostTargetLegalitySemanticsResult {
   const reasons: CostTargetLegalitySemanticsReason[] = [
     {
@@ -149,6 +191,12 @@ function buildSemantics(
       detail: "activate_only_if_gate_detected"
     });
   }
+  if (summoningSicknessTapQMin) {
+    reasons.push({
+      code: "LEGALITY_SUMMONING_SICKNESS_TAP_Q_RECOGNIZED",
+      detail: "activated_creature_ability_with_tap_or_untap_symbol_detected"
+    });
+  }
 
   return {
     separatesCostFromEffect: true,
@@ -159,18 +207,30 @@ function buildSemantics(
   };
 }
 
-export function analyzeCostTargetLegalityMinV1(text: string): CostTargetLegalityMinProfile {
+export function analyzeCostTargetLegalityMinV1(
+  text: string,
+  options?: AnalyzeCostTargetLegalityMinOptions,
+): CostTargetLegalityMinProfile {
   const costItems = [
     ...detectAdditionalSpellCosts(text),
     ...detectActivatedAbilityCosts(text)
   ];
   const targetSpecs = detectFormalTargets(text);
-  const legalityGates = detectLegalityGates(text);
+  const summoningSicknessTapQMin = detectSummoningSicknessTapQMin(text, options) ?? undefined;
+  const legalityGates = [...detectLegalityGates(text)];
+  if (summoningSicknessTapQMin) {
+    legalityGates.push({
+      kind: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION",
+      detail: "activated creature ability with {T} and/or {Q} in activation cost",
+      sourceTextSpan: getActivatedCostPrefix(text) ?? undefined,
+    });
+  }
 
   return {
     costIr: { items: costItems },
     targetSpecs,
     legalityGates,
-    semantics: buildSemantics(costItems, targetSpecs, legalityGates)
+    summoningSicknessTapQMin,
+    semantics: buildSemantics(costItems, targetSpecs, legalityGates, summoningSicknessTapQMin)
   };
 }

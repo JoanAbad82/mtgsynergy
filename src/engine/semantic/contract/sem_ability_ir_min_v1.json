@@ -51,7 +51,7 @@
       "guarded_follow_up: optional, null or minimal object",
       "opaque_remainder: optional, null or string",
       "metadata: required, minimal stable object",
-      "semantic_hints: optional, minimal object with optional boolean flags and optional triggered_ability_min / replacement_prevention_min / linked_ability_min / continuous_layers_min / cost_min_v1 / target_min_v1 / legality_gate_min_v1 / zone_permission_min / legality_actor_constraint_min / legality_condition_min classifications"
+      "semantic_hints: optional, minimal object with optional boolean flags and optional triggered_ability_min / replacement_prevention_min / linked_ability_min / continuous_layers_min / cost_min_v1 / target_min_v1 / legality_gate_min_v1 / zone_permission_min / legality_actor_constraint_min / legality_condition_min / legality_static_ability_restrictions_min_v1 classifications"
     ]
   },
   "field_rules": [
@@ -106,7 +106,7 @@
     {
       "field": "semantic_hints",
       "required": false,
-      "shape": "object {possible_zone_change?, possible_lki_required?, possible_creature_dies_derivation?, triggered_ability_min?, replacement_prevention_min?, linked_ability_min?, continuous_layers_min?, cost_min_v1?, target_min_v1?, legality_gate_min_v1?, zone_permission_min?, legality_actor_constraint_min?, legality_condition_min?}",
+      "shape": "object {possible_zone_change?, possible_lki_required?, possible_creature_dies_derivation?, triggered_ability_min?, replacement_prevention_min?, linked_ability_min?, continuous_layers_min?, cost_min_v1?, target_min_v1?, legality_gate_min_v1?, zone_permission_min?, legality_actor_constraint_min?, legality_condition_min?, legality_static_ability_restrictions_min_v1?}",
       "legality_action_binding_min": [
         "CAST_ONLY",
         "ACTIVATE_ONLY"
@@ -143,7 +143,18 @@
         ],
         "conditionTextNormalized": "string"
       },
-      "notes": "Optional narrowing-only wiring metadata for A2.9/A2.10; triggered_ability_min.class accepts NONE|NORMAL|INTERVENING_IF|ZONE_CHANGE|DELAYED|REFLEXIVE and fallback accepts LINKED; replacement_prevention_min accepts REPLACEMENT|PREVENTION; linked_ability_min accepts LINKED; continuous_layers_min.class accepts TYPE_CHANGE|COLOR_CHANGE|ABILITY_CHANGE|PT_CHANGE|MULTI_LAYER and ordering_risk accepts NONE|TIMESTAMP_OR_DEPENDENCY; cost_min_v1.classes accepts MANA|TAP|SACRIFICE|DISCARD|PAY_LIFE over explicit activated cost prefixes only; target_min_v1 shape is {required,minTargets,maxTargets,targetKinds,zoneHint,controllerConstraint,sourceSpan} over explicit literal target patterns only; legality_gate_min_v1 shape is {type,condition?,timing?} where type accepts ACTIVATE_ONLY_IF|ACTIVATE_ONLY_AS_SORCERY|ACTIVATE_ONLY_AS_INSTANT|ACTIVATE_ONLY_DURING_YOUR_TURN|ACTIVATE_ONLY_ONCE_EACH_TURN|CAST_ONLY_IF|OTHER and timing accepts SORCERY_SPEED|INSTANT_SPEED; zone_permission_min shape is {type,zone} where type accepts ALLOW_FROM_ZONE|ONLY_FROM_ZONE and zone accepts GRAVEYARD|EXILE; legality_actor_constraint_min accepts ANY_PLAYER|YOU_ONLY|OPPONENT_ONLY|OWNER_ONLY over explicit local actor wording only; legality_condition_min shape is {appliesTo,hasCondition,conditionTextNormalized,conditionClass} where appliesTo accepts ACTIVATE|CAST and conditionClass accepts CONTROLS_X|OPPONENT_STATE|ATTACKED_THIS_TURN|OTHER_LEGALITY_TEXT over explicit only-if legality wording; does not replace metadata provenance; not full game semantics and not CR 613 full resolver."
+      "legality_static_ability_restrictions_min_v1": {
+        "hasRestriction": [
+          true
+        ],
+        "restrictionClass": [
+          "ONLY_DURING_YOUR_TURN",
+          "ONLY_ONCE_EACH_TURN",
+          "OTHER_STATIC_ABILITY_RESTRICTION_TEXT"
+        ],
+        "sourceSpan": "string"
+      },
+      "notes": "Optional narrowing-only wiring metadata for A2.9/A2.10; triggered_ability_min.class accepts NONE|NORMAL|INTERVENING_IF|ZONE_CHANGE|DELAYED|REFLEXIVE and fallback accepts LINKED; replacement_prevention_min accepts REPLACEMENT|PREVENTION; linked_ability_min accepts LINKED; continuous_layers_min.class accepts TYPE_CHANGE|COLOR_CHANGE|ABILITY_CHANGE|PT_CHANGE|MULTI_LAYER and ordering_risk accepts NONE|TIMESTAMP_OR_DEPENDENCY; cost_min_v1.classes accepts MANA|TAP|SACRIFICE|DISCARD|PAY_LIFE over explicit activated cost prefixes only; target_min_v1 shape is {required,minTargets,maxTargets,targetKinds,zoneHint,controllerConstraint,sourceSpan} over explicit literal target patterns only; legality_gate_min_v1 shape is {type,condition?,timing?} where type accepts ACTIVATE_ONLY_IF|ACTIVATE_ONLY_AS_SORCERY|ACTIVATE_ONLY_AS_INSTANT|ACTIVATE_ONLY_DURING_YOUR_TURN|ACTIVATE_ONLY_ONCE_EACH_TURN|CAST_ONLY_IF|OTHER and timing accepts SORCERY_SPEED|INSTANT_SPEED; zone_permission_min shape is {type,zone} where type accepts ALLOW_FROM_ZONE|ONLY_FROM_ZONE and zone accepts GRAVEYARD|EXILE; legality_actor_constraint_min accepts ANY_PLAYER|YOU_ONLY|OPPONENT_ONLY|OWNER_ONLY over explicit local actor wording only; legality_condition_min shape is {appliesTo,hasCondition,conditionTextNormalized,conditionClass} where appliesTo accepts ACTIVATE|CAST and conditionClass accepts CONTROLS_X|OPPONENT_STATE|ATTACKED_THIS_TURN|OTHER_LEGALITY_TEXT over explicit only-if legality wording; legality_static_ability_restrictions_min_v1 shape is {hasRestriction,restrictionClass,sourceSpan} with restrictionClass ONLY_DURING_YOUR_TURN|ONLY_ONCE_EACH_TURN|OTHER_STATIC_ABILITY_RESTRICTION_TEXT over explicit activation-only restriction wording; does not replace metadata provenance; not full game semantics and not CR 613 full resolver."
     }
   ],
   "base_card_skeletons": [

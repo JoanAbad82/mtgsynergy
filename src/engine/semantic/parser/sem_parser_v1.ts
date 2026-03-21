@@ -115,6 +115,15 @@ export type LegalityConditionMinV1 = {
   conditionTextNormalized: string;
   conditionClass: LegalityConditionClassMinV1;
 };
+export type LegalityStaticAbilityRestrictionClassMinV1 =
+  | "ONLY_DURING_YOUR_TURN"
+  | "ONLY_ONCE_EACH_TURN"
+  | "OTHER_STATIC_ABILITY_RESTRICTION_TEXT";
+export type LegalityStaticAbilityRestrictionMinV1 = {
+  hasRestriction: true;
+  restrictionClass: LegalityStaticAbilityRestrictionClassMinV1;
+  sourceSpan: string;
+};
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
 export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
@@ -299,6 +308,50 @@ function classifyLegalityConditionMinV1(oracleText: string): LegalityConditionMi
         conditionClass: classifyLegalityConditionClassMinV1(conditionTextNormalized),
       };
     }
+  }
+
+  return null;
+}
+
+function classifyLegalityStaticAbilityRestrictionsMinV1(
+  oracleText: string,
+): LegalityStaticAbilityRestrictionMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+
+  const onlyDuringYourTurnMatch = /\bactivate only during your turn\b/i.exec(text);
+  if (onlyDuringYourTurnMatch) {
+    return {
+      hasRestriction: true,
+      restrictionClass: "ONLY_DURING_YOUR_TURN",
+      sourceSpan: onlyDuringYourTurnMatch[0].trim(),
+    };
+  }
+
+  const onlyOnceEachTurnMatch = /\bactivate only once each turn\b/i.exec(text);
+  if (onlyOnceEachTurnMatch) {
+    return {
+      hasRestriction: true,
+      restrictionClass: "ONLY_ONCE_EACH_TURN",
+      sourceSpan: onlyOnceEachTurnMatch[0].trim(),
+    };
+  }
+
+  if (
+    /\bactivate only as a sorcery\b/i.test(text) ||
+    /\bactivate only as an instant\b/i.test(text) ||
+    /\bactivate only if\b/i.test(text)
+  ) {
+    return null;
+  }
+
+  const otherRestrictiveActivateOnlyMatch = /\bactivate only\b[^.]*/i.exec(text);
+  if (otherRestrictiveActivateOnlyMatch) {
+    return {
+      hasRestriction: true,
+      restrictionClass: "OTHER_STATIC_ABILITY_RESTRICTION_TEXT",
+      sourceSpan: otherRestrictiveActivateOnlyMatch[0].trim(),
+    };
   }
 
   return null;
@@ -801,7 +854,14 @@ export function parseSemanticIrV0(input: {
   const zonePermissionMinV1 = classifyZonePermissionMinV1(text);
   const legalityActorConstraintMinV1 = classifyLegalityActorConstraintMinV1(text);
   const legalityConditionMinV1 = classifyLegalityConditionMinV1(text);
-  if (legalityActionBindingMinV1 || zonePermissionMinV1 || legalityActorConstraintMinV1 || legalityConditionMinV1) {
+  const legalityStaticAbilityRestrictionsMinV1 = classifyLegalityStaticAbilityRestrictionsMinV1(text);
+  if (
+    legalityActionBindingMinV1 ||
+    zonePermissionMinV1 ||
+    legalityActorConstraintMinV1 ||
+    legalityConditionMinV1 ||
+    legalityStaticAbilityRestrictionsMinV1
+  ) {
     const existingSemanticHints =
       (Reflect.get(ir, "semantic_hints") as Record<string, unknown> | undefined) ?? {};
     const nextSemanticHints: Record<string, unknown> = { ...existingSemanticHints };
@@ -816,6 +876,9 @@ export function parseSemanticIrV0(input: {
     }
     if (legalityConditionMinV1) {
       nextSemanticHints.legality_condition_min = legalityConditionMinV1;
+    }
+    if (legalityStaticAbilityRestrictionsMinV1) {
+      nextSemanticHints.legality_static_ability_restrictions_min_v1 = legalityStaticAbilityRestrictionsMinV1;
     }
     Object.defineProperty(ir, "semantic_hints", {
       value: nextSemanticHints,

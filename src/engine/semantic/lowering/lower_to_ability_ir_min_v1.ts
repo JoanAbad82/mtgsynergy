@@ -14,6 +14,7 @@ import {
   type LegalityGateMinV1,
   type LegalityActorConstraintMinV1,
   type LegalityConditionMinV1,
+  type LegalityStaticAbilityRestrictionMinV1,
   type LinkedAbilityClassMinV1,
   type ReplacementPreventionClassMinV1,
   type TargetMinSpecMinV1,
@@ -48,6 +49,7 @@ export type AbilityIrMin = {
     zone_permission_min?: ZonePermissionMinV1;
     actor_constraint_min?: LegalityActorConstraintMinV1;
     condition_min?: LegalityConditionMinV1;
+    static_ability_restrictions_min_v1?: LegalityStaticAbilityRestrictionMinV1;
     summoning_sickness_tap_q_min?: SummoningSicknessTapQMin;
   });
   semantic_hints?: {
@@ -68,6 +70,7 @@ export type AbilityIrMin = {
     zone_permission_min?: ZonePermissionMinV1;
     legality_actor_constraint_min?: LegalityActorConstraintMinV1;
     legality_condition_min?: LegalityConditionMinV1;
+    legality_static_ability_restrictions_min_v1?: LegalityStaticAbilityRestrictionMinV1;
     legality_summoning_sickness_tap_q_min?: SummoningSicknessTapQMin;
     cost_target_legality_min?: {
       cost_kinds: string[];
@@ -228,6 +231,7 @@ function buildSemanticHints(
   zonePermissionMinV1?: ZonePermissionMinV1,
   legalityActorConstraintMinV1?: LegalityActorConstraintMinV1,
   legalityConditionMinV1?: LegalityConditionMinV1,
+  legalityStaticAbilityRestrictionsMinV1?: LegalityStaticAbilityRestrictionMinV1,
 ): AbilityIrMin["semantic_hints"] | undefined {
   const normalized = oracleText.toLowerCase();
   const hasDiesWord = /\bdies\b/.test(normalized);
@@ -313,6 +317,9 @@ function buildSemanticHints(
   if (legalityConditionMinV1) {
     hints.legality_condition_min = legalityConditionMinV1;
   }
+  if (legalityStaticAbilityRestrictionsMinV1) {
+    hints.legality_static_ability_restrictions_min_v1 = legalityStaticAbilityRestrictionsMinV1;
+  }
 
   if (Object.keys(hints).length === 0) {
     return undefined;
@@ -336,6 +343,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
       zone_permission_min?: ZonePermissionMinV1;
       legality_actor_constraint_min?: LegalityActorConstraintMinV1;
       legality_condition_min?: LegalityConditionMinV1;
+      legality_static_ability_restrictions_min_v1?: LegalityStaticAbilityRestrictionMinV1;
     }
     | undefined);
   const frame = ir.frames[0];
@@ -364,6 +372,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
   const zonePermissionMinV1 = parsedSemanticHints?.zone_permission_min;
   const legalityActorConstraintMinV1 = parsedSemanticHints?.legality_actor_constraint_min;
   const legalityConditionMinV1 = parsedSemanticHints?.legality_condition_min;
+  const legalityStaticAbilityRestrictionsMinV1 = parsedSemanticHints?.legality_static_ability_restrictions_min_v1;
   const semanticHints = buildSemanticHints(
     input.oracle_text,
     input.type_line ?? null,
@@ -371,6 +380,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
     zonePermissionMinV1,
     legalityActorConstraintMinV1,
     legalityConditionMinV1,
+    legalityStaticAbilityRestrictionsMinV1,
   );
   let ability: AbilityIrMin = lowered;
 
@@ -417,6 +427,16 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
       legality: {
         ...(ability.legality ?? {}),
         condition_min: semanticHints.legality_condition_min,
+      },
+    };
+  }
+
+  if (semanticHints?.legality_static_ability_restrictions_min_v1) {
+    ability = {
+      ...ability,
+      legality: {
+        ...(ability.legality ?? {}),
+        static_ability_restrictions_min_v1: semanticHints.legality_static_ability_restrictions_min_v1,
       },
     };
   }

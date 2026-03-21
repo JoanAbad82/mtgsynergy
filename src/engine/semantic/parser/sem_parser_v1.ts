@@ -150,6 +150,11 @@ export type TriggeredManaAbilityMinV1 = {
   class: TriggeredManaAbilityMinClassV1;
   reasons: TriggeredManaAbilityMinReasonV1[];
 };
+export type LoyaltyAbilityCostKindMinV1 = "PLUS" | "MINUS" | "ZERO";
+export type LoyaltyAbilityMinV1 = {
+  class: "LOYALTY";
+  loyalty_cost_kind: LoyaltyAbilityCostKindMinV1;
+};
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
 export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
@@ -395,6 +400,32 @@ function getActivatedCostPrefix(text: string): string | null {
   }
 
   return prefix;
+}
+
+export function classifyLoyaltyAbilityMinV1(oracleText: string): LoyaltyAbilityMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+
+  const costPrefix = getActivatedCostPrefix(text);
+  if (!costPrefix) return null;
+
+  const compactCostPrefix = costPrefix.replace(/\s+/g, "");
+  const loyaltyToken =
+    compactCostPrefix.startsWith("[") && compactCostPrefix.endsWith("]")
+      ? compactCostPrefix.slice(1, -1)
+      : compactCostPrefix;
+
+  if (/^\+\d+$/.test(loyaltyToken)) {
+    return { class: "LOYALTY", loyalty_cost_kind: "PLUS" };
+  }
+  if (/^-\d+$/.test(loyaltyToken)) {
+    return { class: "LOYALTY", loyalty_cost_kind: "MINUS" };
+  }
+  if (/^0$/.test(loyaltyToken)) {
+    return { class: "LOYALTY", loyalty_cost_kind: "ZERO" };
+  }
+
+  return null;
 }
 
 function classifyManaAbilityMinV1(oracleText: string): ManaAbilityMinV1 | null {
@@ -952,6 +983,7 @@ export function parseSemanticIrV0(input: {
   const legalityStaticAbilityRestrictionsMinV1 = classifyLegalityStaticAbilityRestrictionsMinV1(text);
   const manaAbilityMinV1 = classifyManaAbilityMinV1(text);
   const triggeredManaAbilityMinV1 = classifyTriggeredManaAbilityMinV1(text);
+  const loyaltyAbilityMinV1 = classifyLoyaltyAbilityMinV1(text);
   if (
     legalityActionBindingMinV1 ||
     zonePermissionMinV1 ||
@@ -959,7 +991,8 @@ export function parseSemanticIrV0(input: {
     legalityConditionMinV1 ||
     legalityStaticAbilityRestrictionsMinV1 ||
     manaAbilityMinV1 ||
-    triggeredManaAbilityMinV1.class === "TRIGGERED_MANA_ABILITY"
+    triggeredManaAbilityMinV1.class === "TRIGGERED_MANA_ABILITY" ||
+    loyaltyAbilityMinV1
   ) {
     const existingSemanticHints =
       (Reflect.get(ir, "semantic_hints") as Record<string, unknown> | undefined) ?? {};
@@ -984,6 +1017,9 @@ export function parseSemanticIrV0(input: {
     }
     if (triggeredManaAbilityMinV1.class === "TRIGGERED_MANA_ABILITY") {
       nextSemanticHints.triggered_mana_ability_min = triggeredManaAbilityMinV1;
+    }
+    if (loyaltyAbilityMinV1) {
+      nextSemanticHints.loyalty_ability_min = loyaltyAbilityMinV1;
     }
     Object.defineProperty(ir, "semantic_hints", {
       value: nextSemanticHints,

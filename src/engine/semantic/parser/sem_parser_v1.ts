@@ -136,6 +136,20 @@ export type ManaAbilityMinV1 = {
   class: ManaAbilityMinClassV1;
   reasons: ManaAbilityMinReasonV1[];
 };
+export type TriggeredManaAbilityMinClassV1 = "NONE" | "TRIGGERED_MANA_ABILITY";
+export type TriggeredManaAbilityMinReasonV1 =
+  | "IS_TRIGGERED"
+  | "NO_TARGET"
+  | "ADDS_MANA"
+  | "MANA_RELATED_TRIGGER"
+  | "HAS_TARGET"
+  | "IS_LOYALTY"
+  | "NO_EXPLICIT_MANA_ADD"
+  | "NON_MANA_TRIGGER_CONTEXT";
+export type TriggeredManaAbilityMinV1 = {
+  class: TriggeredManaAbilityMinClassV1;
+  reasons: TriggeredManaAbilityMinReasonV1[];
+};
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
 export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
@@ -406,6 +420,48 @@ function classifyManaAbilityMinV1(oracleText: string): ManaAbilityMinV1 | null {
 
   return {
     class: !hasTarget && addsMana && !isLoyalty ? "MANA_ABILITY" : "NON_MANA_ABILITY",
+    reasons,
+  };
+}
+
+function hasExplicitManaAddTextV1(text: string): boolean {
+  return /\badds?\b[^.]*\bmana\b/i.test(text) || /\badds?\b[^.]*\{[wubrgcxyz0-9/]+\}/i.test(text);
+}
+
+function hasManaRelatedTriggerContextV1(text: string): boolean {
+  return (
+    /\b(?:when|whenever)\b[^.]*\bactivat(?:e|es|ed)\b[^.]*\b(?:an?\s+)?mana ability\b/i.test(text) ||
+    /\b(?:when|whenever)\b[^.]*\b(?:an?\s+)?activated mana ability\b[^.]*\bresolve(?:s|d)\b/i.test(text) ||
+    /\b(?:when|whenever)\b[^.]*\bresolve(?:s|d)\b[^.]*\b(?:an?\s+)?activated mana ability\b/i.test(text) ||
+    /\b(?:when|whenever)\b[^.]*\bmana is added\b/i.test(text) ||
+    /\b(?:when|whenever)\b[^.]*\btaps?\b[^.]*\bfor mana\b/i.test(text) ||
+    /\b(?:when|whenever)\b[^.]*\bis tapped for mana\b/i.test(text)
+  );
+}
+
+export function classifyTriggeredManaAbilityMinV1(oracleText: string): TriggeredManaAbilityMinV1 {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  const costPrefix = getActivatedCostPrefix(text);
+  const compactCostPrefix = (costPrefix ?? "").replace(/\s+/g, "");
+
+  const isTriggered = hasTriggeredAbilityPrefix(text);
+  const hasTarget = /\btarget\b/i.test(text);
+  const addsMana = hasExplicitManaAddTextV1(text);
+  const isLoyalty = /^[+-]\d+$/.test(compactCostPrefix);
+  const hasManaRelatedTrigger = hasManaRelatedTriggerContextV1(text);
+
+  const reasons: TriggeredManaAbilityMinReasonV1[] = [];
+  if (isTriggered) reasons.push("IS_TRIGGERED");
+  reasons.push(hasTarget ? "HAS_TARGET" : "NO_TARGET");
+  reasons.push(addsMana ? "ADDS_MANA" : "NO_EXPLICIT_MANA_ADD");
+  reasons.push(hasManaRelatedTrigger ? "MANA_RELATED_TRIGGER" : "NON_MANA_TRIGGER_CONTEXT");
+  if (isLoyalty) reasons.push("IS_LOYALTY");
+
+  const isTriggeredManaAbility =
+    isTriggered && !hasTarget && addsMana && !isLoyalty && hasManaRelatedTrigger;
+
+  return {
+    class: isTriggeredManaAbility ? "TRIGGERED_MANA_ABILITY" : "NONE",
     reasons,
   };
 }
@@ -895,13 +951,15 @@ export function parseSemanticIrV0(input: {
   const legalityConditionMinV1 = classifyLegalityConditionMinV1(text);
   const legalityStaticAbilityRestrictionsMinV1 = classifyLegalityStaticAbilityRestrictionsMinV1(text);
   const manaAbilityMinV1 = classifyManaAbilityMinV1(text);
+  const triggeredManaAbilityMinV1 = classifyTriggeredManaAbilityMinV1(text);
   if (
     legalityActionBindingMinV1 ||
     zonePermissionMinV1 ||
     legalityActorConstraintMinV1 ||
     legalityConditionMinV1 ||
     legalityStaticAbilityRestrictionsMinV1 ||
-    manaAbilityMinV1
+    manaAbilityMinV1 ||
+    triggeredManaAbilityMinV1.class === "TRIGGERED_MANA_ABILITY"
   ) {
     const existingSemanticHints =
       (Reflect.get(ir, "semantic_hints") as Record<string, unknown> | undefined) ?? {};
@@ -923,6 +981,9 @@ export function parseSemanticIrV0(input: {
     }
     if (manaAbilityMinV1) {
       nextSemanticHints.mana_ability_min = manaAbilityMinV1;
+    }
+    if (triggeredManaAbilityMinV1.class === "TRIGGERED_MANA_ABILITY") {
+      nextSemanticHints.triggered_mana_ability_min = triggeredManaAbilityMinV1;
     }
     Object.defineProperty(ir, "semantic_hints", {
       value: nextSemanticHints,

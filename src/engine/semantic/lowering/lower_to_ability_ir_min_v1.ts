@@ -33,6 +33,7 @@ type AbilityIrEffect = {
 };
 
 type LegalityActionBindingMinV1 = "CAST_ONLY" | "ACTIVATE_ONLY";
+type LoyaltyActivationRestrictionKindMinV1 = "ACTIVATE_ONLY_AS_SORCERY";
 
 export type AbilityIrMin = {
   kind: "Activated" | "ConditionalTriggered";
@@ -48,6 +49,7 @@ export type AbilityIrMin = {
     ability_slot: 1;
   };
   legality?: (Record<string, unknown> & {
+    kind?: LoyaltyActivationRestrictionKindMinV1;
     action_context?: LegalityActionBindingMinV1;
     zone_permission_min?: ZonePermissionMinV1;
     actor_constraint_min?: LegalityActorConstraintMinV1;
@@ -487,6 +489,16 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
       legality: {
         ...(ability.legality ?? {}),
         loyalty_ability_min: semanticHints.loyalty_ability_min,
+      },
+    };
+  }
+
+  if (semanticHints?.loyalty_ability_min && ability.kind === "Activated") {
+    ability = {
+      ...ability,
+      legality: {
+        ...(ability.legality ?? {}),
+        kind: "ACTIVATE_ONLY_AS_SORCERY",
       },
     };
   }

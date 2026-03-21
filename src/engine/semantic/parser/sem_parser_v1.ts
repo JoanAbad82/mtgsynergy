@@ -124,6 +124,18 @@ export type LegalityStaticAbilityRestrictionMinV1 = {
   restrictionClass: LegalityStaticAbilityRestrictionClassMinV1;
   sourceSpan: string;
 };
+export type ManaAbilityMinClassV1 = "MANA_ABILITY" | "NON_MANA_ABILITY";
+export type ManaAbilityMinReasonV1 =
+  | "NO_TARGET"
+  | "ADDS_MANA"
+  | "NOT_LOYALTY"
+  | "HAS_TARGET"
+  | "IS_LOYALTY"
+  | "NO_EXPLICIT_MANA_ADD";
+export type ManaAbilityMinV1 = {
+  class: ManaAbilityMinClassV1;
+  reasons: ManaAbilityMinReasonV1[];
+};
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
 export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
@@ -369,6 +381,33 @@ function getActivatedCostPrefix(text: string): string | null {
   }
 
   return prefix;
+}
+
+function classifyManaAbilityMinV1(oracleText: string): ManaAbilityMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+
+  const costPrefix = getActivatedCostPrefix(text);
+  if (!costPrefix) return null;
+
+  const colonIndex = text.indexOf(":");
+  if (colonIndex < 0) return null;
+  const effectText = text.slice(colonIndex + 1).trim();
+
+  const hasTarget = /\btarget\b/i.test(text);
+  const addsMana = /^\s*add\b/i.test(effectText);
+  const compactCostPrefix = costPrefix.replace(/\s+/g, "");
+  const isLoyalty = /^[+-]\d+$/.test(compactCostPrefix);
+
+  const reasons: ManaAbilityMinReasonV1[] = [];
+  reasons.push(hasTarget ? "HAS_TARGET" : "NO_TARGET");
+  reasons.push(addsMana ? "ADDS_MANA" : "NO_EXPLICIT_MANA_ADD");
+  reasons.push(isLoyalty ? "IS_LOYALTY" : "NOT_LOYALTY");
+
+  return {
+    class: !hasTarget && addsMana && !isLoyalty ? "MANA_ABILITY" : "NON_MANA_ABILITY",
+    reasons,
+  };
 }
 
 function sortedCostClasses(classes: CostMinClassV1[]): CostMinClassV1[] {
@@ -855,12 +894,14 @@ export function parseSemanticIrV0(input: {
   const legalityActorConstraintMinV1 = classifyLegalityActorConstraintMinV1(text);
   const legalityConditionMinV1 = classifyLegalityConditionMinV1(text);
   const legalityStaticAbilityRestrictionsMinV1 = classifyLegalityStaticAbilityRestrictionsMinV1(text);
+  const manaAbilityMinV1 = classifyManaAbilityMinV1(text);
   if (
     legalityActionBindingMinV1 ||
     zonePermissionMinV1 ||
     legalityActorConstraintMinV1 ||
     legalityConditionMinV1 ||
-    legalityStaticAbilityRestrictionsMinV1
+    legalityStaticAbilityRestrictionsMinV1 ||
+    manaAbilityMinV1
   ) {
     const existingSemanticHints =
       (Reflect.get(ir, "semantic_hints") as Record<string, unknown> | undefined) ?? {};
@@ -879,6 +920,9 @@ export function parseSemanticIrV0(input: {
     }
     if (legalityStaticAbilityRestrictionsMinV1) {
       nextSemanticHints.legality_static_ability_restrictions_min_v1 = legalityStaticAbilityRestrictionsMinV1;
+    }
+    if (manaAbilityMinV1) {
+      nextSemanticHints.mana_ability_min = manaAbilityMinV1;
     }
     Object.defineProperty(ir, "semantic_hints", {
       value: nextSemanticHints,

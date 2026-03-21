@@ -17,6 +17,12 @@ describe("replacement / prevention min v1", () => {
         expected: "REPLACEMENT",
       },
       {
+        name: "As Enters Replacement Sample",
+        oracle:
+          "As this enters the battlefield, choose a color.",
+        expected: "REPLACEMENT",
+      },
+      {
         name: "Fog",
         oracle: "Prevent all combat damage that would be dealt this turn.",
         expected: "PREVENTION",
@@ -45,6 +51,11 @@ describe("replacement / prevention min v1", () => {
         name: "Heart-Piercer Manticore",
         oracle:
           "When Heart-Piercer Manticore enters the battlefield, you may sacrifice another creature. When you do, Heart-Piercer Manticore deals damage equal to that creature's power to any target.",
+      },
+      {
+        name: "Glorious Anthem",
+        oracle:
+          "Creatures you control get +1/+1.",
       },
     ] as const;
 

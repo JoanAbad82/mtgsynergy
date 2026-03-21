@@ -82,6 +82,12 @@ export type TargetMinSpecMinV1 = {
   controllerConstraint: TargetControllerConstraintMinV1 | null;
   sourceSpan: string;
 };
+export type ModeSelectionClassMinV1 = "CHOOSE_ONE" | "CHOOSE_TWO";
+export type ModeSelectionMinV1 = {
+  class: ModeSelectionClassMinV1;
+  source_span: string;
+  mode_dependent_targets_possible: boolean;
+};
 export type LegalityGateMinTypeV1 =
   | "ACTIVATE_ONLY_IF"
   | "ACTIVATE_ONLY_AS_SORCERY"
@@ -587,6 +593,31 @@ export function classifyTargetMinV1(oracleText: string): TargetMinSpecMinV1 | nu
   return null;
 }
 
+export function classifyModeSelectionMinV1(oracleText: string): ModeSelectionMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+
+  const chooseTwoMatch = /\bchoose two\b/i.exec(text);
+  if (chooseTwoMatch) {
+    return {
+      class: "CHOOSE_TWO",
+      source_span: chooseTwoMatch[0],
+      mode_dependent_targets_possible: /\btarget\b/i.test(text),
+    };
+  }
+
+  const chooseOneMatch = /\bchoose one\b/i.exec(text);
+  if (chooseOneMatch) {
+    return {
+      class: "CHOOSE_ONE",
+      source_span: chooseOneMatch[0],
+      mode_dependent_targets_possible: /\btarget\b/i.test(text),
+    };
+  }
+
+  return null;
+}
+
 export function classifyLegalityGateMinV1(oracleText: string): LegalityGateMinV1 | null {
   const text = normalizeOracleTextV1(oracleText ?? "");
   if (!text) return null;
@@ -1019,6 +1050,7 @@ export function parseSemanticIrV0(input: {
   const legalityActorConstraintMinV1 = classifyLegalityActorConstraintMinV1(text);
   const legalityConditionMinV1 = classifyLegalityConditionMinV1(text);
   const legalityStaticAbilityRestrictionsMinV1 = classifyLegalityStaticAbilityRestrictionsMinV1(text);
+  const modeSelectionMinV1 = classifyModeSelectionMinV1(text);
   const manaAbilityMinV1 = classifyManaAbilityMinV1(text);
   const triggeredManaAbilityMinV1 = classifyTriggeredManaAbilityMinV1(text);
   const loyaltyAbilityMinV1 = classifyLoyaltyAbilityMinV1(text);
@@ -1029,6 +1061,7 @@ export function parseSemanticIrV0(input: {
     legalityActorConstraintMinV1 ||
     legalityConditionMinV1 ||
     legalityStaticAbilityRestrictionsMinV1 ||
+    modeSelectionMinV1 ||
     manaAbilityMinV1 ||
     triggeredManaAbilityMinV1.class === "TRIGGERED_MANA_ABILITY" ||
     loyaltyAbilityMinV1 ||
@@ -1051,6 +1084,9 @@ export function parseSemanticIrV0(input: {
     }
     if (legalityStaticAbilityRestrictionsMinV1) {
       nextSemanticHints.legality_static_ability_restrictions_min_v1 = legalityStaticAbilityRestrictionsMinV1;
+    }
+    if (modeSelectionMinV1) {
+      nextSemanticHints.mode_selection_min = modeSelectionMinV1;
     }
     if (manaAbilityMinV1) {
       nextSemanticHints.mana_ability_min = manaAbilityMinV1;

@@ -18,6 +18,7 @@ import {
   type LoyaltyAbilityMinV1,
   type LoyaltySymbolCostMinV1,
   type ManaAbilityMinV1,
+  type ModeSelectionMinV1,
   type TriggeredManaAbilityMinV1,
   type LinkedAbilityClassMinV1,
   type ReplacementPreventionClassMinV1,
@@ -77,6 +78,7 @@ export type AbilityIrMin = {
     };
     cost_min_v1?: CostMinClassificationMinV1;
     target_min_v1?: TargetMinSpecMinV1;
+    mode_selection_min?: ModeSelectionMinV1;
     legality_gate_min_v1?: LegalityGateMinV1;
     legality_action_binding_min?: LegalityActionBindingMinV1;
     zone_permission_min?: ZonePermissionMinV1;
@@ -249,6 +251,7 @@ function buildSemanticHints(
   legalityActorConstraintMinV1?: LegalityActorConstraintMinV1,
   legalityConditionMinV1?: LegalityConditionMinV1,
   legalityStaticAbilityRestrictionsMinV1?: LegalityStaticAbilityRestrictionMinV1,
+  modeSelectionMinV1?: ModeSelectionMinV1,
   loyaltyAbilityMinV1?: LoyaltyAbilityMinV1,
   loyaltySymbolCostMinV1?: LoyaltySymbolCostMinV1,
   manaAbilityMinV1?: ManaAbilityMinV1,
@@ -311,6 +314,9 @@ function buildSemanticHints(
   const targetMinV1 = classifyTargetMinV1(oracleText);
   if (targetMinV1) {
     hints.target_min_v1 = targetMinV1;
+  }
+  if (modeSelectionMinV1) {
+    hints.mode_selection_min = modeSelectionMinV1;
   }
 
   const legalityGateMinV1 = classifyLegalityGateMinV1(oracleText);
@@ -386,6 +392,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
       legality_actor_constraint_min?: LegalityActorConstraintMinV1;
       legality_condition_min?: LegalityConditionMinV1;
       legality_static_ability_restrictions_min_v1?: LegalityStaticAbilityRestrictionMinV1;
+      mode_selection_min?: ModeSelectionMinV1;
       loyalty_ability_min?: LoyaltyAbilityMinV1;
       loyalty_once_each_turn_restriction_min_v1?: LoyaltyOnceEachTurnRestrictionMinV1;
       loyalty_symbol_cost_min_v1?: LoyaltySymbolCostMinV1;
@@ -420,6 +427,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
   const legalityActorConstraintMinV1 = parsedSemanticHints?.legality_actor_constraint_min;
   const legalityConditionMinV1 = parsedSemanticHints?.legality_condition_min;
   const legalityStaticAbilityRestrictionsMinV1 = parsedSemanticHints?.legality_static_ability_restrictions_min_v1;
+  const modeSelectionMinV1 = parsedSemanticHints?.mode_selection_min;
   const loyaltyAbilityMinV1 = parsedSemanticHints?.loyalty_ability_min;
   const loyaltySymbolCostMinV1 = parsedSemanticHints?.loyalty_symbol_cost_min_v1;
   const manaAbilityMinV1 = parsedSemanticHints?.mana_ability_min;
@@ -432,6 +440,7 @@ export function lowerToAbilityIrMinV1(input: LowerInput): AbilityIrMin | null {
     legalityActorConstraintMinV1,
     legalityConditionMinV1,
     legalityStaticAbilityRestrictionsMinV1,
+    modeSelectionMinV1,
     loyaltyAbilityMinV1,
     loyaltySymbolCostMinV1,
     manaAbilityMinV1,

@@ -214,6 +214,7 @@ function hasReplacementPattern(text: string): boolean {
   return (
     /\bif\b[^.]*\bwould\b[^.]*\binstead\b/i.test(text) ||
     /\bwould\b[^.]*\binstead\b/i.test(text) ||
+    /\bas\b[^.]*\benters?\s+the\s+battlefield\b/i.test(text) ||
     /\benters?\b[^.]*\binstead\b/i.test(text) ||
     /\bexile\b[^.]*\binstead\b/i.test(text) ||
     /\bput\b[^.]*\binstead\b/i.test(text)

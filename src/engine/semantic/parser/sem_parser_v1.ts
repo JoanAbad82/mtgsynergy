@@ -103,6 +103,18 @@ export type ZonePermissionMinV1 = {
   zone: ZonePermissionMinZoneV1;
 };
 export type LegalityActorConstraintMinV1 = "ANY_PLAYER" | "YOU_ONLY" | "OPPONENT_ONLY" | "OWNER_ONLY";
+export type LegalityConditionAppliesToMinV1 = "ACTIVATE" | "CAST";
+export type LegalityConditionClassMinV1 =
+  | "CONTROLS_X"
+  | "OPPONENT_STATE"
+  | "ATTACKED_THIS_TURN"
+  | "OTHER_LEGALITY_TEXT";
+export type LegalityConditionMinV1 = {
+  appliesTo: LegalityConditionAppliesToMinV1;
+  hasCondition: true;
+  conditionTextNormalized: string;
+  conditionClass: LegalityConditionClassMinV1;
+};
 export type ReplacementPreventionClassMinV1 = "REPLACEMENT" | "PREVENTION";
 export type LinkedAbilityClassMinV1 = "LINKED";
 export type ContinuousLayersClassMinV1 = "TYPE_CHANGE" | "COLOR_CHANGE" | "ABILITY_CHANGE" | "PT_CHANGE" | "MULTI_LAYER";
@@ -245,6 +257,49 @@ function classifyLegalityActorConstraintMinV1(oracleText: string): LegalityActor
   if (/\bonly an opponent may activate\b/i.test(text)) return "OPPONENT_ONLY";
   if (/\bits owner may cast\b/i.test(text)) return "OWNER_ONLY";
   if (/\byou may cast\b/i.test(text)) return "YOU_ONLY";
+
+  return null;
+}
+
+function classifyLegalityConditionClassMinV1(conditionTextNormalized: string): LegalityConditionClassMinV1 {
+  if (conditionTextNormalized.includes("you control")) return "CONTROLS_X";
+  if (conditionTextNormalized.includes("attacked this turn")) return "ATTACKED_THIS_TURN";
+  if (conditionTextNormalized.includes("opponent")) return "OPPONENT_STATE";
+  return "OTHER_LEGALITY_TEXT";
+}
+
+function classifyLegalityConditionMinV1(oracleText: string): LegalityConditionMinV1 | null {
+  const text = normalizeOracleTextV1(oracleText ?? "");
+  if (!text) return null;
+
+  const clauses = text
+    .split(".")
+    .map((clause) => clause.trim())
+    .filter((clause) => clause.length > 0);
+
+  for (const clause of clauses) {
+    const activateMatch = /^activate only if (.+)$/i.exec(clause);
+    if (activateMatch) {
+      const conditionTextNormalized = activateMatch[1].trim().toLowerCase();
+      return {
+        appliesTo: "ACTIVATE",
+        hasCondition: true,
+        conditionTextNormalized,
+        conditionClass: classifyLegalityConditionClassMinV1(conditionTextNormalized),
+      };
+    }
+
+    const castMatch = /^cast(?: this spell)? only if (.+)$/i.exec(clause);
+    if (castMatch) {
+      const conditionTextNormalized = castMatch[1].trim().toLowerCase();
+      return {
+        appliesTo: "CAST",
+        hasCondition: true,
+        conditionTextNormalized,
+        conditionClass: classifyLegalityConditionClassMinV1(conditionTextNormalized),
+      };
+    }
+  }
 
   return null;
 }
@@ -745,7 +800,8 @@ export function parseSemanticIrV0(input: {
   const legalityActionBindingMinV1 = detectLegalityActionBindingMinV1(text, kind);
   const zonePermissionMinV1 = classifyZonePermissionMinV1(text);
   const legalityActorConstraintMinV1 = classifyLegalityActorConstraintMinV1(text);
-  if (legalityActionBindingMinV1 || zonePermissionMinV1 || legalityActorConstraintMinV1) {
+  const legalityConditionMinV1 = classifyLegalityConditionMinV1(text);
+  if (legalityActionBindingMinV1 || zonePermissionMinV1 || legalityActorConstraintMinV1 || legalityConditionMinV1) {
     const existingSemanticHints =
       (Reflect.get(ir, "semantic_hints") as Record<string, unknown> | undefined) ?? {};
     const nextSemanticHints: Record<string, unknown> = { ...existingSemanticHints };
@@ -757,6 +813,9 @@ export function parseSemanticIrV0(input: {
     }
     if (legalityActorConstraintMinV1) {
       nextSemanticHints.legality_actor_constraint_min = legalityActorConstraintMinV1;
+    }
+    if (legalityConditionMinV1) {
+      nextSemanticHints.legality_condition_min = legalityConditionMinV1;
     }
     Object.defineProperty(ir, "semantic_hints", {
       value: nextSemanticHints,

@@ -210,6 +210,49 @@ type CostTargetLegalityHintsBundle = {
   legalitySummoningSicknessTapQMin?: SummoningSicknessTapQMin;
 };
 
+type TriggeredZoneChangeGuardMinV1 = {
+  possibleZoneChange: boolean;
+  possibleLkiRequired: boolean;
+  possibleCreatureDiesDerivation: boolean;
+};
+
+function hasExplicitLkiReferenceMinV1(normalized: string): boolean {
+  return (
+    normalized.includes("that card") ||
+    normalized.includes("the exiled card") ||
+    normalized.includes("cards exiled with") ||
+    normalized.includes("exiled with")
+  );
+}
+
+export function detectTriggeredZoneChangeGuardMinV1(
+  oracleText: string,
+  triggeredAbilityMin: TriggeredAbilityClassificationMinV1 = classifyTriggeredAbilityMinV1(oracleText),
+): TriggeredZoneChangeGuardMinV1 {
+  const normalized = oracleText.toLowerCase();
+  const hasDiesWord = /\bdies\b/.test(normalized);
+
+  const possibleCreatureDiesDerivation = hasDiesWord;
+  const possibleZoneChange =
+    hasDiesWord ||
+    normalized.includes("leaves the battlefield") ||
+    normalized.includes("return target") ||
+    normalized.includes("exile target") ||
+    normalized.includes("from your graveyard") ||
+    normalized.includes("from a graveyard");
+
+  const isTriggeredZoneChangeOrLinked =
+    triggeredAbilityMin.is_triggered &&
+    (triggeredAbilityMin.class === "ZONE_CHANGE" || triggeredAbilityMin.fallback === "LINKED");
+  const possibleLkiRequired = isTriggeredZoneChangeOrLinked && hasExplicitLkiReferenceMinV1(normalized);
+
+  return {
+    possibleZoneChange,
+    possibleLkiRequired,
+    possibleCreatureDiesDerivation,
+  };
+}
+
 function buildCostTargetLegalityHints(
   oracleText: string,
   sourceTypeLine?: string | null,
@@ -257,22 +300,11 @@ function buildSemanticHints(
   manaAbilityMinV1?: ManaAbilityMinV1,
   triggeredManaAbilityMinV1?: TriggeredManaAbilityMinV1,
 ): AbilityIrMin["semantic_hints"] | undefined {
-  const normalized = oracleText.toLowerCase();
-  const hasDiesWord = /\bdies\b/.test(normalized);
-
-  const possibleCreatureDiesDerivation = hasDiesWord;
-  const possibleZoneChange =
-    hasDiesWord ||
-    normalized.includes("leaves the battlefield") ||
-    normalized.includes("return target") ||
-    normalized.includes("exile target") ||
-    normalized.includes("from your graveyard") ||
-    normalized.includes("from a graveyard");
-  const possibleLkiRequired =
-    normalized.includes("that card") &&
-    (normalized.includes("graveyard") ||
-      normalized.includes("exile") ||
-      normalized.includes("leaves the battlefield"));
+  const triggeredAbilityMin = classifyTriggeredAbilityMinV1(oracleText);
+  const zoneChangeGuardMin = detectTriggeredZoneChangeGuardMinV1(oracleText, triggeredAbilityMin);
+  const possibleCreatureDiesDerivation = zoneChangeGuardMin.possibleCreatureDiesDerivation;
+  const possibleZoneChange = zoneChangeGuardMin.possibleZoneChange;
+  const possibleLkiRequired = zoneChangeGuardMin.possibleLkiRequired;
 
   const hints: NonNullable<AbilityIrMin["semantic_hints"]> = {};
 
@@ -286,7 +318,6 @@ function buildSemanticHints(
     hints.possible_creature_dies_derivation = true;
   }
 
-  const triggeredAbilityMin = classifyTriggeredAbilityMinV1(oracleText);
   if (triggeredAbilityMin.is_triggered || triggeredAbilityMin.fallback) {
     hints.triggered_ability_min = triggeredAbilityMin;
   }

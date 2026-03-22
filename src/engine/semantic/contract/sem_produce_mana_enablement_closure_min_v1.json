@@ -1,0 +1,84 @@
+{
+  "metadata": {
+    "document_id": "sem_produce_mana_enablement_closure_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-v52-produce-mana-enablement-closure-min-v1",
+    "source_note": "Minimal contract to open a local-only PRODUCE_MANA -> ENABLEMENT_CLOSURE bridge without parser expansion, lowering changes, or runtime mana simulation."
+  },
+  "family": "PRODUCE_MANA -> ENABLEMENT_CLOSURE",
+  "bridge_name": "produce_mana_to_enablement_closure_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "deterministic_contract": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true
+  },
+  "derived_from": {
+    "source_overlay_bridge_contract": "src/engine/semantic/contract/sem_overlay_bridge_min_v1.json",
+    "source_contract_patterns": [
+      "src/engine/semantic/contract/sem_deal_damage_lose_life_bridge_min_v1.json",
+      "src/engine/semantic/contract/sem_life_gain_add_counters_bridge_min_v1.json"
+    ],
+    "source_pairing_impl_file": "src/engine/semantic/overlay/sem_edges.ts"
+  },
+  "bridge_kind": {
+    "id": "produce_mana_enables_local_action_closure",
+    "label": "produce_mana -> enablement_closure",
+    "event_origin": "ACTION:PRODUCE_MANA",
+    "compatibility_type": "local_causal_explicit",
+    "purpose": "Enable a narrow local closure where explicit mana production coexists with explicit mana-costed activated payoff action text.",
+    "explicitly_not": [
+      "mana_pool_runtime",
+      "cost_payment_runtime",
+      "cross_card_enablement",
+      "global mana ontology"
+    ]
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile produces ACTION:PRODUCE_MANA",
+      "Profile produces at least one explicit payoff action key"
+    ],
+    "text_evidence_policy": "Require explicit mana production wording and explicit mana-costed activated sink wording in the same local text.",
+    "honesty_constraints": [
+      "Do not infer global mana payment validity.",
+      "Do not promote isolated mana rocks to generic enablement closure."
+    ]
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "helper_style": "Dedicated local helper, post generic i/j loop, following existing bridge insertion pattern.",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "ACTION:PRODUCE_MANA",
+        "ACTION:<explicit_local_payoff>"
+      ]
+    }
+  },
+  "invariants": [
+    "No parser expansion",
+    "No lowering changes",
+    "No runtime mana engine",
+    "No UI/scoring/SPS changes",
+    "No cross-card closure"
+  ]
+}

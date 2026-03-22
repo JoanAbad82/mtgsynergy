@@ -103,6 +103,36 @@ function applyDrawSecondDealDamageBridge(profile: ReturnType<typeof buildSemanti
   return profile.consumed.has(drawSecondKey) && profile.produced.has(dealDamageKey);
 }
 
+function applyProduceManaEnablementClosureBridge(
+  profile: ReturnType<typeof buildSemanticCardProfile>,
+): number[] {
+  const produceManaKey = keyOf(KeyKind.ACTION, ActionId.PRODUCE_MANA);
+  if (!profile.produced.has(produceManaKey)) return [];
+
+  const enablementActionKeys = [
+    keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS),
+    keyOf(KeyKind.ACTION, ActionId.SCRY),
+    keyOf(KeyKind.ACTION, ActionId.MILL_CARDS),
+    keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE),
+    keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS),
+    keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN),
+  ];
+  const matched = enablementActionKeys.filter((key) => profile.produced.has(key));
+  return matched.length > 0 ? matched : [];
+}
+
+function explicitProduceManaEnablementTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasProduceMana = /\{t\}:\s*add\s+(?:\{[wubrgc]\}|\{c\}\{c\}|one\s+mana\s+of\s+any\s+color|three\s+mana\s+of\s+any\s+one\s+color)\b/i.test(
+    normalized,
+  );
+  const hasManaCostedActivatedSink = /(?:^|[.]\s*)(?:\{(?:\d+|[wubrgcxy]|[wubrgc]\/[wubrgc])\}\s*,\s*)+\{t\}\s*:/i.test(
+    normalized,
+  );
+  const hasExplicitPayoffVerb = /\b(draw|scry|mill|deal|create|put)\b/i.test(normalized);
+  return hasProduceMana && hasManaCostedActivatedSink && hasExplicitPayoffVerb;
+}
+
 function explicitCastInstantOrSorceryDamagePayoffTextEvidence(text: string): boolean {
   const normalized = text.toLowerCase();
   return (
@@ -316,6 +346,26 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
       { key: dealDamageLifelinkKey, weight: 1 },
       { key: lifeGainLifelinkKey, weight: 1 },
     ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const produceManaKey = keyOf(KeyKind.ACTION, ActionId.PRODUCE_MANA);
+  for (const card of cards) {
+    const matchedEnablementActions = applyProduceManaEnablementClosureBridge(card.profile);
+    if (matchedEnablementActions.length === 0) continue;
+    if (!explicitProduceManaEnablementTextEvidence(card.oracle_text ?? "")) continue;
+
+    const reasons: SemanticEdgeReason[] = [{ key: produceManaKey, weight: 1 }];
+    for (const key of matchedEnablementActions) {
+      reasons.push({ key, weight: 1 });
+    }
     reasons.sort((a, b) => a.key - b.key);
     edges.push({
       from: card.card_id,

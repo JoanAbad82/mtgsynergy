@@ -1,0 +1,97 @@
+{
+  "metadata": {
+    "document_id": "sem_counters_matter_local_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-v53-counters-matter-local-bridge-min-v1",
+    "source_note": "Minimal contract to open a local-only COUNTERS -> COUNTERS_MATTER bridge without parser expansion, runtime counters engine, or cross-card closure."
+  },
+  "family": "COUNTERS -> COUNTERS_MATTER",
+  "bridge_name": "counters_to_counters_matter_local_bridge_min_v1",
+  "scope_alignment": {
+    "family_name_retained": "COUNTERS -> COUNTERS_MATTER",
+    "v1_operational_upstream_signal": "ACTION:ADD_COUNTERS",
+    "note": "v1 intentionally stays narrow and does not model generic passive having-counters semantics."
+  },
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "no_general_magic_semantics": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "deterministic_contract": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true
+  },
+  "derived_from": {
+    "source_overlay_bridge_contract": "src/engine/semantic/contract/sem_overlay_bridge_min_v1.json",
+    "source_contract_patterns": [
+      "src/engine/semantic/contract/sem_life_gain_add_counters_bridge_min_v1.json",
+      "src/engine/semantic/contract/sem_produce_mana_enablement_closure_min_v1.json"
+    ],
+    "source_pairing_impl_file": "src/engine/semantic/overlay/sem_edges.ts"
+  },
+  "bridge_kind": {
+    "id": "counters_signal_enables_local_counters_matter_payoff",
+    "label": "counters -> counters_matter",
+    "event_origin": "ACTION:ADD_COUNTERS",
+    "compatibility_type": "local_causal_explicit",
+    "purpose": "Enable narrow local closure where explicit counter signals co-exist with explicit local counters-matter payoff wording.",
+    "explicitly_not": [
+      "global_counter_engine",
+      "passive_having_counters_global_inference",
+      "counter_state_runtime",
+      "cross_card_counter_closure",
+      "proliferate_engine",
+      "replacement_prevention_counter_runtime"
+    ]
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only inside the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile produces ACTION:ADD_COUNTERS",
+      "Profile produces at least one explicit local payoff action"
+    ],
+    "text_evidence_policy": "Require explicit counters wording with counters-matter local phrasing (for each / one or more / whenever counters...) and explicit local payoff wording.",
+    "honesty_constraints": [
+      "Do not infer global counter state.",
+      "Do not fire on generic counter mentions without explicit local payoff pattern."
+    ]
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "helper_style": "Dedicated local helper, inserted in existing local bridge block.",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "ACTION:ADD_COUNTERS",
+        "ACTION:<explicit_local_counters_matter_payoff>"
+      ]
+    }
+  },
+  "invariants": [
+    "No parser expansion",
+    "No lowering changes",
+    "No runtime counters engine",
+    "No UI/scoring/SPS changes",
+    "No cross-card closure"
+  ],
+  "non_goals": [
+    "Loyalty runtime or loyalty engine",
+    "Poison/stun/shield/lore global engines",
+    "SBA/stack/priority integration",
+    "Counter math beyond local bridge signal"
+  ]
+}

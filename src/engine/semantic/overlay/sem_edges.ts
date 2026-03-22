@@ -103,6 +103,31 @@ function applyDrawSecondDealDamageBridge(profile: ReturnType<typeof buildSemanti
   return profile.consumed.has(drawSecondKey) && profile.produced.has(dealDamageKey);
 }
 
+function applyCountersMatterLocalBridge(profile: ReturnType<typeof buildSemanticCardProfile>): number[] {
+  const addCountersKey = keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS);
+  if (!profile.produced.has(addCountersKey)) return [];
+
+  const countersMatterPayoffKeys = [
+    keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS),
+    keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE),
+    keyOf(KeyKind.ACTION, ActionId.GAIN_LIFE),
+    keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN),
+  ];
+  const matched = countersMatterPayoffKeys.filter((key) => profile.produced.has(key));
+  return matched.length > 0 ? matched : [];
+}
+
+function explicitCountersMatterTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasCounterSignal = /\bcounters?\b/.test(normalized);
+  const hasCountersMatterPattern =
+    /\bfor each\b[^.]*\bcounters?\b/.test(normalized) ||
+    /\bone or more\b[^.]*\bcounters?\b/.test(normalized) ||
+    (/\bwhenever\b[^.]*\bcounters?\b/.test(normalized) &&
+      /\b(draw|deal|create|gain)\b/.test(normalized));
+  return hasCounterSignal && hasCountersMatterPattern;
+}
+
 function applyProduceManaEnablementClosureBridge(
   profile: ReturnType<typeof buildSemanticCardProfile>,
 ): number[] {
@@ -327,6 +352,26 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
       { key: lifeGainEventKey, weight: 1 },
       { key: addCountersKey, weight: 1 },
     ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const countersBridgeAddCountersKey = keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS);
+  for (const card of cards) {
+    const matchedPayoffs = applyCountersMatterLocalBridge(card.profile);
+    if (matchedPayoffs.length === 0) continue;
+    if (!explicitCountersMatterTextEvidence(card.oracle_text ?? "")) continue;
+
+    const reasons: SemanticEdgeReason[] = [{ key: countersBridgeAddCountersKey, weight: 1 }];
+    for (const key of matchedPayoffs) {
+      reasons.push({ key, weight: 1 });
+    }
     reasons.sort((a, b) => a.key - b.key);
     edges.push({
       from: card.card_id,

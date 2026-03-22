@@ -55,6 +55,7 @@ export enum ActionId {
   COPY_SPELL = 20,
   COPY_PERMANENT = 21,
   EXILE_FACE_DOWN = 22,
+  PT_CHANGE = 23,
 }
 
 export enum CostId {

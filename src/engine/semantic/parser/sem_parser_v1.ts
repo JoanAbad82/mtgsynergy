@@ -943,6 +943,14 @@ export function parseSemanticIrV0(input: {
     }
   }
 
+  const castSpellPtChangeMatch =
+    /\b(when|whenever)[^.]*\bcast\b[^.]*\b(?:instant\b[^.]*\bsorcery|noncreature\s+spell)\b[^.]*\bgets\s+\+\d+\/(?:\+\d+|0)\s+until\s+end\s+of\s+turn\b/i.test(
+      text,
+    );
+  if (castSpellPtChangeMatch) {
+    doList.push({ action: ActionId.PT_CHANGE });
+  }
+
   const damageMatch = /deal\w*\s+(\d+)\s+damage/i.exec(text);
   if (damageMatch) {
     const n = Number.parseInt(damageMatch[1], 10);

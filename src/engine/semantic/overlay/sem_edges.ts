@@ -111,6 +111,12 @@ function applyCastSpellCreateTokenBridge(profile: ReturnType<typeof buildSemanti
   return profile.consumed.has(castSpellKey) && profile.produced.has(createTokenKey);
 }
 
+function applyCastSpellPtChangeBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const castSpellKey = keyOf(KeyKind.EVENT, EventId.CAST_SPELL);
+  const ptChangeKey = keyOf(KeyKind.ACTION, ActionId.PT_CHANGE);
+  return profile.consumed.has(castSpellKey) && profile.produced.has(ptChangeKey);
+}
+
 function applyDrawSecondCreateTokenBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
   const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
@@ -228,6 +234,15 @@ function explicitCastSpellCreateTokenPayoffTextEvidence(text: string): boolean {
   const isCastInstantOrSorcery = normalized.includes("whenever you cast an instant or sorcery spell");
   const isCastNoncreatureSpell = normalized.includes("whenever you cast a noncreature spell");
   return hasCreateToken && (isCastInstantOrSorcery || isCastNoncreatureSpell);
+}
+
+function explicitCastSpellPtChangePayoffTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasCastTrigger =
+    normalized.includes("whenever you cast an instant or sorcery spell") ||
+    normalized.includes("whenever you cast a noncreature spell");
+  const hasPtPumpUntilEot = /\bgets\s+\+\d+\/(?:\+\d+|0)\s+until\s+end\s+of\s+turn\b/i.test(normalized);
+  return hasCastTrigger && hasPtPumpUntilEot;
 }
 
 function explicitDrawSecondCreateTokenTextEvidence(text: string): boolean {
@@ -417,6 +432,26 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: castSpellKey, weight: 1 },
       { key: createTokenCastSpellKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const ptChangeCastSpellKey = keyOf(KeyKind.ACTION, ActionId.PT_CHANGE);
+  for (const card of cards) {
+    const apply = applyCastSpellPtChangeBridge(card.profile);
+    const textEvidence = explicitCastSpellPtChangePayoffTextEvidence(card.oracle_text ?? "");
+    if (!apply) continue;
+    if (!textEvidence) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: castSpellKey, weight: 1 },
+      { key: ptChangeCastSpellKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

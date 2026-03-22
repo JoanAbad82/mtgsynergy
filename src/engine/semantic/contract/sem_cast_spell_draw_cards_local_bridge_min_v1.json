@@ -1,0 +1,78 @@
+{
+  "metadata": {
+    "document_id": "sem_cast_spell_draw_cards_local_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-v56-cast-spell-draw-cards-local-bridge-min-v1",
+    "source_note": "Minimal contract for a local-only CAST_SPELL -> DRAW_CARDS bridge with narrow evidence gate and no parser/runtime expansion."
+  },
+  "family": "CAST_SPELL -> DRAW_CARDS",
+  "bridge_name": "cast_spell_to_draw_cards_local_bridge_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "deterministic_contract": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true
+  },
+  "bridge_kind": {
+    "id": "cast_spell_enables_local_draw_cards",
+    "label": "cast_spell -> draw_cards",
+    "event_origin": "EVENT:CAST_SPELL",
+    "action_targets": [
+      "ACTION:DRAW_CARDS"
+    ],
+    "causal_mode": "local_explicit_narrow",
+    "purpose": "Enable strict local closure where explicit instant-or-sorcery cast trigger wording co-exists with local draw action."
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile consumes EVENT:CAST_SPELL",
+      "Profile produces ACTION:DRAW_CARDS"
+    ],
+    "text_evidence_policy": "Require explicit wording equivalent to 'whenever you cast an instant or sorcery spell' plus draw wording.",
+    "honesty_constraints": [
+      "Do not generalize to noncreature-spell, prowess, magecraft, or generic spells-matter wording in v1.",
+      "Do not mix CAST with ACTIVATE."
+    ]
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "EVENT:CAST_SPELL",
+        "ACTION:DRAW_CARDS"
+      ]
+    }
+  },
+  "invariants": [
+    "No parser expansion",
+    "No lowering changes",
+    "No runtime stack/priority changes",
+    "No UI/scoring/SPS changes",
+    "No cross-card closure"
+  ],
+  "non_goals": [
+    "CAST_SPELL -> generic payoff families",
+    "Activation-based bridges",
+    "Generic spells-matter ontology",
+    "Triggered family/runtime expansion",
+    "Multi-hop or cross-card closure"
+  ]
+}

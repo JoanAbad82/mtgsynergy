@@ -99,6 +99,12 @@ function applyCastSpellDamageBridge(profile: ReturnType<typeof buildSemanticCard
   return profile.consumed.has(castSpellKey) && profile.produced.has(dealDamageKey);
 }
 
+function applyCastSpellDrawCardsBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const castSpellKey = keyOf(KeyKind.EVENT, EventId.CAST_SPELL);
+  const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  return profile.consumed.has(castSpellKey) && profile.produced.has(drawCardsKey);
+}
+
 function applyDrawSecondCreateTokenBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
   const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
@@ -199,6 +205,14 @@ function explicitCastInstantOrSorceryDamagePayoffTextEvidence(text: string): boo
     normalized.includes("whenever you cast an instant or sorcery spell") &&
     normalized.includes("deal") &&
     normalized.includes("damage")
+  );
+}
+
+function explicitCastInstantOrSorceryDrawPayoffTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return (
+    normalized.includes("whenever you cast an instant or sorcery spell") &&
+    /\bdraw\b/.test(normalized)
   );
 }
 
@@ -349,6 +363,26 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: castSpellKey, weight: 1 },
       { key: dealDamageCastSpellKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const drawCardsCastSpellKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  for (const card of cards) {
+    const apply = applyCastSpellDrawCardsBridge(card.profile);
+    const textEvidence = explicitCastInstantOrSorceryDrawPayoffTextEvidence(card.oracle_text ?? "");
+    if (!apply) continue;
+    if (!textEvidence) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: castSpellKey, weight: 1 },
+      { key: drawCardsCastSpellKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

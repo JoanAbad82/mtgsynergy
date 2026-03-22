@@ -59,6 +59,14 @@ function applyLeavesBattlefieldCreateTokenBridge(
   return profile.consumed.has(leavesBattlefieldKey) && profile.produced.has(createTokenKey);
 }
 
+function applyLeavesBattlefieldDrawCardsBridge(
+  profile: ReturnType<typeof buildSemanticCardProfile>,
+): boolean {
+  const leavesBattlefieldKey = keyOf(KeyKind.EVENT, EventId.LEAVES_BATTLEFIELD);
+  const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  return profile.consumed.has(leavesBattlefieldKey) && profile.produced.has(drawCardsKey);
+}
+
 function explicitLeavesBattlefieldTextEvidence(text: string): boolean {
   const normalized = text.toLowerCase();
   return normalized.includes("leaves the battlefield");
@@ -281,6 +289,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: leavesBattlefieldKey, weight: 1 },
       { key: createTokenKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const leavesBattlefieldDrawKey = keyOf(KeyKind.EVENT, EventId.LEAVES_BATTLEFIELD);
+  const drawCardsLeavesKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  for (const card of cards) {
+    if (!applyLeavesBattlefieldDrawCardsBridge(card.profile)) continue;
+    if (!explicitLeavesBattlefieldTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: leavesBattlefieldDrawKey, weight: 1 },
+      { key: drawCardsLeavesKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

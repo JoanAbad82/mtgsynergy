@@ -25,7 +25,16 @@ function findLocalBridgeEdge(
   edges: ReturnType<typeof buildSemanticEdges>,
   cardId: number,
 ) {
-  return edges.find((edge) => edge.local_only && edge.from === cardId && edge.to === cardId);
+  const leavesBattlefieldKey = keyOf(KeyKind.EVENT, EventId.LEAVES_BATTLEFIELD);
+  const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+  return edges.find(
+    (edge) =>
+      edge.local_only &&
+      edge.from === cardId &&
+      edge.to === cardId &&
+      edge.reasons.some((reason) => reason.key === leavesBattlefieldKey) &&
+      edge.reasons.some((reason) => reason.key === createTokenKey),
+  );
 }
 
 describe("semantic overlay leaves battlefield create token bridge min v1", () => {

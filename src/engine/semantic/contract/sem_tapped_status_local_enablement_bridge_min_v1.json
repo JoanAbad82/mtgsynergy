@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "document_id": "sem_tapped_status_local_enablement_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-v54-tapped-status-local-enablement-bridge-min-v1",
+    "source_note": "Minimal contract for a local-only bridge from explicit self untapped-status conditions to local ACTION:DRAW_CARDS enablement already recognized in the same profile."
+  },
+  "family": "TAPPED_STATUS -> LOCAL_ENABLEMENT",
+  "bridge_name": "tapped_status_to_local_enablement_bridge_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "deterministic_contract": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true
+  },
+  "bridge_kind": {
+    "id": "tapped_status_enables_local_action",
+    "label": "tapped_status -> local_enablement",
+    "status_signal_source": "explicit self untapped condition in oracle text",
+    "causal_mode": "local_explicit_narrow",
+    "purpose": "Capture explicit local enablement where self untapped status conditions co-exist with local ACTION:DRAW_CARDS in the same profile."
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only inside the same card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Explicit self status condition using untapped wording",
+      "Profile produces ACTION:DRAW_CARDS"
+    ],
+    "status_condition_patterns": [
+      "if this artifact|creature|permanent is untapped",
+      "for as long as this artifact|creature|permanent is untapped",
+      "as long as this artifact|creature|permanent is untapped"
+    ],
+    "text_evidence_policy": "Require explicit local untapped status-condition phrasing and do not infer from incidental tapped mentions."
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "EVENT:UNTAP",
+        "ACTION:DRAW_CARDS"
+      ]
+    }
+  },
+  "invariants": [
+    "No parser expansion",
+    "No runtime status engine",
+    "No turn structure engine",
+    "No stack/priority model",
+    "No UI/scoring/SPS changes",
+    "No cross-card closure"
+  ],
+  "non_goals": [
+    "General tap/untap engine",
+    "Explicit self tapped conditions are out of scope in v1",
+    "Downstream actions other than ACTION:DRAW_CARDS are out of scope in v1",
+    "Enters tapped or becomes tapped incidental text",
+    "Untap step simulation",
+    "Summoning sickness or TAP/Q legality rework",
+    "Global tempo/resource modeling"
+  ]
+}

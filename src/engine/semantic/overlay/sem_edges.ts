@@ -103,6 +103,33 @@ function applyDrawSecondDealDamageBridge(profile: ReturnType<typeof buildSemanti
   return profile.consumed.has(drawSecondKey) && profile.produced.has(dealDamageKey);
 }
 
+function applyTappedStatusLocalEnablementBridge(
+  profile: ReturnType<typeof buildSemanticCardProfile>,
+): number[] {
+  const localEnablementActionKeys = [keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS)];
+  const matched = localEnablementActionKeys.filter((key) => profile.produced.has(key));
+  return matched.length > 0 ? matched : [];
+}
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function hasLocalUntappedStatusCondition(text: string, cardName?: string): boolean {
+  const normalized = text.toLowerCase();
+  const selfSubjects = ["this artifact", "this creature", "this permanent"];
+  const trimmedCardName = (cardName ?? "").trim().toLowerCase();
+  if (trimmedCardName.length > 0) {
+    selfSubjects.push(trimmedCardName);
+  }
+  const subjectPattern = selfSubjects.map((subject) => escapeRegex(subject)).join("|");
+  const untappedConditionPattern = new RegExp(
+    `\\b(?:if|for as long as|as long as)\\s+(?:${subjectPattern})\\s+is\\s+untapped\\b`,
+    "i",
+  );
+  return untappedConditionPattern.test(normalized);
+}
+
 function applyCountersMatterLocalBridge(profile: ReturnType<typeof buildSemanticCardProfile>): number[] {
   const addCountersKey = keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS);
   if (!profile.produced.has(addCountersKey)) return [];
@@ -408,6 +435,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     if (!explicitProduceManaEnablementTextEvidence(card.oracle_text ?? "")) continue;
 
     const reasons: SemanticEdgeReason[] = [{ key: produceManaKey, weight: 1 }];
+    for (const key of matchedEnablementActions) {
+      reasons.push({ key, weight: 1 });
+    }
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  for (const card of cards) {
+    const matchedEnablementActions = applyTappedStatusLocalEnablementBridge(card.profile);
+    if (matchedEnablementActions.length === 0) continue;
+    if (!hasLocalUntappedStatusCondition(card.oracle_text ?? "", (card as { name?: string }).name ?? "")) continue;
+
+    const reasons: SemanticEdgeReason[] = [{ key: keyOf(KeyKind.EVENT, EventId.UNTAP), weight: 1 }];
     for (const key of matchedEnablementActions) {
       reasons.push({ key, weight: 1 });
     }

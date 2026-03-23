@@ -117,6 +117,11 @@ function applyCastSpellPtChangeBridge(profile: ReturnType<typeof buildSemanticCa
   return profile.consumed.has(castSpellKey) && profile.produced.has(ptChangeKey);
 }
 
+function applyCastSpellAddCountersBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const addCountersKey = keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS);
+  return profile.produced.has(addCountersKey);
+}
+
 function applyDrawSecondCreateTokenBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
   const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
@@ -255,6 +260,34 @@ function explicitCastSpellPtChangePayoffTextEvidence(text: string): boolean {
     normalized.includes("whenever you cast a noncreature spell");
   const hasPtPumpUntilEot = /\bgets\s+\+\d+\/(?:\+\d+|0)\s+until\s+end\s+of\s+turn\b/i.test(normalized);
   return hasCastTrigger && hasPtPumpUntilEot;
+}
+
+function explicitCastSpellAddCountersPayoffTextEvidence(text: string, cardName?: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasSecondSpellPattern = /\bsecond\s+spell\b[^.]*\beach\s+turn\b/i.test(normalized);
+  if (hasSecondSpellPattern) return false;
+
+  const hasCastOrCopyPattern =
+    /\bwhen(?:ever)?\s+you\s+cast\s+or\s+copy\b[^.]*\bspell\b/i.test(normalized);
+  if (hasCastOrCopyPattern) return false;
+
+  const castSpellClause = "\\bwhen(?:ever)?\\s+you\\s+cast\\b[^.]*\\bspell\\b";
+  const putCounterClause =
+    "\\bput\\s+(?:a|an|one|two|three|four|\\d+)\\s+\\+1\\/\\+1\\s+counters?\\s+on\\s+";
+
+  const thisCreaturePattern = new RegExp(
+    `${castSpellClause}[^.]*${putCounterClause}this\\s+creature\\b`,
+    "i",
+  );
+  if (thisCreaturePattern.test(normalized)) return true;
+
+  const normalizedCardName = (cardName ?? "").trim().toLowerCase();
+  if (normalizedCardName.length === 0) return false;
+  const cardNamePattern = new RegExp(
+    `${castSpellClause}[^.]*${putCounterClause}${escapeRegex(normalizedCardName)}\\b`,
+    "i",
+  );
+  return cardNamePattern.test(normalized);
 }
 
 function explicitCastSpellAddManaPayoffTextEvidence(text: string): boolean {
@@ -482,6 +515,27 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: castSpellKey, weight: 1 },
       { key: ptChangeCastSpellKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const addCountersCastSpellKey = keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS);
+  for (const card of cards) {
+    const apply = applyCastSpellAddCountersBridge(card.profile);
+    const cardName = (card as { name?: string }).name ?? "";
+    const textEvidence = explicitCastSpellAddCountersPayoffTextEvidence(card.oracle_text ?? "", cardName);
+    if (!apply) continue;
+    if (!textEvidence) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: castSpellKey, weight: 1 },
+      { key: addCountersCastSpellKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

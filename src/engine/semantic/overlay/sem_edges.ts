@@ -245,6 +245,24 @@ function explicitCastSpellPtChangePayoffTextEvidence(text: string): boolean {
   return hasCastTrigger && hasPtPumpUntilEot;
 }
 
+function explicitCastSpellAddManaPayoffTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const castTriggerPattern =
+    "when(?:ever)?\\s+you\\s+cast\\s+(?:a\\s+spell|an?\\s+instant\\s+or\\s+sorcery\\s+spell|a\\s+noncreature\\s+spell)";
+  const hasCastAddManaSameSentence =
+    /\bwhen(?:ever)?\s+you\s+cast\s+(?:a\s+spell|an?\s+instant\s+or\s+sorcery\s+spell|a\s+noncreature\s+spell)\b[^.]*\badd\s+(?:\{[wubrgc]\}|one\s+mana\s+of\s+any\s+color|mana)/i.test(
+      normalized,
+    );
+  const hasCastAddManaNextSentence = new RegExp(
+    `\\b${castTriggerPattern}\\b[^.]*\\.\\s*add\\s+(?:\\{[wubrgc]\\}|one\\s+mana\\s+of\\s+any\\s+color|mana)`,
+    "i",
+  ).test(normalized);
+  const hasCastAddManaSentence = hasCastAddManaSameSentence || hasCastAddManaNextSentence;
+  const hasCastCreateTokenSentence =
+    /\bwhen(?:ever)?\s+you\s+cast\b[^.]*\bcreate\b[^.]*\btoken\b/i.test(normalized);
+  return hasCastAddManaSentence && !hasCastCreateTokenSentence;
+}
+
 function explicitDrawSecondCreateTokenTextEvidence(text: string): boolean {
   const normalized = text.toLowerCase();
   return (
@@ -452,6 +470,24 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: castSpellKey, weight: 1 },
       { key: ptChangeCastSpellKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const produceManaCastSpellKey = keyOf(KeyKind.ACTION, ActionId.PRODUCE_MANA);
+  for (const card of cards) {
+    const textEvidence = explicitCastSpellAddManaPayoffTextEvidence(card.oracle_text ?? "");
+    if (!textEvidence) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: castSpellKey, weight: 1 },
+      { key: produceManaCastSpellKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

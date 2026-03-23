@@ -38,7 +38,7 @@ function findCastDrawLocalBridgeEdge(
 }
 
 describe("semantic overlay cast spell draw cards local bridge min v1", () => {
-  it("closes locally only for explicit cast instant-or-sorcery plus draw-cards wording", () => {
+  it("closes locally only for explicit cast-spell plus draw-cards wording", () => {
     const castSpellKey = keyOf(KeyKind.EVENT, EventId.CAST_SPELL);
     const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
     const expectedReasonKeys = [castSpellKey, drawCardsKey].sort((a, b) => a - b);
@@ -85,6 +85,9 @@ describe("semantic overlay cast spell draw cards local bridge min v1", () => {
     const genericSpellsMatterEdges = buildSemanticEdges(genericSpellsMatterCards, { includeLocalOnly: true });
     const genericSpellsMatterBridgeEdge = findCastDrawLocalBridgeEdge(genericSpellsMatterEdges, 1);
 
-    expect(genericSpellsMatterBridgeEdge).toBeUndefined();
+    expect(genericSpellsMatterBridgeEdge).toBeTruthy();
+    expect(genericSpellsMatterBridgeEdge?.local_only).toBe(true);
+    expect(genericSpellsMatterBridgeEdge?.score).toBe(0);
+    expect(genericSpellsMatterBridgeEdge?.reasons.map((reason) => reason.key)).toEqual(expectedReasonKeys);
   });
 });

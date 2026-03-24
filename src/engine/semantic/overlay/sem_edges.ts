@@ -134,6 +134,12 @@ function applyDrawCardsDealDamageBridge(profile: ReturnType<typeof buildSemantic
   return profile.produced.has(drawCardsKey) && profile.produced.has(dealDamageKey);
 }
 
+function applyDrawCardsCreateTokenBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+  return profile.produced.has(drawCardsKey) && profile.produced.has(createTokenKey);
+}
+
 function applyDrawSecondCreateTokenBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
   const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
@@ -350,6 +356,20 @@ function explicitDrawCardsDealDamageTextEvidence(text: string): boolean {
     /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\bdeal\w*\b[^.]*\bdamage\b/i.test(normalized);
 
   return hasDrawTrigger && hasDealDamageInSameSentence;
+}
+
+function explicitDrawCardsCreateTokenTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasDrawSecondPattern = /\bsecond\s+card\b[^.]*\beach\s+turn\b/i.test(normalized);
+  if (hasDrawSecondPattern) return false;
+
+  const hasDrawTrigger =
+    /\bwhen(?:ever)?\s+you\s+draw\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(normalized) ||
+    /\bwhen(?:ever)?\s+one\s+or\s+more\s+cards?\s+are\s+drawn\b/i.test(normalized);
+  const hasCreateTokenInSameSentence =
+    /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\bcreate\b[^.]*\btoken\b/i.test(normalized);
+
+  return hasDrawTrigger && hasCreateTokenInSameSentence;
 }
 
 function explicitLifelinkTextEvidence(text: string): boolean {
@@ -623,6 +643,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: drawSecondKey, weight: 1 },
       { key: createTokenDrawSecondKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const drawCardsCreateTokenKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const createTokenDrawCardsKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+  for (const card of cards) {
+    if (!applyDrawCardsCreateTokenBridge(card.profile)) continue;
+    if (!explicitDrawCardsCreateTokenTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: drawCardsCreateTokenKey, weight: 1 },
+      { key: createTokenDrawCardsKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

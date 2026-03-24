@@ -82,6 +82,17 @@ function explicitDamageToPlayerTextEvidence(text: string): boolean {
   );
 }
 
+function explicitPreventDamageNoDamageEventGuardTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  if (/\bcan(?:not|'t)\s+be\s+prevented\b/.test(normalized)) return false;
+
+  return (
+    /\bprevent\b[^.]*\bdamage\b[^.]*\bwould\s+be\s+dealt\b/.test(normalized) ||
+    /\bprevent\b[^.]*\bwould\s+deal\b[^.]*\bdamage\b/.test(normalized) ||
+    /\bprevent\b[^.]*\bdeal\w*\s+\d+\s+damage\b/.test(normalized)
+  );
+}
+
 function applyLifeGainAddCountersBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const lifeGainEventKey = keyOf(KeyKind.EVENT, EventId.LIFE_GAIN);
   const addCountersKey = keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS);
@@ -500,6 +511,7 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
   for (const card of cards) {
     if (!applyDealDamageLoseLifeBridge(card.profile)) continue;
     if (!explicitDamageToPlayerTextEvidence(card.oracle_text ?? "")) continue;
+    if (explicitPreventDamageNoDamageEventGuardTextEvidence(card.oracle_text ?? "")) continue;
     const reasons: SemanticEdgeReason[] = [
       { key: dealDamageKey, weight: 1 },
       { key: loseLifeKey, weight: 1 },

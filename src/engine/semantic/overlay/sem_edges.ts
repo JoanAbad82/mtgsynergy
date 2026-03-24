@@ -338,8 +338,27 @@ function explicitDrawSecondDealDamageTextEvidence(text: string): boolean {
   );
 }
 
+function explicitDrawCardsDealDamageTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasDrawSecondPattern = /\bsecond\s+card\b[^.]*\beach\s+turn\b/i.test(normalized);
+  if (hasDrawSecondPattern) return false;
+
+  const hasDrawTrigger =
+    /\bwhen(?:ever)?\s+you\s+draw\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(normalized) ||
+    /\bwhen(?:ever)?\s+one\s+or\s+more\s+cards?\s+are\s+drawn\b/i.test(normalized);
+  const hasDealDamageInSameSentence =
+    /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\bdeal\w*\b[^.]*\bdamage\b/i.test(normalized);
+
+  return hasDrawTrigger && hasDealDamageInSameSentence;
+}
+
 function explicitLifelinkTextEvidence(text: string): boolean {
   return /\blifelink\b/.test(text.toLowerCase());
+}
+
+function explicitCreateTokenTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return normalized.includes("create") && normalized.includes("token");
 }
 
 export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSemanticEdgesOptions): SemanticEdge[] {
@@ -426,6 +445,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: leavesBattlefieldDrawKey, weight: 1 },
       { key: drawCardsLeavesKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const createTokenEtbKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+  const entersBattlefieldEtbKey = keyOf(KeyKind.EVENT, EventId.ENTERS_BATTLEFIELD);
+  for (const card of cards) {
+    if (!applyCreateTokenEtbBridge(card.profile)) continue;
+    if (!explicitCreateTokenTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: createTokenEtbKey, weight: 1 },
+      { key: entersBattlefieldEtbKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({
@@ -604,6 +642,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: drawSecondDamageKey, weight: 1 },
       { key: dealDamageDrawSecondKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const drawCardsDealDamageKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const dealDamageDrawCardsKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  for (const card of cards) {
+    if (!applyDrawCardsDealDamageBridge(card.profile)) continue;
+    if (!explicitDrawCardsDealDamageTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: drawCardsDealDamageKey, weight: 1 },
+      { key: dealDamageDrawCardsKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

@@ -122,6 +122,18 @@ function applyCastSpellAddCountersBridge(profile: ReturnType<typeof buildSemanti
   return profile.produced.has(addCountersKey);
 }
 
+function applyCreateTokenEtbBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+  const entersBattlefieldKey = keyOf(KeyKind.EVENT, EventId.ENTERS_BATTLEFIELD);
+  return profile.produced.has(createTokenKey) && profile.produced.has(entersBattlefieldKey);
+}
+
+function applyDrawCardsDealDamageBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const dealDamageKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  return profile.produced.has(drawCardsKey) && profile.produced.has(dealDamageKey);
+}
+
 function applyDrawSecondCreateTokenBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
   const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);

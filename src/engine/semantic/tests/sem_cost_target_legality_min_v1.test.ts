@@ -21,6 +21,30 @@ describe("cost target legality min v1 service", () => {
     expect(result.legalityGates).toHaveLength(0);
   });
 
+  it("activates target recheck-at-resolution guard only when formal targets exist", () => {
+    const withFormalTarget = analyzeCostTargetLegalityMinV1("Destroy target creature.");
+    expect(withFormalTarget.targetSpecs).toHaveLength(1);
+    expect(withFormalTarget.semantics.reservesResolutionLegalityRecheck).toBe(true);
+    expect(
+      withFormalTarget.semantics.reasons.some(
+        (reason) =>
+          reason.code === "RESOLUTION_RECHECK_RESERVED_MIN" &&
+          reason.detail === "resolution_legality_recheck_reserved_for_formal_targets_only",
+      ),
+    ).toBe(true);
+
+    const withoutFormalTarget = analyzeCostTargetLegalityMinV1("Draw two cards.");
+    expect(withoutFormalTarget.targetSpecs).toHaveLength(0);
+    expect(withoutFormalTarget.semantics.reservesResolutionLegalityRecheck).toBe(false);
+    expect(
+      withoutFormalTarget.semantics.reasons.some(
+        (reason) =>
+          reason.code === "RESOLUTION_RECHECK_RESERVED_MIN" &&
+          reason.detail === "resolution_legality_recheck_guard_not_applicable_without_formal_targets",
+      ),
+    ).toBe(true);
+  });
+
   it("detects mana and tap costs plus artifact/creature/land target for Icy Manipulator", () => {
     const text = "{1}, {T}: Tap target artifact, creature, or land.";
     const result = analyzeCostTargetLegalityMinV1(text);

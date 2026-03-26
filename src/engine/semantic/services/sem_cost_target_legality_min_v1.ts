@@ -142,6 +142,8 @@ function buildSemantics(
   legalityGates: LegalityGate[],
   summoningSicknessTapQMin?: SummoningSicknessTapQMin,
 ): CostTargetLegalitySemanticsResult {
+  const targetRecheckAtResolutionGuardActive = targetSpecs.length > 0;
+
   const reasons: CostTargetLegalitySemanticsReason[] = [
     {
       code: "COST_EFFECT_SEPARATION_MIN",
@@ -157,7 +159,9 @@ function buildSemantics(
     },
     {
       code: "RESOLUTION_RECHECK_RESERVED_MIN",
-      detail: "resolution_legality_recheck_reserved"
+      detail: targetRecheckAtResolutionGuardActive
+        ? "resolution_legality_recheck_reserved_for_formal_targets_only"
+        : "resolution_legality_recheck_guard_not_applicable_without_formal_targets"
     }
   ];
 
@@ -202,7 +206,7 @@ function buildSemantics(
     separatesCostFromEffect: true,
     separatesTargetFromReferenceText: true,
     separatesLegalityFromEffect: true,
-    reservesResolutionLegalityRecheck: true,
+    reservesResolutionLegalityRecheck: targetRecheckAtResolutionGuardActive,
     reasons
   };
 }

@@ -166,4 +166,33 @@ describe("sem_zone_identity_lki_min_v1", () => {
 
     expect(resolved).toEqual(lki);
   });
+
+  it("uses pre-SBA snapshot guard for leaves-the-battlefield LKI", () => {
+    const objectRef = createObjectInstanceRef({
+      objectInstanceId: "obj-5",
+      objectKind: "card",
+      oracleCardName: "Shambling Ghast",
+      ownerId: "p1",
+      controllerId: "p2"
+    });
+
+    const record = buildZoneChangeRecord({
+      objectRef,
+      fromZone: "BATTLEFIELD",
+      toZone: "GRAVEYARD",
+      wasCreatureImmediatelyBeforeChange: true,
+      sourceTextHint: "When Shambling Ghast dies, choose one - create a Treasure token; or target creature gets -1/-1 until end of turn."
+    });
+
+    const preSbaLki = captureLastKnownInformation(record);
+    const resolvedWithSbaGuard = resolveLkiQuery(preSbaLki, {
+      leftBattlefieldInSbaBatch: true
+    });
+    const resolvedWithoutSbaGuard = resolveLkiQuery(preSbaLki, {
+      leftBattlefieldInSbaBatch: false
+    });
+
+    expect(resolvedWithSbaGuard).toEqual(preSbaLki);
+    expect(resolvedWithoutSbaGuard).toEqual(preSbaLki);
+  });
 });

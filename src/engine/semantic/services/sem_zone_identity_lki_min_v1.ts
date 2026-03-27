@@ -7,6 +7,10 @@ import {
   ZoneSemanticsResult
 } from "../types/sem_zone_identity_types";
 
+export interface LkiQueryContext {
+  leftBattlefieldInSbaBatch?: boolean;
+}
+
 export function createObjectInstanceRef(args: {
   objectInstanceId: string;
   objectKind: "card" | "token" | "copy" | "unknown";
@@ -62,7 +66,15 @@ export function captureLastKnownInformation(record: ZoneChangeRecord): LastKnown
   };
 }
 
-export function resolveLkiQuery(lki: LastKnownInfo): LastKnownInfo {
+function shouldUsePreSbaSnapshotGuard(lki: LastKnownInfo, context?: LkiQueryContext): boolean {
+  return context?.leftBattlefieldInSbaBatch === true && lki.zoneBeforeChange === "BATTLEFIELD";
+}
+
+export function resolveLkiQuery(lki: LastKnownInfo, context?: LkiQueryContext): LastKnownInfo {
+  if (shouldUsePreSbaSnapshotGuard(lki, context)) {
+    return lki;
+  }
+
   return lki;
 }
 

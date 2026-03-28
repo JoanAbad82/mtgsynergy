@@ -151,6 +151,12 @@ function applyDrawCardsCreateTokenBridge(profile: ReturnType<typeof buildSemanti
   return profile.produced.has(drawCardsKey) && profile.produced.has(createTokenKey);
 }
 
+function applyDrawCardsLoseLifeBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const loseLifeKey = keyOf(KeyKind.ACTION, ActionId.LOSE_LIFE);
+  return profile.produced.has(drawCardsKey) && profile.produced.has(loseLifeKey);
+}
+
 function applyDrawSecondCreateTokenBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
   const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
@@ -381,6 +387,21 @@ function explicitDrawCardsCreateTokenTextEvidence(text: string): boolean {
     /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\bcreate\b[^.]*\btoken\b/i.test(normalized);
 
   return hasDrawTrigger && hasCreateTokenInSameSentence;
+}
+
+function explicitDrawCardsLoseLifeTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasDrawSecondPattern = /\bsecond\s+card\b[^.]*\beach\s+turn\b/i.test(normalized);
+  if (hasDrawSecondPattern) return false;
+
+  const hasDrawTrigger =
+    /\bwhen(?:ever)?\s+you\s+draw\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(normalized);
+  const hasLoseLifeInSameSentence =
+    /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\beach\s+opponents?\s+loses?\s+(?:a|an|one|two|three|four|\d+)\s+life\b/i.test(
+      normalized,
+    );
+
+  return hasDrawTrigger && hasLoseLifeInSameSentence;
 }
 
 function explicitLifelinkTextEvidence(text: string): boolean {
@@ -712,6 +733,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: drawCardsDealDamageKey, weight: 1 },
       { key: dealDamageDrawCardsKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const drawCardsLoseLifeKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const loseLifeDrawCardsKey = keyOf(KeyKind.ACTION, ActionId.LOSE_LIFE);
+  for (const card of cards) {
+    if (!applyDrawCardsLoseLifeBridge(card.profile)) continue;
+    if (!explicitDrawCardsLoseLifeTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: drawCardsLoseLifeKey, weight: 1 },
+      { key: loseLifeDrawCardsKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

@@ -1,0 +1,81 @@
+{
+  "metadata": {
+    "document_id": "sem_draw_cards_lose_life_local_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-v68-draw-cards-lose-life-local-bridge-min-v1",
+    "source_note": "Minimal contract for a local-only DRAW_CARDS -> LOSE_LIFE bridge with explicit wording gate and no parser/lowering/runtime expansion."
+  },
+  "family": "DRAW_CARDS -> LOSE_LIFE",
+  "bridge_name": "draw_cards_to_lose_life_local_bridge_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "deterministic_contract": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true
+  },
+  "bridge_kind": {
+    "id": "draw_cards_enables_local_lose_life",
+    "label": "draw_cards -> lose_life",
+    "event_origin": "ACTION:DRAW_CARDS",
+    "action_targets": [
+      "ACTION:LOSE_LIFE"
+    ],
+    "causal_mode": "local_explicit_narrow",
+    "purpose": "Enable strict local closure where explicit draw trigger wording co-exists with explicit local lose-life payoff wording."
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile produces ACTION:DRAW_CARDS",
+      "Profile produces ACTION:LOSE_LIFE"
+    ],
+    "text_evidence_policy": "Require explicit wording equivalent to 'Whenever you draw a card, each opponent loses 1 life.' in the same local sentence.",
+    "honesty_constraints": [
+      "Do not infer bridge from loose coexistence of draw and lose-life words in unrelated clauses.",
+      "Do not activate on draw-second-card wording.",
+      "Do not open general lose-life ontology."
+    ]
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "ACTION:DRAW_CARDS",
+        "ACTION:LOSE_LIFE"
+      ]
+    }
+  },
+  "invariants": [
+    "No parser expansion",
+    "No lowering changes",
+    "No runtime/stack/priority changes",
+    "No UI/scoring/SPS changes",
+    "No cross-card closure"
+  ],
+  "non_goals": [
+    "DRAW_CARDS -> DEAL_DAMAGE",
+    "DRAW_CARDS -> CREATE_TOKEN",
+    "DRAW_CARDS -> ADD_COUNTERS",
+    "DRAW_SECOND_CARD_TURN families",
+    "MILL/SCRY/SURVEIL/DISCARD branches",
+    "General lose-life bridges",
+    "General damage -> lose-life handling"
+  ]
+}

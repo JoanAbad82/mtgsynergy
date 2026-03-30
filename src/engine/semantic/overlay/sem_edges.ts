@@ -151,6 +151,12 @@ function applyDrawCardsCreateTokenBridge(profile: ReturnType<typeof buildSemanti
   return profile.produced.has(drawCardsKey) && profile.produced.has(createTokenKey);
 }
 
+function applyDrawCardsMillBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const millCardsKey = keyOf(KeyKind.ACTION, ActionId.MILL_CARDS);
+  return profile.produced.has(drawCardsKey) && profile.produced.has(millCardsKey);
+}
+
 function applyDrawCardsLoseLifeBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
   const loseLifeKey = keyOf(KeyKind.ACTION, ActionId.LOSE_LIFE);
@@ -387,6 +393,35 @@ function explicitDrawCardsCreateTokenTextEvidence(text: string): boolean {
     /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\bcreate\b[^.]*\btoken\b/i.test(normalized);
 
   return hasDrawTrigger && hasCreateTokenInSameSentence;
+}
+
+function explicitDrawCardsMillTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasDrawSecondPattern = /\bsecond\s+card\b[^.]*\beach\s+turn\b/i.test(normalized);
+  if (hasDrawSecondPattern) return false;
+
+  const hasDrawTrigger =
+    /\bwhen(?:ever)?\s+you\s+draw\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(normalized);
+  const hasMillInSameSentence =
+    /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\btarget\s+opponents?\s+mills\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(
+      normalized,
+    );
+  if (!hasDrawTrigger || !hasMillInSameSentence) return false;
+
+  const hasCreateTokenInSameSentence =
+    /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\bcreate\b[^.]*\btoken\b/i.test(normalized);
+  if (hasCreateTokenInSameSentence) return false;
+  const hasLoseLifeInSameSentence =
+    /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\bloses?\b[^.]*\blife\b/i.test(normalized);
+  if (hasLoseLifeInSameSentence) return false;
+  const hasDealDamageInSameSentence =
+    /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\bdeal\w*\b[^.]*\bdamage\b/i.test(normalized);
+  if (hasDealDamageInSameSentence) return false;
+  const hasAddCountersInSameSentence =
+    /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\bput\b[^.]*\+1\/\+1\b[^.]*\bcounters?\b/i.test(normalized);
+  if (hasAddCountersInSameSentence) return false;
+
+  return true;
 }
 
 function explicitDrawCardsLoseLifeTextEvidence(text: string): boolean {
@@ -695,6 +730,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: drawCardsCreateTokenKey, weight: 1 },
       { key: createTokenDrawCardsKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const drawCardsMillKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const millCardsDrawKey = keyOf(KeyKind.ACTION, ActionId.MILL_CARDS);
+  for (const card of cards) {
+    if (!applyDrawCardsMillBridge(card.profile)) continue;
+    if (!explicitDrawCardsMillTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: drawCardsMillKey, weight: 1 },
+      { key: millCardsDrawKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

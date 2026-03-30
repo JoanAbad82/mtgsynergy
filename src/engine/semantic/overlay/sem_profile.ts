@@ -233,7 +233,6 @@ export function buildSemanticCardProfile(
   if (bloodCreated && !createdBlood) {
     addResource(produced, ResourceId.BLOOD, 1, "effect");
   }
-
   return { produced, consumed };
 }
 

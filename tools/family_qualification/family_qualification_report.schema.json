@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mtgsynergy.local/tools/family_qualification/family_qualification_report.schema.json",
+  "title": "Family Qualification Report v1 Bootstrap (Minimal)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "meta",
+    "verdict",
+    "shortlist",
+    "families"
+  ],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "headShort",
+        "originMainShort",
+        "repoDirtyGlobal",
+        "closurePath",
+        "catalogPath"
+      ],
+      "properties": {
+        "headShort": {
+          "type": "string",
+          "minLength": 1
+        },
+        "originMainShort": {
+          "type": "string",
+          "minLength": 1
+        },
+        "repoDirtyGlobal": {
+          "type": "boolean"
+        },
+        "closurePath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "catalogPath": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "verdict": {
+      "type": "string",
+      "enum": [
+        "NO_CLEAN_CANDIDATE"
+      ]
+    },
+    "shortlist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "families": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "family_id",
+          "status",
+          "status_reason",
+          "tracked_contract_hits",
+          "tracked_test_hits",
+          "tracked_wiring_hits",
+          "untracked_homonym_hits",
+          "closure_positive_hits",
+          "closure_negative_hits"
+        ],
+        "properties": {
+          "family_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "CLOSED",
+              "VETOED",
+              "CONTAMINATED_BY_WORKTREE"
+            ]
+          },
+          "status_reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tracked_contract_hits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tracked_test_hits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tracked_wiring_hits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "untracked_homonym_hits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "closure_positive_hits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "closure_negative_hits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

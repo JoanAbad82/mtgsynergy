@@ -1,0 +1,85 @@
+{
+  "catalog_version": "family_qualification_system_v1_bootstrap_min",
+  "families": [
+    {
+      "family_id": "draw_cards_mill_local_bridge_min_v1",
+      "label": "DRAW_CARDS -> MILL local bridge min v1",
+      "repo_contract_globs": [
+        "src/engine/semantic/contract/sem_draw_cards_mill_local_bridge_min_v1.json"
+      ],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_draw_cards_mill_local_bridge_min_v1.test.ts"
+      ],
+      "repo_wiring_globs": [
+        "src/engine/semantic/overlay/sem_edges.ts"
+      ],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/contract/sem_draw_cards_mill_local_bridge_min_v1.json",
+        "src/engine/semantic/tests/sem_overlay_draw_cards_mill_local_bridge_min_v1.test.ts"
+      ],
+      "closure_positive_terms": [
+        "DRAW_CARDS -> MILL local bridge min v1 quedó cerrado materialmente en main remoto"
+      ],
+      "closure_negative_terms": []
+    },
+    {
+      "family_id": "draw_cards_add_counters_local_bridge_min_v1",
+      "label": "DRAW_CARDS -> ADD_COUNTERS local bridge min v1",
+      "repo_contract_globs": [
+        "src/engine/semantic/contract/sem_draw_cards_add_counters_local_bridge_min_v1.json"
+      ],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts"
+      ],
+      "repo_wiring_globs": [
+        "src/engine/semantic/overlay/sem_edges.ts"
+      ],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/contract/sem_draw_cards_add_counters_local_bridge_min_v1.json",
+        "src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts"
+      ],
+      "closure_positive_terms": [],
+      "closure_negative_terms": []
+    },
+    {
+      "family_id": "produce_mana_enablement_closure_min_v1",
+      "label": "PRODUCE_MANA -> ENABLEMENT closure min v1",
+      "repo_contract_globs": [
+        "src/engine/semantic/contract/sem_produce_mana_enablement_closure_min_v1.json"
+      ],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_produce_mana_enablement_closure_min_v1.test.ts"
+      ],
+      "repo_wiring_globs": [
+        "src/engine/semantic/overlay/sem_edges.ts"
+      ],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/contract/sem_produce_mana_enablement_closure_min_v1.json",
+        "src/engine/semantic/tests/sem_overlay_produce_mana_enablement_closure_min_v1.test.ts"
+      ],
+      "closure_positive_terms": [],
+      "closure_negative_terms": [
+        "Mantener absorbido / no reabrir"
+      ]
+    },
+    {
+      "family_id": "tapped_status_local_enablement_bridge_min_v1",
+      "label": "TAPPED_STATUS -> LOCAL_ENABLEMENT bridge min v1",
+      "repo_contract_globs": [
+        "src/engine/semantic/contract/sem_tapped_status_local_enablement_bridge_min_v1.json"
+      ],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_tapped_status_local_enablement_bridge_min_v1.test.ts"
+      ],
+      "repo_wiring_globs": [
+        "src/engine/semantic/overlay/sem_edges.ts"
+      ],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/contract/sem_tapped_status_local_enablement_bridge_min_v1.json",
+        "src/engine/semantic/tests/sem_overlay_tapped_status_local_enablement_bridge_min_v1.test.ts"
+      ],
+      "closure_positive_terms": [],
+      "closure_negative_terms": []
+    }
+  ]
+}

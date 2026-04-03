@@ -64,7 +64,7 @@ test('run_family_qualification_v1 bootstrap emits expected deterministic report 
   const expectedStatuses = {
     draw_cards_mill_local_bridge_min_v1: 'CLOSED',
     draw_cards_add_counters_local_bridge_min_v1: 'CONTAMINATED_BY_WORKTREE',
-    produce_mana_enablement_closure_min_v1: 'VETOED',
+    produce_mana_enablement_closure_min_v1: 'ABSORBED',
     tapped_status_local_enablement_bridge_min_v1: 'CLOSED'
   };
 
@@ -79,5 +79,9 @@ test('run_family_qualification_v1 bootstrap emits expected deterministic report 
     assert.ok(Array.isArray(row.untracked_homonym_hits));
     assert.ok(Array.isArray(row.closure_positive_hits));
     assert.ok(Array.isArray(row.closure_negative_hits));
+    assert.ok(Array.isArray(row.closure_absorbed_hits));
   }
+
+  const produceMana = byFamilyId.get('produce_mana_enablement_closure_min_v1');
+  assert.ok(produceMana.closure_absorbed_hits.length > 0);
 });

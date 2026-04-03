@@ -7,6 +7,7 @@ import { execFileSync } from 'node:child_process';
 const STATUS_CLOSED = 'CLOSED';
 const STATUS_VETOED = 'VETOED';
 const STATUS_CONTAMINATED = 'CONTAMINATED_BY_WORKTREE';
+const STATUS_ABSORBED = 'ABSORBED';
 const VERDICT_NO_CLEAN = 'NO_CLEAN_CANDIDATE';
 
 function parseArgs(argv) {
@@ -133,6 +134,13 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
   const untrackedHomonymHits = collectPathHits(untrackedPaths, family.untracked_homonym_globs);
   const closurePositiveHits = collectClosureHits(closureTextLower, family.closure_positive_terms);
   const closureNegativeHits = collectClosureHits(closureTextLower, family.closure_negative_terms);
+  const closureAbsorbedHits = collectClosureHits(closureTextLower, family.closure_absorbed_terms);
+
+  const hasClosedCondition =
+    trackedContractHits.length > 0 &&
+    trackedTestHits.length > 0 &&
+    (trackedWiringHits.length > 0 || closurePositiveHits.length > 0) &&
+    closureAbsorbedHits.length === 0;
 
   let status = STATUS_CONTAMINATED;
   let statusReason = 'bootstrap fallback: not enough material evidence for CLOSED';
@@ -143,13 +151,12 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
   } else if (untrackedHomonymHits.length > 0) {
     status = STATUS_CONTAMINATED;
     statusReason = `untracked homonym hit: ${untrackedHomonymHits.join(', ')}`;
-  } else if (
-    trackedContractHits.length > 0 &&
-    trackedTestHits.length > 0 &&
-    (trackedWiringHits.length > 0 || closurePositiveHits.length > 0)
-  ) {
+  } else if (hasClosedCondition) {
     status = STATUS_CLOSED;
     statusReason = 'tracked contract + tracked test + material additional hit';
+  } else if (closureAbsorbedHits.length > 0) {
+    status = STATUS_ABSORBED;
+    statusReason = `closure absorbed hit: ${closureAbsorbedHits.join(', ')}`;
   }
 
   return {
@@ -161,7 +168,8 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
     tracked_wiring_hits: trackedWiringHits,
     untracked_homonym_hits: untrackedHomonymHits,
     closure_positive_hits: closurePositiveHits,
-    closure_negative_hits: closureNegativeHits
+    closure_negative_hits: closureNegativeHits,
+    closure_absorbed_hits: closureAbsorbedHits
   };
 }
 
@@ -192,7 +200,8 @@ function validateCatalogFamilyShape(family) {
     'repo_wiring_globs',
     'untracked_homonym_globs',
     'closure_positive_terms',
-    'closure_negative_terms'
+    'closure_negative_terms',
+    'closure_absorbed_terms'
   ];
   for (const key of required) {
     if (!(key in family)) {

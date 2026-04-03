@@ -20,7 +20,8 @@
       "closure_positive_terms": [
         "DRAW_CARDS -> MILL local bridge min v1 quedó cerrado materialmente en main remoto"
       ],
-      "closure_negative_terms": []
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
     },
     {
       "family_id": "draw_cards_add_counters_local_bridge_min_v1",
@@ -39,7 +40,8 @@
         "src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts"
       ],
       "closure_positive_terms": [],
-      "closure_negative_terms": []
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
     },
     {
       "family_id": "produce_mana_enablement_closure_min_v1",
@@ -58,7 +60,8 @@
         "src/engine/semantic/tests/sem_overlay_produce_mana_enablement_closure_min_v1.test.ts"
       ],
       "closure_positive_terms": [],
-      "closure_negative_terms": [
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": [
         "Mantener absorbido / no reabrir"
       ]
     },
@@ -79,7 +82,8 @@
         "src/engine/semantic/tests/sem_overlay_tapped_status_local_enablement_bridge_min_v1.test.ts"
       ],
       "closure_positive_terms": [],
-      "closure_negative_terms": []
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
     }
   ]
 }

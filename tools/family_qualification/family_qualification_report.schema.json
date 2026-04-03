@@ -69,7 +69,8 @@
           "tracked_wiring_hits",
           "untracked_homonym_hits",
           "closure_positive_hits",
-          "closure_negative_hits"
+          "closure_negative_hits",
+          "closure_absorbed_hits"
         ],
         "properties": {
           "family_id": {
@@ -81,7 +82,8 @@
             "enum": [
               "CLOSED",
               "VETOED",
-              "CONTAMINATED_BY_WORKTREE"
+              "CONTAMINATED_BY_WORKTREE",
+              "ABSORBED"
             ]
           },
           "status_reason": {
@@ -119,6 +121,12 @@
             }
           },
           "closure_negative_hits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "closure_absorbed_hits": {
             "type": "array",
             "items": {
               "type": "string"

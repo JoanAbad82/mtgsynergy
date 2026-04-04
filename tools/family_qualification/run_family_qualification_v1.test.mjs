@@ -12,7 +12,7 @@ const repoRoot = path.resolve(__dirname, '..', '..');
 const runnerPath = path.join(repoRoot, 'tools/family_qualification/run_family_qualification_v1.mjs');
 const closurePath = path.join(
   repoRoot,
-  'maestros/v70/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v70_2026-03-30.txt'
+  'maestros/v72/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v72_2026-04-03.txt'
 );
 const catalogPath = path.join(repoRoot, 'tools/family_qualification/family_catalog_v1.json');
 
@@ -41,7 +41,7 @@ function executeRunnerInTempDir() {
   return { tempDir, reportPath, reportTextPath, report };
 }
 
-test('run_family_qualification_v1 bootstrap emits expected deterministic report for current repo', () => {
+test('run_family_qualification_v1 bootstrap reconciled with post-v72 emits expected deterministic report', () => {
   const { reportPath, reportTextPath, report } = executeRunnerInTempDir();
 
   assert.ok(fs.existsSync(reportPath), 'JSON report should exist');

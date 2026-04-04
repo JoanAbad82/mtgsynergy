@@ -103,6 +103,25 @@
       "closure_positive_terms": [],
       "closure_negative_terms": [],
       "closure_absorbed_terms": []
+    },
+    {
+      "family_id": "bootstrap_open_candidate_probe_min_v1",
+      "label": "Bootstrap open-candidate probe (non-engine)",
+      "repo_contract_globs": [
+        "tools/family_qualification/non_engine/probes/bootstrap_open_candidate_probe_min_v1.contract.json"
+      ],
+      "repo_test_globs": [
+        "tools/family_qualification/non_engine/probes/bootstrap_open_candidate_probe_min_v1.test.txt"
+      ],
+      "repo_wiring_globs": [
+        "tools/family_qualification/run_family_qualification_v1.mjs"
+      ],
+      "untracked_homonym_globs": [
+        "tools/family_qualification/non_engine/probes/bootstrap_open_candidate_probe_min_v1.*"
+      ],
+      "closure_positive_terms": [],
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
     }
   ]
 }

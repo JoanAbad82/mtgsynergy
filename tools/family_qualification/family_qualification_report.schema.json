@@ -84,7 +84,8 @@
               "VETOED",
               "CONTAMINATED_BY_WORKTREE",
               "ABSORBED",
-              "INSUFFICIENT_ANCHOR"
+              "INSUFFICIENT_ANCHOR",
+              "OPEN_CANDIDATE"
             ]
           },
           "status_reason": {

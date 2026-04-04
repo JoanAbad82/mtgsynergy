@@ -9,7 +9,9 @@ const STATUS_VETOED = 'VETOED';
 const STATUS_CONTAMINATED = 'CONTAMINATED_BY_WORKTREE';
 const STATUS_ABSORBED = 'ABSORBED';
 const STATUS_INSUFFICIENT_ANCHOR = 'INSUFFICIENT_ANCHOR';
+const STATUS_OPEN_CANDIDATE = 'OPEN_CANDIDATE';
 const VERDICT_NO_CLEAN = 'NO_CLEAN_CANDIDATE';
+const BOOTSTRAP_OPEN_CANDIDATE_PROBE_ID = 'bootstrap_open_candidate_probe_min_v1';
 
 function parseArgs(argv) {
   const out = {};
@@ -142,6 +144,16 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
     trackedTestHits.length > 0 &&
     (trackedWiringHits.length > 0 || closurePositiveHits.length > 0) &&
     closureAbsorbedHits.length === 0;
+  const isBootstrapOpenCandidateProbe =
+    family.family_id === BOOTSTRAP_OPEN_CANDIDATE_PROBE_ID;
+  const hasBootstrapOpenCandidateCondition =
+    isBootstrapOpenCandidateProbe &&
+    trackedContractHits.length === 0 &&
+    trackedTestHits.length === 0 &&
+    closureAbsorbedHits.length === 0 &&
+    trackedWiringHits.length > 0 &&
+    untrackedHomonymHits.length === 0 &&
+    closureNegativeHits.length === 0;
 
   let status = STATUS_INSUFFICIENT_ANCHOR;
   let statusReason = 'insufficient positive anchor: no clean material basis';
@@ -158,6 +170,9 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
   } else if (closureAbsorbedHits.length > 0) {
     status = STATUS_ABSORBED;
     statusReason = `closure absorbed hit: ${closureAbsorbedHits.join(', ')}`;
+  } else if (hasBootstrapOpenCandidateCondition) {
+    status = STATUS_OPEN_CANDIDATE;
+    statusReason = 'clean positive anchor: controlled bootstrap open-candidate probe';
   }
 
   return {
@@ -240,6 +255,9 @@ function main() {
     validateCatalogFamilyShape(family);
     return classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower);
   });
+  const shortlist = families
+    .filter((family) => family.status === STATUS_OPEN_CANDIDATE)
+    .map((family) => family.family_id);
 
   const report = {
     meta: {
@@ -250,7 +268,7 @@ function main() {
       catalogPath: args.catalog
     },
     verdict: VERDICT_NO_CLEAN,
-    shortlist: [],
+    shortlist,
     families
   };
 

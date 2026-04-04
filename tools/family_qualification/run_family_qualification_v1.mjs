@@ -8,6 +8,7 @@ const STATUS_CLOSED = 'CLOSED';
 const STATUS_VETOED = 'VETOED';
 const STATUS_CONTAMINATED = 'CONTAMINATED_BY_WORKTREE';
 const STATUS_ABSORBED = 'ABSORBED';
+const STATUS_INSUFFICIENT_ANCHOR = 'INSUFFICIENT_ANCHOR';
 const VERDICT_NO_CLEAN = 'NO_CLEAN_CANDIDATE';
 
 function parseArgs(argv) {
@@ -142,8 +143,8 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
     (trackedWiringHits.length > 0 || closurePositiveHits.length > 0) &&
     closureAbsorbedHits.length === 0;
 
-  let status = STATUS_CONTAMINATED;
-  let statusReason = 'bootstrap fallback: not enough material evidence for CLOSED';
+  let status = STATUS_INSUFFICIENT_ANCHOR;
+  let statusReason = 'insufficient positive anchor: no clean material basis';
 
   if (closureNegativeHits.length > 0) {
     status = STATUS_VETOED;

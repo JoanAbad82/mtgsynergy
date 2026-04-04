@@ -83,7 +83,8 @@
               "CLOSED",
               "VETOED",
               "CONTAMINATED_BY_WORKTREE",
-              "ABSORBED"
+              "ABSORBED",
+              "INSUFFICIENT_ANCHOR"
             ]
           },
           "status_reason": {

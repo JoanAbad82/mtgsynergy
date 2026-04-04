@@ -84,6 +84,25 @@
       "closure_positive_terms": [],
       "closure_negative_terms": [],
       "closure_absorbed_terms": []
+    },
+    {
+      "family_id": "bootstrap_insufficient_anchor_probe_min_v1",
+      "label": "Bootstrap insufficient-anchor probe (non-engine)",
+      "repo_contract_globs": [
+        "tools/family_qualification/non_engine/probes/bootstrap_insufficient_anchor_probe_min_v1.contract.json"
+      ],
+      "repo_test_globs": [
+        "tools/family_qualification/non_engine/probes/bootstrap_insufficient_anchor_probe_min_v1.test.txt"
+      ],
+      "repo_wiring_globs": [
+        "tools/family_qualification/non_engine/probes/bootstrap_insufficient_anchor_probe_min_v1.wiring.txt"
+      ],
+      "untracked_homonym_globs": [
+        "tools/family_qualification/non_engine/probes/bootstrap_insufficient_anchor_probe_min_v1.*"
+      ],
+      "closure_positive_terms": [],
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
     }
   ]
 }

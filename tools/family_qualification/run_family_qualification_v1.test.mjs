@@ -58,14 +58,15 @@ test('run_family_qualification_v1 bootstrap reconciled with post-v72 emits expec
   assert.equal(report.verdict, 'NO_CLEAN_CANDIDATE');
   assert.deepEqual(report.shortlist, []);
   assert.ok(Array.isArray(report.families), 'families must be an array');
-  assert.equal(report.families.length, 4, 'must classify exactly 4 families');
+  assert.equal(report.families.length, 5, 'must classify exactly 5 families');
 
   const byFamilyId = new Map(report.families.map((item) => [item.family_id, item]));
   const expectedStatuses = {
     draw_cards_mill_local_bridge_min_v1: 'CLOSED',
     draw_cards_add_counters_local_bridge_min_v1: 'CONTAMINATED_BY_WORKTREE',
     produce_mana_enablement_closure_min_v1: 'ABSORBED',
-    tapped_status_local_enablement_bridge_min_v1: 'CLOSED'
+    tapped_status_local_enablement_bridge_min_v1: 'CLOSED',
+    bootstrap_insufficient_anchor_probe_min_v1: 'INSUFFICIENT_ANCHOR'
   };
 
   for (const [familyId, expectedStatus] of Object.entries(expectedStatuses)) {
@@ -84,4 +85,10 @@ test('run_family_qualification_v1 bootstrap reconciled with post-v72 emits expec
 
   const produceMana = byFamilyId.get('produce_mana_enablement_closure_min_v1');
   assert.ok(produceMana.closure_absorbed_hits.length > 0);
+
+  const insufficientAnchor = byFamilyId.get('bootstrap_insufficient_anchor_probe_min_v1');
+  assert.equal(
+    insufficientAnchor.status_reason,
+    'insufficient positive anchor: no clean material basis'
+  );
 });

@@ -1,0 +1,98 @@
+{
+  "metadata": {
+    "document_id": "sem_life_gain_draw_cards_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "life-gain-draw-cards-local-bridge-min-v1",
+    "source_note": "Minimal contract to open a strict local-only LIFE_GAIN -> DRAW_CARDS bridge with explicit text gate and no parser/lowering expansion."
+  },
+  "family": "LIFE_GAIN -> DRAW_CARDS",
+  "bridge_name": "life_gain_to_draw_cards_local_bridge_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "deterministic_contract": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true,
+    "no_optional_payment_closure": true,
+    "no_multi_hop_chain_modeling": true
+  },
+  "semantic_basis": {
+    "already_emitted_keys": [
+      "EVENT:LIFE_GAIN",
+      "ACTION:GAIN_LIFE",
+      "ACTION:DRAW_CARDS"
+    ],
+    "positive_anchor_oracle": [
+      "Whenever you gain life, draw a card."
+    ],
+    "current_gap": "No strict local closure exists today between EVENT:LIFE_GAIN listeners and ACTION:DRAW_CARDS payoffs for direct same-ability wording."
+  },
+  "bridge_kind": {
+    "id": "life_gain_enables_local_draw_cards",
+    "label": "life_gain -> draw_cards",
+    "event_origin": "EVENT:LIFE_GAIN",
+    "action_targets": [
+      "ACTION:DRAW_CARDS"
+    ],
+    "compatibility_type": "local_causal_explicit",
+    "purpose": "Enable strict local pairing for direct gain-life trigger into draw-card payoff in the same local ability text."
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile consumes EVENT:LIFE_GAIN",
+      "Profile produces ACTION:DRAW_CARDS"
+    ],
+    "text_evidence_policy": "Require explicit local wording equivalent to 'Whenever you gain life, draw a card.'",
+    "hard_exclusions": [
+      "you may pay",
+      "if you do",
+      "first time each turn",
+      "activated draw in separate ability",
+      "counter-chain intermediates before draw"
+    ]
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "helper_style": "Dedicated local helper and dedicated textual-evidence gate.",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "EVENT:LIFE_GAIN",
+        "ACTION:DRAW_CARDS"
+      ]
+    }
+  },
+  "invariants": [
+    "No parser changes",
+    "No lowering changes",
+    "No global scoring changes",
+    "No cross-card inference",
+    "No optional-payment closure",
+    "No chain composition closure"
+  ],
+  "non_goals": [
+    "LIFE_GAIN -> ADD_COUNTERS (already materialized family)",
+    "Optional payment triggers (Dawn of Hope / Oloro-like templates)",
+    "Counter-chain then draw closures (Exemplar-like templates)",
+    "Separate activated draw abilities (Archimandrite-like templates)",
+    "first-time-each-turn life-gain variants",
+    "General life-gain ontology expansion",
+    "Cross-card or multi-hop bridge composition"
+  ]
+}

@@ -99,6 +99,12 @@ function applyLifeGainAddCountersBridge(profile: ReturnType<typeof buildSemantic
   return profile.consumed.has(lifeGainEventKey) && profile.produced.has(addCountersKey);
 }
 
+function applyLifeGainDrawCardsBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const lifeGainEventKey = keyOf(KeyKind.EVENT, EventId.LIFE_GAIN);
+  const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  return profile.consumed.has(lifeGainEventKey) && profile.produced.has(drawCardsKey);
+}
+
 function applyDamageWithLifelinkLifeGainBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const dealDamageKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
   return profile.produced.has(dealDamageKey);
@@ -441,6 +447,30 @@ function explicitDrawCardsLoseLifeTextEvidence(text: string): boolean {
 
 function explicitLifelinkTextEvidence(text: string): boolean {
   return /\blifelink\b/.test(text.toLowerCase());
+}
+
+function explicitLifeGainDrawCardsTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasDirectTriggerPayoff =
+    /\bwhen(?:ever)?\s+you\s+gain\s+life,\s*draw\s+a\s+card\b/i.test(normalized);
+  if (!hasDirectTriggerPayoff) return false;
+
+  const hasCostGate = /\byou\s+may\s+pay\b/i.test(normalized) || /\bif\s+you\s+do\b/i.test(normalized);
+  if (hasCostGate) return false;
+
+  const hasFirstTimeEachTurn = /\bfirst\s+time\s+each\s+turn\b/i.test(normalized);
+  if (hasFirstTimeEachTurn) return false;
+
+  const hasCounterChain = /\bcounters?\b[^.]*\bdraw\s+a\s+card\b/i.test(normalized);
+  if (hasCounterChain) return false;
+
+  const hasActivatedDrawClause =
+    /(?:^|[.]\s*)(?:\{(?:\d+|[wubrgcxy]|[wubrgc]\/[wubrgc])\}\s*,\s*)+\{t\}\s*:[^.]*\bdraw\s+a\s+card\b/i.test(
+      normalized,
+    );
+  if (hasActivatedDrawClause) return false;
+
+  return true;
 }
 
 function explicitCreateTokenTextEvidence(text: string): boolean {
@@ -819,6 +849,24 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
 
   const lifeGainEventKey = keyOf(KeyKind.EVENT, EventId.LIFE_GAIN);
   const addCountersKey = keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS);
+  const drawCardsLifeGainKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  for (const card of cards) {
+    if (!applyLifeGainDrawCardsBridge(card.profile)) continue;
+    if (!explicitLifeGainDrawCardsTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: lifeGainEventKey, weight: 1 },
+      { key: drawCardsLifeGainKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
   for (const card of cards) {
     if (!applyLifeGainAddCountersBridge(card.profile)) continue;
     const reasons: SemanticEdgeReason[] = [

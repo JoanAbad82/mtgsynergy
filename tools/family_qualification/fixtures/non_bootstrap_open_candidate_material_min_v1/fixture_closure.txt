@@ -1,0 +1,5 @@
+FAMILY_QUALIFICATION_FIXTURE_NON_BOOTSTRAP_OPEN_CANDIDATE_MATERIAL_MIN_V1
+
+Synthetic non-bootstrap material open candidate anchor v1.
+No absorbed statements.
+No veto statements.

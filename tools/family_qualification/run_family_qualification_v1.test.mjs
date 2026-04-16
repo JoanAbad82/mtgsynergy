@@ -15,6 +15,13 @@ const closurePath = path.join(
   'maestros/v72/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v72_2026-04-03.txt'
 );
 const catalogPath = path.join(repoRoot, 'tools/family_qualification/family_catalog_v1.json');
+const fixtureBasePath = path.join(
+  repoRoot,
+  'tools/family_qualification/fixtures/non_bootstrap_open_candidate_material_min_v1'
+);
+const fixtureCatalogPath = path.join(fixtureBasePath, 'fixture_catalog_v1.json');
+const fixtureClosurePath = path.join(fixtureBasePath, 'fixture_closure.txt');
+const fixtureMaterialPath = path.join(fixtureBasePath, 'material');
 
 function executeRunnerInTempDir() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'family-qualification-v1-'));
@@ -39,6 +46,51 @@ function executeRunnerInTempDir() {
 
   const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
   return { tempDir, reportPath, reportTextPath, report };
+}
+
+function executeRunnerWithNonBootstrapMaterialFixture() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'family-qualification-v1-non-bootstrap-'));
+  const repoDir = path.join(tempDir, 'repo');
+  fs.mkdirSync(repoDir, { recursive: true });
+  fs.cpSync(fixtureMaterialPath, path.join(repoDir, 'material'), { recursive: true });
+
+  execFileSync('git', ['init'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['config', 'user.email', 'family-qualification-fixture@example.local'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+  execFileSync('git', ['config', 'user.name', 'family-qualification-fixture'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+  execFileSync('git', ['add', '.'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['commit', '-m', 'seed fixture'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['update-ref', 'refs/remotes/origin/main', 'HEAD'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+
+  const reportPath = path.join(tempDir, 'family_qualification_report.json');
+  const reportTextPath = path.join(tempDir, 'family_qualification_report.txt');
+
+  execFileSync(
+    'node',
+    [
+      runnerPath,
+      '--closure',
+      fixtureClosurePath,
+      '--catalog',
+      fixtureCatalogPath,
+      '--report',
+      reportPath,
+      '--report-text',
+      reportTextPath
+    ],
+    { cwd: repoDir, stdio: 'pipe' }
+  );
+
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  return { tempDir, repoDir, reportPath, reportTextPath, report };
 }
 
 test('run_family_qualification_v1 bootstrap reconciled with post-v72 emits expected deterministic report', () => {
@@ -109,12 +161,39 @@ test('bootstrap_open_candidate_probe_min_v1 emits controlled OPEN_CANDIDATE shor
   assert.equal(insufficientAnchor.status, 'INSUFFICIENT_ANCHOR');
 });
 
-test('only bootstrap_open_candidate_probe_min_v1 can classify as OPEN_CANDIDATE', () => {
-  const { report } = executeRunnerInTempDir();
-  const openCandidateFamilyIds = report.families
-    .filter((family) => family.status === 'OPEN_CANDIDATE')
-    .map((family) => family.family_id)
-    .sort();
+test('non-bootstrap synthetic fixture can promote OPEN_CANDIDATE with tracked material and clean closure', () => {
+  const { report } = executeRunnerWithNonBootstrapMaterialFixture();
+  assert.equal(report.verdict, 'NO_CLEAN_CANDIDATE');
+  assert.deepEqual(report.shortlist, ['synthetic_non_bootstrap_open_candidate_material_min_v1']);
+  assert.equal(report.families.length, 1);
 
-  assert.deepEqual(openCandidateFamilyIds, ['bootstrap_open_candidate_probe_min_v1']);
+  const row = report.families[0];
+  assert.equal(row.family_id, 'synthetic_non_bootstrap_open_candidate_material_min_v1');
+  assert.equal(row.status, 'OPEN_CANDIDATE');
+  assert.equal(
+    row.status_reason,
+    'clean positive anchor: controlled material open-candidate fixture'
+  );
+  assert.ok(row.tracked_contract_hits.length > 0);
+  assert.ok(row.tracked_test_hits.length > 0);
+  assert.ok(row.tracked_wiring_hits.length > 0);
+  assert.equal(row.untracked_homonym_hits.length, 0);
+  assert.ok(row.closure_positive_hits.length > 0);
+  assert.equal(row.closure_negative_hits.length, 0);
+  assert.equal(row.closure_absorbed_hits.length, 0);
+});
+
+test('runner --help prints usage and exits successfully', () => {
+  const stdout = execFileSync('node', [runnerPath, '--help'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    stdio: 'pipe'
+  });
+
+  assert.match(stdout, /^Usage:/m);
+  assert.match(stdout, /--closure <path>/);
+  assert.match(stdout, /--catalog <path>/);
+  assert.match(stdout, /--report <path>/);
+  assert.match(stdout, /--report-text <path>/);
+  assert.match(stdout, /--help, -h/);
 });

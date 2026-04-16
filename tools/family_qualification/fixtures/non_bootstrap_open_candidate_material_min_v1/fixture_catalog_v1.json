@@ -1,0 +1,31 @@
+{
+  "catalog_version": "family_qualification_fixture_non_bootstrap_open_candidate_material_min_v1",
+  "families": [
+    {
+      "family_id": "synthetic_non_bootstrap_open_candidate_material_min_v1",
+      "label": "Synthetic non-bootstrap material open-candidate min v1",
+      "allow_material_open_candidate": true,
+      "repo_contract_globs": [
+        "material/synthetic_non_bootstrap_open_candidate_material_min_v1.contract.json"
+      ],
+      "repo_test_globs": [
+        "material/synthetic_non_bootstrap_open_candidate_material_min_v1.test.txt"
+      ],
+      "repo_wiring_globs": [
+        "material/synthetic_non_bootstrap_open_candidate_material_min_v1.wiring.txt"
+      ],
+      "untracked_homonym_globs": [
+        "material/synthetic_non_bootstrap_open_candidate_material_min_v1.*"
+      ],
+      "closure_positive_terms": [
+        "Synthetic non-bootstrap material open candidate anchor v1."
+      ],
+      "closure_negative_terms": [
+        "synthetic-negative-veto-token-v1"
+      ],
+      "closure_absorbed_terms": [
+        "synthetic-absorbed-token-v1"
+      ]
+    }
+  ]
+}

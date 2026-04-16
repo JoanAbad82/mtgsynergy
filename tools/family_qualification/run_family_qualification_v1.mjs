@@ -11,12 +11,30 @@ const STATUS_ABSORBED = 'ABSORBED';
 const STATUS_INSUFFICIENT_ANCHOR = 'INSUFFICIENT_ANCHOR';
 const STATUS_OPEN_CANDIDATE = 'OPEN_CANDIDATE';
 const VERDICT_NO_CLEAN = 'NO_CLEAN_CANDIDATE';
-const BOOTSTRAP_OPEN_CANDIDATE_PROBE_ID = 'bootstrap_open_candidate_probe_min_v1';
+
+function buildUsage(scriptPath) {
+  const scriptName = scriptPath ? normalizePath(scriptPath) : 'tools/family_qualification/run_family_qualification_v1.mjs';
+  return [
+    'Usage:',
+    `  node ${scriptName} --closure <path> --catalog <path> --report <path> --report-text <path>`,
+    '',
+    'Options:',
+    '  --closure <path>      Path to closure text file',
+    '  --catalog <path>      Path to family catalog JSON',
+    '  --report <path>       Output path for JSON report',
+    '  --report-text <path>  Output path for plain-text report',
+    '  --help, -h            Show this help and exit'
+  ].join('\n');
+}
 
 function parseArgs(argv) {
   const out = {};
   for (let i = 2; i < argv.length; i += 1) {
     const token = argv[i];
+    if (token === '--help' || token === '-h') {
+      out.help = true;
+      continue;
+    }
     if (!token.startsWith('--')) {
       throw new Error(`Unexpected argument: ${token}`);
     }
@@ -27,6 +45,10 @@ function parseArgs(argv) {
     }
     out[key] = value;
     i += 1;
+  }
+
+  if (out.help) {
+    return out;
   }
 
   const required = ['closure', 'catalog', 'report', 'report-text'];
@@ -144,14 +166,20 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
     trackedTestHits.length > 0 &&
     (trackedWiringHits.length > 0 || closurePositiveHits.length > 0) &&
     closureAbsorbedHits.length === 0;
-  const isBootstrapOpenCandidateProbe =
-    family.family_id === BOOTSTRAP_OPEN_CANDIDATE_PROBE_ID;
-  const hasBootstrapOpenCandidateCondition =
-    isBootstrapOpenCandidateProbe &&
+  const hasOpenCandidateCondition =
     trackedContractHits.length === 0 &&
     trackedTestHits.length === 0 &&
     closureAbsorbedHits.length === 0 &&
     trackedWiringHits.length > 0 &&
+    untrackedHomonymHits.length === 0 &&
+    closureNegativeHits.length === 0;
+  const hasMaterialOpenCandidateCondition =
+    family.allow_material_open_candidate === true &&
+    trackedContractHits.length > 0 &&
+    trackedTestHits.length > 0 &&
+    trackedWiringHits.length > 0 &&
+    closurePositiveHits.length > 0 &&
+    closureAbsorbedHits.length === 0 &&
     untrackedHomonymHits.length === 0 &&
     closureNegativeHits.length === 0;
 
@@ -164,15 +192,18 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
   } else if (untrackedHomonymHits.length > 0) {
     status = STATUS_CONTAMINATED;
     statusReason = `untracked homonym hit: ${untrackedHomonymHits.join(', ')}`;
+  } else if (hasMaterialOpenCandidateCondition) {
+    status = STATUS_OPEN_CANDIDATE;
+    statusReason = 'clean positive anchor: controlled material open-candidate fixture';
   } else if (hasClosedCondition) {
     status = STATUS_CLOSED;
     statusReason = 'tracked contract + tracked test + material additional hit';
   } else if (closureAbsorbedHits.length > 0) {
     status = STATUS_ABSORBED;
     statusReason = `closure absorbed hit: ${closureAbsorbedHits.join(', ')}`;
-  } else if (hasBootstrapOpenCandidateCondition) {
+  } else if (hasOpenCandidateCondition) {
     status = STATUS_OPEN_CANDIDATE;
-    statusReason = 'clean positive anchor: controlled bootstrap open-candidate probe';
+    statusReason = 'clean positive anchor: controlled open-candidate probe';
   }
 
   return {
@@ -228,6 +259,10 @@ function validateCatalogFamilyShape(family) {
 
 function main() {
   const args = parseArgs(process.argv);
+  if (args.help) {
+    console.log(buildUsage(process.argv[1]));
+    return;
+  }
   const closureText = fs.readFileSync(args.closure, 'utf8');
   const catalogJson = JSON.parse(fs.readFileSync(args.catalog, 'utf8'));
   const catalogFamilies = Array.isArray(catalogJson)

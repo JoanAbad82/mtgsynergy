@@ -1,0 +1,1 @@
+synthetic_non_bootstrap_open_candidate_material_min_v1 test fixture

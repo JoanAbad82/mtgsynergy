@@ -1,0 +1,109 @@
+{
+  "catalog_version": "family_qualification_fixture_fq_r2_real_seed_min_v1",
+  "families": [
+    {
+      "family_id": "draw_cards_mill_local_bridge_min_v1",
+      "label": "FQ-R2 seed: draw_cards_mill_local_bridge_min_v1",
+      "repo_contract_globs": [
+        "src/engine/semantic/contract/sem_draw_cards_mill_local_bridge_min_v1.json"
+      ],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_draw_cards_mill_local_bridge_min_v1.test.ts"
+      ],
+      "repo_wiring_globs": [
+        "src/engine/semantic/overlay/fq_r2_seed_draw_cards_mill.wiring.txt"
+      ],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/contract/sem_draw_cards_mill_local_bridge_min_v1.json",
+        "src/engine/semantic/tests/sem_overlay_draw_cards_mill_local_bridge_min_v1.test.ts"
+      ],
+      "closure_positive_terms": [
+        "FQ-R2 CLOSED anchor: draw_cards_mill_local_bridge_min_v1"
+      ],
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
+    },
+    {
+      "family_id": "produce_mana_enablement_closure_min_v1",
+      "label": "FQ-R2 seed: produce_mana_enablement_closure_min_v1",
+      "repo_contract_globs": [
+        "src/engine/semantic/contract/sem_produce_mana_enablement_closure_min_v1.json"
+      ],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_produce_mana_enablement_closure_min_v1.test.ts"
+      ],
+      "repo_wiring_globs": [
+        "src/engine/semantic/overlay/fq_r2_seed_produce_mana_enablement.wiring.txt"
+      ],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/contract/sem_produce_mana_enablement_closure_min_v1.json",
+        "src/engine/semantic/tests/sem_overlay_produce_mana_enablement_closure_min_v1.test.ts"
+      ],
+      "closure_positive_terms": [],
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": [
+        "FQ-R2 ABSORBED: produce_mana_enablement_closure_min_v1 stays absorbed."
+      ]
+    },
+    {
+      "family_id": "tapped_status_local_enablement_bridge_min_v1",
+      "label": "FQ-R2 seed: tapped_status_local_enablement_bridge_min_v1",
+      "repo_contract_globs": [
+        "src/engine/semantic/contract/sem_tapped_status_local_enablement_bridge_min_v1.json"
+      ],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_tapped_status_local_enablement_bridge_min_v1.test.ts"
+      ],
+      "repo_wiring_globs": [
+        "src/engine/semantic/overlay/fq_r2_seed_tapped_status_local_enablement.wiring.txt"
+      ],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/contract/sem_tapped_status_local_enablement_bridge_min_v1.json",
+        "src/engine/semantic/tests/sem_overlay_tapped_status_local_enablement_bridge_min_v1.test.ts"
+      ],
+      "closure_positive_terms": [],
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
+    },
+    {
+      "family_id": "draw_cards_add_counters_local_bridge_min_v1",
+      "label": "FQ-R2 seed: draw_cards_add_counters_local_bridge_min_v1",
+      "repo_contract_globs": [
+        "src/engine/semantic/contract/sem_draw_cards_add_counters_local_bridge_min_v1.json"
+      ],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts"
+      ],
+      "repo_wiring_globs": [
+        "src/engine/semantic/overlay/fq_r2_seed_draw_cards_add_counters.wiring.txt"
+      ],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/contract/sem_draw_cards_add_counters_local_bridge_min_v1.json",
+        "src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts"
+      ],
+      "closure_positive_terms": [],
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
+    },
+    {
+      "family_id": "life_gain_draw_cards_bridge_min_v1",
+      "label": "FQ-R2 seed: life_gain_draw_cards_bridge_min_v1 open slot",
+      "repo_contract_globs": [
+        "src/engine/semantic/contract/sem_life_gain_draw_cards_bridge_min_v1.json"
+      ],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_bridge_min_v1.test.ts"
+      ],
+      "repo_wiring_globs": [
+        "src/engine/semantic/overlay/fq_r2_seed_life_gain_draw_cards_open_slot.wiring.txt"
+      ],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/contract/sem_life_gain_draw_cards_bridge_min_v1.json",
+        "src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_bridge_min_v1.test.ts"
+      ],
+      "closure_positive_terms": [],
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
+    }
+  ]
+}

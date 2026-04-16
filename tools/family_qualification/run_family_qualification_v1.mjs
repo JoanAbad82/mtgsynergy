@@ -11,6 +11,7 @@ const STATUS_ABSORBED = 'ABSORBED';
 const STATUS_INSUFFICIENT_ANCHOR = 'INSUFFICIENT_ANCHOR';
 const STATUS_OPEN_CANDIDATE = 'OPEN_CANDIDATE';
 const VERDICT_NO_CLEAN = 'NO_CLEAN_CANDIDATE';
+const VERDICT_SHORTLIST_READY = 'SHORTLIST_READY';
 
 function buildUsage(scriptPath) {
   const scriptName = scriptPath ? normalizePath(scriptPath) : 'tools/family_qualification/run_family_qualification_v1.mjs';
@@ -302,7 +303,10 @@ function main() {
       closurePath: args.closure,
       catalogPath: args.catalog
     },
-    verdict: VERDICT_NO_CLEAN,
+    verdict:
+      shortlist.length > 0
+        ? VERDICT_SHORTLIST_READY
+        : VERDICT_NO_CLEAN,
     shortlist,
     families
   };

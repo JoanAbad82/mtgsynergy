@@ -1,0 +1,1 @@
+fq_r2_real_seed_min_v1 open slot wiring marker for life_gain_draw_cards_bridge_min_v1

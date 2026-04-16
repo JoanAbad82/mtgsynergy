@@ -46,7 +46,8 @@
     "verdict": {
       "type": "string",
       "enum": [
-        "NO_CLEAN_CANDIDATE"
+        "NO_CLEAN_CANDIDATE",
+        "SHORTLIST_READY"
       ]
     },
     "shortlist": {

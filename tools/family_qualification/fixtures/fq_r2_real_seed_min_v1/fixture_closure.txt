@@ -1,0 +1,4 @@
+FAMILY_QUALIFICATION_FIXTURE_FQ_R2_REAL_SEED_MIN_V1
+
+FQ-R2 CLOSED anchor: draw_cards_mill_local_bridge_min_v1
+FQ-R2 ABSORBED: produce_mana_enablement_closure_min_v1 stays absorbed.

@@ -22,6 +22,13 @@ const fixtureBasePath = path.join(
 const fixtureCatalogPath = path.join(fixtureBasePath, 'fixture_catalog_v1.json');
 const fixtureClosurePath = path.join(fixtureBasePath, 'fixture_closure.txt');
 const fixtureMaterialPath = path.join(fixtureBasePath, 'material');
+const fqR2FixtureBasePath = path.join(
+  repoRoot,
+  'tools/family_qualification/fixtures/fq_r2_real_seed_min_v1'
+);
+const fqR2FixtureCatalogPath = path.join(fqR2FixtureBasePath, 'fixture_catalog_v1.json');
+const fqR2FixtureClosurePath = path.join(fqR2FixtureBasePath, 'fixture_closure.txt');
+const fqR2FixtureMaterialRepoPath = path.join(fqR2FixtureBasePath, 'material_repo');
 
 function executeRunnerInTempDir() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'family-qualification-v1-'));
@@ -93,6 +100,76 @@ function executeRunnerWithNonBootstrapMaterialFixture() {
   return { tempDir, repoDir, reportPath, reportTextPath, report };
 }
 
+function executeRunnerWithFqR2RealSeedFixture({
+  includeOpenCandidateWiring = true
+} = {}) {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'family-qualification-v1-fq-r2-seed-'));
+  const repoDir = path.join(tempDir, 'repo');
+  fs.mkdirSync(repoDir, { recursive: true });
+  fs.cpSync(path.join(fqR2FixtureMaterialRepoPath, 'src'), path.join(repoDir, 'src'), {
+    recursive: true
+  });
+
+  if (!includeOpenCandidateWiring) {
+    fs.rmSync(
+      path.join(
+        repoDir,
+        'src/engine/semantic/overlay/fq_r2_seed_life_gain_draw_cards_open_slot.wiring.txt'
+      ),
+      { force: true }
+    );
+  }
+
+  execFileSync('git', ['init'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['config', 'user.email', 'family-qualification-fixture@example.local'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+  execFileSync('git', ['config', 'user.name', 'family-qualification-fixture'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+  execFileSync('git', ['add', '.'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['commit', '-m', 'seed fixture'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['update-ref', 'refs/remotes/origin/main', 'HEAD'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+
+  const contaminatedHomonymPath = path.join(
+    repoDir,
+    'src/engine/semantic/contract/sem_draw_cards_add_counters_local_bridge_min_v1.json'
+  );
+  fs.mkdirSync(path.dirname(contaminatedHomonymPath), { recursive: true });
+  fs.writeFileSync(
+    contaminatedHomonymPath,
+    '{ "fixture": "fq_r2_real_seed_min_v1", "kind": "untracked_homonym" }\n',
+    'utf8'
+  );
+
+  const reportPath = path.join(tempDir, 'family_qualification_report.json');
+  const reportTextPath = path.join(tempDir, 'family_qualification_report.txt');
+
+  execFileSync(
+    'node',
+    [
+      runnerPath,
+      '--closure',
+      fqR2FixtureClosurePath,
+      '--catalog',
+      fqR2FixtureCatalogPath,
+      '--report',
+      reportPath,
+      '--report-text',
+      reportTextPath
+    ],
+    { cwd: repoDir, stdio: 'pipe' }
+  );
+
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  return { tempDir, repoDir, reportPath, reportTextPath, report };
+}
+
 test('run_family_qualification_v1 bootstrap reconciled with post-v72 emits expected deterministic report', () => {
   const { reportPath, reportTextPath, report } = executeRunnerInTempDir();
 
@@ -107,7 +184,7 @@ test('run_family_qualification_v1 bootstrap reconciled with post-v72 emits expec
   assert.equal(typeof report.meta.closurePath, 'string');
   assert.equal(typeof report.meta.catalogPath, 'string');
 
-  assert.equal(report.verdict, 'NO_CLEAN_CANDIDATE');
+  assert.equal(report.verdict, 'SHORTLIST_READY');
   assert.deepEqual(report.shortlist, ['bootstrap_open_candidate_probe_min_v1']);
   assert.ok(Array.isArray(report.families), 'families must be an array');
   assert.equal(report.families.length, 6, 'must classify exactly 6 families');
@@ -153,6 +230,7 @@ test('bootstrap_open_candidate_probe_min_v1 emits controlled OPEN_CANDIDATE shor
   const openProbe = byFamilyId.get('bootstrap_open_candidate_probe_min_v1');
   assert.ok(openProbe, 'missing open-candidate probe row');
   assert.equal(openProbe.status, 'OPEN_CANDIDATE');
+  assert.equal(report.verdict, 'SHORTLIST_READY');
   assert.equal(report.shortlist.length, 1);
   assert.deepEqual(report.shortlist, ['bootstrap_open_candidate_probe_min_v1']);
 
@@ -163,7 +241,7 @@ test('bootstrap_open_candidate_probe_min_v1 emits controlled OPEN_CANDIDATE shor
 
 test('non-bootstrap synthetic fixture can promote OPEN_CANDIDATE with tracked material and clean closure', () => {
   const { report } = executeRunnerWithNonBootstrapMaterialFixture();
-  assert.equal(report.verdict, 'NO_CLEAN_CANDIDATE');
+  assert.equal(report.verdict, 'SHORTLIST_READY');
   assert.deepEqual(report.shortlist, ['synthetic_non_bootstrap_open_candidate_material_min_v1']);
   assert.equal(report.families.length, 1);
 
@@ -181,6 +259,35 @@ test('non-bootstrap synthetic fixture can promote OPEN_CANDIDATE with tracked ma
   assert.ok(row.closure_positive_hits.length > 0);
   assert.equal(row.closure_negative_hits.length, 0);
   assert.equal(row.closure_absorbed_hits.length, 0);
+});
+
+test('fq-r2 real-seed fixture emits mixed statuses and SHORTLIST_READY when open slot is clean', () => {
+  const { report } = executeRunnerWithFqR2RealSeedFixture();
+  assert.equal(report.verdict, 'SHORTLIST_READY');
+  assert.deepEqual(report.shortlist, ['life_gain_draw_cards_bridge_min_v1']);
+
+  const byFamilyId = new Map(report.families.map((item) => [item.family_id, item]));
+  const expectedStatuses = {
+    draw_cards_mill_local_bridge_min_v1: 'CLOSED',
+    produce_mana_enablement_closure_min_v1: 'ABSORBED',
+    tapped_status_local_enablement_bridge_min_v1: 'INSUFFICIENT_ANCHOR',
+    draw_cards_add_counters_local_bridge_min_v1: 'CONTAMINATED_BY_WORKTREE',
+    life_gain_draw_cards_bridge_min_v1: 'OPEN_CANDIDATE'
+  };
+
+  for (const [familyId, expectedStatus] of Object.entries(expectedStatuses)) {
+    const row = byFamilyId.get(familyId);
+    assert.ok(row, `missing family row for ${familyId}`);
+    assert.equal(row.status, expectedStatus, `unexpected status for ${familyId}`);
+  }
+});
+
+test('fq-r2 real-seed fixture emits NO_CLEAN_CANDIDATE when open slot wiring is absent', () => {
+  const { report } = executeRunnerWithFqR2RealSeedFixture({
+    includeOpenCandidateWiring: false
+  });
+  assert.equal(report.verdict, 'NO_CLEAN_CANDIDATE');
+  assert.deepEqual(report.shortlist, []);
 });
 
 test('runner --help prints usage and exits successfully', () => {

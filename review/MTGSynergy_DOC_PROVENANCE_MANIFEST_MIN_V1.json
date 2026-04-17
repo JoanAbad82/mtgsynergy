@@ -158,6 +158,30 @@
       "move_now_recommended": false,
       "absorbed_elsewhere": false,
       "notes": "Auditoría técnica/arquitectónica auxiliar sobre parser/overlay, útil como soporte analítico, no como fuente canónica viva de cierre actual."
+    },
+    {
+      "path": "maestros/v86/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v86_2026-04-17.txt",
+      "doc_class": "CANONICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Cierre documental real de continuidad post-v85; preserva trazabilidad de la cadena reciente sin autorizar reordenación física ni retorno al motor."
+    },
+    {
+      "path": "maestros/v87/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v87_2026-04-17.txt",
+      "doc_class": "CANONICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Cierre documental real de continuidad post-v86; consolida la secuencia metodológica reciente sin habilitar ordenación física ni trabajo de motor."
+    },
+    {
+      "path": "maestros/v88/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v88_2026-04-17.txt",
+      "doc_class": "CANONICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Cierre documental real vigente de auditoría/continuidad disciplinada; mejora trazabilidad de estado heredado sin autorizar reordenación física ni retorno al motor."
     }
   ],
   "conclusions": {

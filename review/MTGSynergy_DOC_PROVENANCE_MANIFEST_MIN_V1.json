@@ -118,6 +118,46 @@
       "move_now_recommended": false,
       "absorbed_elsewhere": false,
       "notes": "Cierre documental real vigente post-bbf1a6b, materialmente cerrado en remoto; fija el estado heredado actual y mejora trazabilidad de la cadena documental sin autorizar reordenación física ni retorno al motor."
+    },
+    {
+      "path": "review/maestros/MTGSynergy_DELTA_REAL_v53_PRODUCE_MANA_ENABLEMENT_CLOSURE_MIN_V1.txt",
+      "doc_class": "HISTORICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Cierre histórico/operativo de la microfase v53 ya cerrada, útil para trazabilidad histórica en review/maestros, pero no documento canónico vivo actual."
+    },
+    {
+      "path": "review/POST_V52_PRODUCE_MANA_ENABLEMENT_CLOSURE_MIN_V1_PREFLIGHT.md",
+      "doc_class": "AUXILIARY",
+      "authority_level": "DERIVED",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Preflight metodológico/operativo de decisión post-v52 para una microfase concreta; soporte de decisión, no cierre canónico."
+    },
+    {
+      "path": "review/produce_mana_enablement_preflight_v1.txt",
+      "doc_class": "TECHNICAL_SNAPSHOT",
+      "authority_level": "SNAPSHOT",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Snapshot técnico preliminar de búsqueda/grep/contexto git con valor de trazabilidad local, no autoridad canónica."
+    },
+    {
+      "path": "review/produce_mana_enablement_preflight_v2.txt",
+      "doc_class": "TECHNICAL_SNAPSHOT",
+      "authority_level": "SNAPSHOT",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Snapshot técnico derivado más rico que v1, con evidencia local de contratos/tests y trazabilidad de inspección, pero sigue siendo snapshot no canónico."
+    },
+    {
+      "path": "review/SEMANTIC_PARSER_AUDIT_v14.10.0_2026-03-02.md",
+      "doc_class": "AUXILIARY",
+      "authority_level": "DERIVED",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Auditoría técnica/arquitectónica auxiliar sobre parser/overlay, útil como soporte analítico, no como fuente canónica viva de cierre actual."
     }
   ],
   "conclusions": {

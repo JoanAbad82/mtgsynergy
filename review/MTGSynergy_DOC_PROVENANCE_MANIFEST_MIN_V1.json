@@ -1,0 +1,80 @@
+{
+  "microphase": "OPS-DOC-PROVENANCE-MANIFEST-MIN-V1",
+  "scope": {
+    "includes": [
+      "maestros",
+      "fuentes",
+      "review"
+    ],
+    "excludes": [
+      "src/engine",
+      "src",
+      "public",
+      "motor_changes",
+      "physical_moves"
+    ]
+  },
+  "entries": [
+    {
+      "path": "maestros/v83/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v83_2026-04-17.txt",
+      "doc_class": "CANONICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Cierre documental real vigente post-v83; fija estado canónico y absorbe estado previo. Mover ahora reduciría trazabilidad de continuidad en maestros/v*."
+    },
+    {
+      "path": "maestros/v82/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v82_2026-04-17.txt",
+      "doc_class": "HISTORICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": true,
+      "notes": "Registro primario del cierre v82, explícitamente absorbido en v83. Mover ahora reduciría trazabilidad histórica de cadena v81->v82->v83."
+    },
+    {
+      "path": "maestros/v81/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v81_2026-04-17.txt",
+      "doc_class": "HISTORICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": true,
+      "notes": "Registro primario del cierre v81 (primera ejecución real FQ-R2), absorbido por cierres posteriores. Mover ahora reduciría trazabilidad de origen del NO_CLEAN_CANDIDATE."
+    },
+    {
+      "path": "maestros/ops/MTGSynergy_FAMILY_QUALIFICATION_SYSTEM_V1_MASTER_SPEC.md",
+      "doc_class": "CANONICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Spec operativa maestra del sistema de qualification; documento doctrinal de referencia metodológica. Mover ahora reduciría estabilidad de referencia para futuras microfases."
+    },
+    {
+      "path": "fuentes/MTGSynergy_PROTOCOLO_OPERATIVO_POST_v33_VALIDATION_AND_MICROPHASE_WORKFLOW_v1_2026-03-19.md",
+      "doc_class": "AUXILIARY",
+      "authority_level": "SUPPORT",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Documento metodológico de soporte; declara explícitamente que no sustituye fuentes normativas/semánticas. Mover ahora podría disminuir trazabilidad operativa entre ciclos de validación."
+    },
+    {
+      "path": "review/MTGSynergy_REPO_INVENTORY_SNAPSHOT_POST_FQ_R3_v1.txt",
+      "doc_class": "TECHNICAL_SNAPSHOT",
+      "authority_level": "SNAPSHOT",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Snapshot derivado de inspección local post FQ-R3; útil para diagnóstico de estado, no normativo. Mover ahora no aporta y puede mezclar snapshot con fuentes canónicas."
+    },
+    {
+      "path": "review/MTGSynergy_REPO_ORDERING_RECOMMENDATION_POST_FQ_R3_v1.txt",
+      "doc_class": "AUXILIARY",
+      "authority_level": "DERIVED",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Recomendación operativa derivada del snapshot; soporte de decisión, no evidencia canónica. Mover ahora puede reducir trazabilidad de por qué se propuso el manifest."
+    }
+  ],
+  "conclusions": {
+    "safe_to_reorder_physically_now": false,
+    "manifest_supports_future_small_batch_reordering": true,
+    "return_to_engine_authorized": false
+  }
+}

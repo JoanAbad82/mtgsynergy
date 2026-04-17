@@ -65,6 +65,8 @@
           "family_id",
           "status",
           "status_reason",
+          "promotion_eligible_for_real_seed",
+          "promotion_blocker_kind",
           "tracked_contract_hits",
           "tracked_test_hits",
           "tracked_wiring_hits",
@@ -92,6 +94,21 @@
           "status_reason": {
             "type": "string",
             "minLength": 1
+          },
+          "promotion_eligible_for_real_seed": {
+            "type": "boolean"
+          },
+          "promotion_blocker_kind": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "WORKTREE_CONTAMINATION",
+              "INSUFFICIENT_ANCHOR",
+              "AUXILIARY_TEST_ONLY_EXCLUSION",
+              "ALREADY_CLOSED",
+              "ALREADY_ABSORBED",
+              "CLOSURE_NEGATIVE"
+            ]
           },
           "tracked_contract_hits": {
             "type": "array",

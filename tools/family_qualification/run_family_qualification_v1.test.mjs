@@ -385,6 +385,8 @@ test('run_family_qualification_v1 bootstrap reconciled with post-v72 emits expec
     assert.ok(row, `missing family row for ${familyId}`);
     assert.equal(row.status, expectedStatus, `unexpected status for ${familyId}`);
     assert.equal(typeof row.status_reason, 'string');
+    assert.equal(typeof row.promotion_eligible_for_real_seed, 'boolean');
+    assert.equal(typeof row.promotion_blocker_kind, 'string');
     assert.ok(Array.isArray(row.tracked_contract_hits));
     assert.ok(Array.isArray(row.tracked_test_hits));
     assert.ok(Array.isArray(row.tracked_wiring_hits));
@@ -411,6 +413,8 @@ test('bootstrap_open_candidate_probe_min_v1 emits controlled OPEN_CANDIDATE shor
   const openProbe = byFamilyId.get('bootstrap_open_candidate_probe_min_v1');
   assert.ok(openProbe, 'missing open-candidate probe row');
   assert.equal(openProbe.status, 'OPEN_CANDIDATE');
+  assert.equal(openProbe.promotion_eligible_for_real_seed, true);
+  assert.equal(openProbe.promotion_blocker_kind, 'NONE');
   assert.equal(report.verdict, 'SHORTLIST_READY');
   assert.equal(report.shortlist.length, 1);
   assert.deepEqual(report.shortlist, ['bootstrap_open_candidate_probe_min_v1']);
@@ -429,6 +433,8 @@ test('non-bootstrap synthetic fixture can promote OPEN_CANDIDATE with tracked ma
   const row = report.families[0];
   assert.equal(row.family_id, 'synthetic_non_bootstrap_open_candidate_material_min_v1');
   assert.equal(row.status, 'OPEN_CANDIDATE');
+  assert.equal(row.promotion_eligible_for_real_seed, true);
+  assert.equal(row.promotion_blocker_kind, 'NONE');
   assert.equal(
     row.status_reason,
     'clean positive anchor: controlled material open-candidate fixture'
@@ -481,6 +487,8 @@ test('real-seed consolidation keeps auxiliary test-only out of promotion and sur
   const diagnose = byFamilyId.get('life_gain_draw_cards_diagnose_min_v1');
   assert.ok(diagnose, 'missing diagnose family');
   assert.equal(diagnose.status, 'INSUFFICIENT_ANCHOR');
+  assert.equal(diagnose.promotion_eligible_for_real_seed, false);
+  assert.equal(diagnose.promotion_blocker_kind, 'AUXILIARY_TEST_ONLY_EXCLUSION');
   assert.match(
     diagnose.status_reason,
     /real-seed non-eligible auxiliary\/test-only artifact: blocked from real promotion/
@@ -489,6 +497,8 @@ test('real-seed consolidation keeps auxiliary test-only out of promotion and sur
   const pairingInspect = byFamilyId.get('life_gain_draw_cards_pairing_inspect_min_v1');
   assert.ok(pairingInspect, 'missing pairing_inspect family');
   assert.equal(pairingInspect.status, 'INSUFFICIENT_ANCHOR');
+  assert.equal(pairingInspect.promotion_eligible_for_real_seed, false);
+  assert.equal(pairingInspect.promotion_blocker_kind, 'AUXILIARY_TEST_ONLY_EXCLUSION');
   assert.match(
     pairingInspect.status_reason,
     /real-seed non-eligible auxiliary\/test-only artifact: blocked from real promotion/
@@ -497,6 +507,8 @@ test('real-seed consolidation keeps auxiliary test-only out of promotion and sur
   const contaminated = byFamilyId.get('draw_cards_add_counters_local_bridge_min_v1');
   assert.ok(contaminated, 'missing contaminated family');
   assert.equal(contaminated.status, 'CONTAMINATED_BY_WORKTREE');
+  assert.equal(contaminated.promotion_eligible_for_real_seed, false);
+  assert.equal(contaminated.promotion_blocker_kind, 'WORKTREE_CONTAMINATION');
   assert.match(
     contaminated.status_reason,
     /worktree contamination blocks real promotion: untracked homonym hit:/

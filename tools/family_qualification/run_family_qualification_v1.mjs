@@ -14,6 +14,13 @@ const VERDICT_NO_CLEAN = 'NO_CLEAN_CANDIDATE';
 const VERDICT_SHORTLIST_READY = 'SHORTLIST_READY';
 const AUXILIARY_NON_ELIGIBLE_REASON =
   'real-seed non-eligible auxiliary/test-only artifact: blocked from real promotion';
+const PROMOTION_BLOCKER_NONE = 'NONE';
+const PROMOTION_BLOCKER_WORKTREE_CONTAMINATION = 'WORKTREE_CONTAMINATION';
+const PROMOTION_BLOCKER_INSUFFICIENT_ANCHOR = 'INSUFFICIENT_ANCHOR';
+const PROMOTION_BLOCKER_AUXILIARY_TEST_ONLY_EXCLUSION = 'AUXILIARY_TEST_ONLY_EXCLUSION';
+const PROMOTION_BLOCKER_ALREADY_CLOSED = 'ALREADY_CLOSED';
+const PROMOTION_BLOCKER_ALREADY_ABSORBED = 'ALREADY_ABSORBED';
+const PROMOTION_BLOCKER_CLOSURE_NEGATIVE = 'CLOSURE_NEGATIVE';
 
 function buildUsage(scriptPath) {
   const scriptName = scriptPath ? normalizePath(scriptPath) : 'tools/family_qualification/run_family_qualification_v1.mjs';
@@ -177,6 +184,58 @@ function isCatalogTestOnlyShape(family) {
   return hasTestGlobs && !hasContractGlobs && !hasWiringGlobs;
 }
 
+function inferPromotionProvenance(status, statusReason) {
+  if (status === STATUS_OPEN_CANDIDATE) {
+    return {
+      promotionEligibleForRealSeed: true,
+      promotionBlockerKind: PROMOTION_BLOCKER_NONE
+    };
+  }
+
+  if (status === STATUS_CONTAMINATED) {
+    return {
+      promotionEligibleForRealSeed: false,
+      promotionBlockerKind: PROMOTION_BLOCKER_WORKTREE_CONTAMINATION
+    };
+  }
+
+  if (status === STATUS_INSUFFICIENT_ANCHOR) {
+    return {
+      promotionEligibleForRealSeed: false,
+      promotionBlockerKind:
+        statusReason === AUXILIARY_NON_ELIGIBLE_REASON
+          ? PROMOTION_BLOCKER_AUXILIARY_TEST_ONLY_EXCLUSION
+          : PROMOTION_BLOCKER_INSUFFICIENT_ANCHOR
+    };
+  }
+
+  if (status === STATUS_CLOSED) {
+    return {
+      promotionEligibleForRealSeed: false,
+      promotionBlockerKind: PROMOTION_BLOCKER_ALREADY_CLOSED
+    };
+  }
+
+  if (status === STATUS_ABSORBED) {
+    return {
+      promotionEligibleForRealSeed: false,
+      promotionBlockerKind: PROMOTION_BLOCKER_ALREADY_ABSORBED
+    };
+  }
+
+  if (status === STATUS_VETOED) {
+    return {
+      promotionEligibleForRealSeed: false,
+      promotionBlockerKind: PROMOTION_BLOCKER_CLOSURE_NEGATIVE
+    };
+  }
+
+  return {
+    promotionEligibleForRealSeed: false,
+    promotionBlockerKind: PROMOTION_BLOCKER_INSUFFICIENT_ANCHOR
+  };
+}
+
 function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) {
   const trackedContractHits = collectPathHits(trackedFiles, family.repo_contract_globs);
   const trackedTestHits = collectPathHits(trackedFiles, family.repo_test_globs);
@@ -247,11 +306,14 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
     status = STATUS_INSUFFICIENT_ANCHOR;
     statusReason = AUXILIARY_NON_ELIGIBLE_REASON;
   }
+  const provenance = inferPromotionProvenance(status, statusReason);
 
   return {
     family_id: family.family_id,
     status,
     status_reason: statusReason,
+    promotion_eligible_for_real_seed: provenance.promotionEligibleForRealSeed,
+    promotion_blocker_kind: provenance.promotionBlockerKind,
     tracked_contract_hits: trackedContractHits,
     tracked_test_hits: trackedTestHits,
     tracked_wiring_hits: trackedWiringHits,
@@ -276,6 +338,8 @@ function renderTextReport(report) {
   for (const family of report.families) {
     lines.push(`- ${family.family_id}: ${family.status}`);
     lines.push(`  reason: ${family.status_reason}`);
+    lines.push(`  promotion_eligible_for_real_seed: ${family.promotion_eligible_for_real_seed}`);
+    lines.push(`  promotion_blocker_kind: ${family.promotion_blocker_kind}`);
   }
   return `${lines.join('\n')}\n`;
 }

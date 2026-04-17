@@ -70,6 +70,46 @@
       "move_now_recommended": false,
       "absorbed_elsewhere": false,
       "notes": "Recomendación operativa derivada del snapshot; soporte de decisión, no evidencia canónica. Mover ahora puede reducir trazabilidad de por qué se propuso el manifest."
+    },
+    {
+      "path": "review/MTGSynergy_DOC_PROVENANCE_MANIFEST_MIN_V1.json",
+      "doc_class": "AUXILIARY",
+      "authority_level": "DERIVED",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Manifest estructurado de procedencia documental generado para trazabilidad operativa; es derivado y no sustituye cierres canónicos."
+    },
+    {
+      "path": "review/MTGSynergy_DOC_PROVENANCE_MANIFEST_MIN_V1.txt",
+      "doc_class": "AUXILIARY",
+      "authority_level": "DERIVED",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Resumen humano derivado del manifest JSON para lectura disciplinada; mantiene soporte metodológico sin autoridad canónica."
+    },
+    {
+      "path": "maestros/v83/",
+      "doc_class": "CANONICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Directorio de versión canónica vigente post-v83 con cierres y continuidad activa; mover ahora reduciría trazabilidad del estado actual."
+    },
+    {
+      "path": "maestros/v82/",
+      "doc_class": "HISTORICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Directorio histórico de cierre previo; conservar ubicación actual preserva la trazabilidad documental sin autorizar todavía reordenación física."
+    },
+    {
+      "path": "maestros/v81/",
+      "doc_class": "HISTORICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Directorio histórico de cierre previo; mantener su ubicación actual conserva la secuencia documental y evita sobreinterpretación de absorción."
     }
   ],
   "conclusions": {

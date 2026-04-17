@@ -1,0 +1,103 @@
+MTGSynergy - REPO ORDERING RECOMMENDATION POST FQ-R3 v1
+Microfase: OPS-REPO-INVENTORY-SNAPSHOT-MIN-V1
+
+=====================================================================
+MARCO
+=====================================================================
+
+Este documento propone una ordenacion documental estrecha y priorizada.
+No ejecuta limpieza, no mueve archivos y no modifica motor.
+
+Base factual usada:
+- snapshot de inventario post FQ-R3 en review/MTGSynergy_REPO_INVENTORY_SNAPSHOT_POST_FQ_R3_v1.txt
+- estado con contaminacion untracked concentrada en maestros/fuentes/review
+
+=====================================================================
+PROPUESTA PRIORIZADA DE ORDENACION DOCUMENTAL
+=====================================================================
+
+Prioridad 1 (antes del proximo cierre documental)
+1) Consolidar una tabla de procedencia documental (manifest) sin mover archivos:
+   - columna A: path actual
+   - columna B: tipo (maestro operativo / cierre / fuente delta / preflight / backup / bundle / snapshot tecnico)
+   - columna C: estado propuesto (canonico / historico / auxiliar / pendiente de clasificar)
+   - columna D: destino recomendado futuro (mantener / candidatos a maestros/ops / candidatos a fuentes / archivo de backup)
+2) Aplicar la tabla de procedencia primero a zonas mas cargadas:
+   - maestros/ (31 untracked)
+   - fuentes/ (14 untracked)
+   - review/ (5 untracked)
+3) Publicar un criterio breve de precedencia documental para el siguiente cierre:
+   - que entra como evidencia de cierre,
+   - que queda como soporte auxiliar,
+   - que no debe mezclarse en lectura canonia.
+
+Prioridad 2 (solo despues de tener manifest estable)
+1) Proponer normalizacion nominal (sin ejecutar cambios aun):
+   - distinguir explicitamente backup/snapshot/probe vs documentos canonicos.
+2) Separar logica de almacen:
+   - snapshots tecnicos (OPS_PROD_*, _cf_*) en zona de evidencia operativa,
+   - documentos de cierre/fuente en zona documental.
+
+=====================================================================
+QUE CONVIENE CONSOLIDAR ANTES DEL PROXIMO CIERRE
+=====================================================================
+
+1) maestros/v81 y maestros/v82 como base canonia reciente de family_qualification.
+2) maestros/ops como ancla de spec/freeze activos.
+3) fuentes/ con deltas reales pendientes de clasificar como:
+   - evidencia operativa reutilizable,
+   - o historico de referencia.
+4) review/ preflights y backups como material auxiliar, no canonia de cierre por defecto.
+
+=====================================================================
+QUE NO CONVIENE TOCAR TODAVIA
+=====================================================================
+
+1) src/engine/** (fuera de alcance de esta linea metodologica).
+2) parser/lowering/overlay/UI/scoring.
+3) catalogos real-seed y cierres historicos ya fijados para FQ-R2/FQ-R3.
+4) limpieza masiva de untracked sin tabla previa de procedencia.
+
+=====================================================================
+CANDIDATOS A PASAR LUEGO A MAESTROS/OPS O FUENTES
+=====================================================================
+
+Nota: candidatos, no accion inmediata.
+
+1) Candidatos a maestros/ops (si se confirma rol operativo estable)
+- review/POST_V52_PRODUCE_MANA_ENABLEMENT_CLOSURE_MIN_V1_PREFLIGHT.md
+- review/produce_mana_enablement_preflight_v1.txt
+- review/produce_mana_enablement_preflight_v2.txt
+
+2) Candidatos a fuentes (si se confirma rol de delta/fuente base)
+- review/maestros/MTGSynergy_DELTA_REAL_v53_PRODUCE_MANA_ENABLEMENT_CLOSURE_MIN_V1.txt
+- deltas en fuentes/ ya presentes como MTGSynergy_DELTA_REAL_MICROFASE_*
+
+3) Candidatos a zona de backup/snapshot tecnico (no canonia de cierre)
+- review/backup_split_655918d/*.working
+- _CHATGPT_BUNDLE_POST_V80/ y _CHATGPT_BUNDLE_POST_V80.zip
+- artefactos top-level _cf_* y OPS_PROD_* (segun politica de retencion)
+
+=====================================================================
+RIESGOS DE MEZCLAR INVENTARIO CON LIMPIEZA MASIVA
+=====================================================================
+
+1) Perder trazabilidad de procedencia documental antes de clasificar.
+2) Borrar respaldos utiles sin haber extraido metadatos minimos.
+3) Confundir evidencia de cierre con snapshots tecnicos de debugging.
+4) Introducir ruido metodologico en el siguiente cierre documental por cambios de estructura no auditados.
+
+=====================================================================
+SIGUIENTE MICROFASE AUXILIAR PROPUESTA
+=====================================================================
+
+Nombre sugerido:
+- OPS-DOC-PROVENANCE-MANIFEST-MIN-V1
+
+Objetivo sugerido:
+- generar un manifest unico y auditable de procedencia documental
+- sin mover archivos
+- sin limpieza automatica
+- dejando listo un plan de ordenacion por lotes pequenos para una fase posterior
+
+Fin.

@@ -1,0 +1,159 @@
+MTGSynergy - REPO INVENTORY SNAPSHOT POST FQ-R3 v1
+Fecha de snapshot (local): 2026-04-17 19:06:41 +02:00
+Microfase: OPS-REPO-INVENTORY-SNAPSHOT-MIN-V1
+
+=====================================================================
+SECCION A - INSPECCION DIRECTA DEL REPO (HECHOS OBSERVADOS)
+=====================================================================
+
+1) HEAD ACTUAL
+- branch: main
+- HEAD (full): fc54be23f7682ede836f00f02832fce143b28c1f
+- HEAD (short): fc54be2
+- origin/main (short): fc54be2
+
+2) RESUMEN DE ESTADO GIT (ALTO NIVEL)
+- git status --porcelain=v1:
+  - entradas totales: 54
+  - staged changes: 0
+  - unstaged tracked changes: 0
+  - untracked entries: 54
+- Observacion factual: en esta lectura, la contaminacion visible viene de untracked.
+
+3) INVENTARIO TOP-LEVEL DEL REPO
+- Total entradas top-level: 102
+  - directorios: 23
+  - archivos: 79
+
+3.1 Directorios top-level (23)
+- _builddiff
+- _cf_block23
+- _CHATGPT_BUNDLE_POST_V80
+- .astro
+- .cache
+- .git
+- .github
+- .wt
+- artifacts
+- dist
+- docs
+- fuentes
+- maestros
+- node_modules
+- ops
+- OPS_PROD_ASSETS
+- OPS_PROD_ASSETS_latest
+- public
+- review
+- scripts
+- site
+- src
+- tools
+
+3.2 Resumen de archivos top-level por prefijo/patron
+- archivos top-level con prefijo _cf_: 32
+- archivos top-level con prefijo OPS_PROD_: 30
+- archivos top-level con prefijo _prod_latest_: 4
+- archivos top-level con patron bundle/BUNDLE: 8
+
+4) INVENTARIO RESUMIDO POR ZONA CLAVE
+
+4.1 maestros/
+- contenido total:
+  - subdirectorios (recurse): 33
+  - archivos (recurse): 60
+- versiones detectadas como carpetas v*: 32
+  - v33, v35, v48, v49, v50, v52, v54, v58, v59, v60, v61, v62, v63, v64, v65, v66, v67, v68, v69, v70, v71, v72, v73, v74, v75, v76, v77, v78, v79, v80, v81, v82
+- top-level destacado:
+  - ops/ (child_count=4)
+  - MTGSynergy_MASTERLOG_WEB_v14.10.0_UPDATED_2026-02-19.txt
+  - README_HISTORICO_Y_PRECEDENCIA.md
+
+4.2 fuentes/
+- contenido total:
+  - subdirectorios (recurse): 0
+  - archivos (recurse): 16
+- observacion factual:
+  - predominan archivos MTGSynergy_DELTA_REAL_MICROFASE_* y un protocolo operativo.
+
+4.3 review/
+- contenido total:
+  - subdirectorios (recurse): 2
+  - archivos (recurse): 10
+- top-level observado:
+  - backup_split_655918d/ (con 5 archivos .working)
+  - maestros/ (1 archivo)
+  - POST_V52_PRODUCE_MANA_ENABLEMENT_CLOSURE_MIN_V1_PREFLIGHT.md
+  - produce_mana_enablement_preflight_v1.txt
+  - produce_mana_enablement_preflight_v2.txt
+  - SEMANTIC_PARSER_AUDIT_v14.10.0_2026-03-02.md
+
+4.4 tools/family_qualification/
+- contenido total:
+  - subdirectorios (recurse): 13
+  - archivos (recurse): 20
+- top-level observado:
+  - catalogs/ (files=1)
+  - closures/ (files=1)
+  - fixtures/ (dirs=10, files=14)
+  - family_catalog_v1.json
+  - family_qualification_report.schema.json
+  - run_family_qualification_v1.mjs
+  - run_family_qualification_v1.test.mjs
+
+5) ZONAS CON MAYOR CONTAMINACION UNTRACKED (AGRUPADO)
+- maestros: 31
+- fuentes: 14
+- review: 5
+- _CHATGPT_BUNDLE_POST_V80: 1
+- _CHATGPT_BUNDLE_POST_V80.zip: 1
+- artifacts: 1
+- src: 1
+
+Muestras representativas por zona:
+- maestros:
+  - maestros/ops/
+  - maestros/v48/
+  - maestros/v49/
+  - maestros/v50/
+  - maestros/v52/
+- fuentes:
+  - fuentes/MTGSynergy_DELTA_REAL_MICROFASE_CAST_SPELL_DRAW_CARDS_LOCAL_BRIDGE_MIN_V1_v57.txt
+  - fuentes/MTGSynergy_DELTA_REAL_MICROFASE_LEAVES_BATTLEFIELD_DRAW_CARDS_LOCAL_BRIDGE_MIN_V1_v56.txt
+  - fuentes/MTGSynergy_DELTA_REAL_MICROFASE_LEGALITY_ACTOR_CONSTRAINT_MIN_V1_v40.txt
+- review:
+  - review/POST_V52_PRODUCE_MANA_ENABLEMENT_CLOSURE_MIN_V1_PREFLIGHT.md
+  - review/backup_split_655918d/
+  - review/maestros/
+- src:
+  - src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts
+
+6) OBSERVACIONES FACTUALES SOBRE BUNDLES/BACKUPS/SNAPSHOTS/OPERATIVO
+- Existen artefactos bundle con misma base nominal en dos formatos:
+  - _CHATGPT_BUNDLE_POST_V80/ (directorio)
+  - _CHATGPT_BUNDLE_POST_V80.zip (archivo)
+- Existen señales de backup de trabajo en review:
+  - review/backup_split_655918d/*.working
+- Existen activos operativos/probe en top-level:
+  - familia OPS_PROD_* numerosa
+- Existen snapshots/logs de tipo _cf_* en top-level:
+  - historial, logs, diffs y ventanas de error.
+- Existen variantes con sufijo _latest junto a variantes con sufijo de bloque/fecha.
+
+=====================================================================
+SECCION B - INFERENCIAS (SEPARADAS DE LOS HECHOS)
+=====================================================================
+
+1) Duplicacion aparente por naming
+- La coexistencia de _CHATGPT_BUNDLE_POST_V80 dir + zip sugiere duplicacion potencial de contenido.
+- Los prefijos OPS_PROD_* y _cf_* indican posible solapamiento parcial entre snapshots operativos.
+- Nota metodologica: esto es inferencia por naming/estructura, no deduplicacion verificada por hash.
+
+2) Riesgo metodologico actual
+- Con 54 untracked (31 en maestros y 14 en fuentes), mezclar inventario con limpieza masiva puede borrar contexto documental util para cierre.
+- El untracked en src/engine/** es sensible metodologicamente, aunque esta microfase no interviene motor.
+
+3) Lectura operativa para continuidad
+- El estado actual favorece consolidar catalogacion documental primero, antes de cualquier accion de ordenamiento fisico.
+
+Fin del snapshot v1.

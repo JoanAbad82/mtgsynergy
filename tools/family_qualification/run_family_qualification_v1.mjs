@@ -12,6 +12,8 @@ const STATUS_INSUFFICIENT_ANCHOR = 'INSUFFICIENT_ANCHOR';
 const STATUS_OPEN_CANDIDATE = 'OPEN_CANDIDATE';
 const VERDICT_NO_CLEAN = 'NO_CLEAN_CANDIDATE';
 const VERDICT_SHORTLIST_READY = 'SHORTLIST_READY';
+const FAMILY_SCOPE_REAL_SEED = 'REAL_SEED';
+const FAMILY_SCOPE_BOOTSTRAP = 'BOOTSTRAP';
 const AUXILIARY_NON_ELIGIBLE_REASON =
   'real-seed non-eligible auxiliary/test-only artifact: blocked from real promotion';
 const PROMOTION_BLOCKER_NONE = 'NONE';
@@ -162,6 +164,13 @@ function parseUntrackedPaths(statusShortRaw) {
   return uniqueSorted(out);
 }
 
+function normalizeFamilyScope(value) {
+  if (value === FAMILY_SCOPE_BOOTSTRAP) {
+    return FAMILY_SCOPE_BOOTSTRAP;
+  }
+  return FAMILY_SCOPE_REAL_SEED;
+}
+
 function isAuxiliaryPatternFamily(family) {
   const familyId = typeof family.family_id === 'string' ? family.family_id : '';
   const label = typeof family.label === 'string' ? family.label : '';
@@ -237,6 +246,7 @@ function inferPromotionProvenance(status, statusReason) {
 }
 
 function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) {
+  const familyScope = normalizeFamilyScope(family.family_scope);
   const trackedContractHits = collectPathHits(trackedFiles, family.repo_contract_globs);
   const trackedTestHits = collectPathHits(trackedFiles, family.repo_test_globs);
   const trackedWiringHits = collectPathHits(trackedFiles, family.repo_wiring_globs);
@@ -310,6 +320,7 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
 
   return {
     family_id: family.family_id,
+    family_scope: familyScope,
     status,
     status_reason: statusReason,
     promotion_eligible_for_real_seed: provenance.promotionEligibleForRealSeed,
@@ -334,6 +345,7 @@ function renderTextReport(report) {
   lines.push(`catalogPath: ${report.meta.catalogPath}`);
   lines.push(`verdict: ${report.verdict}`);
   lines.push(`shortlist: ${JSON.stringify(report.shortlist)}`);
+  lines.push(`bootstrap_shortlist: ${JSON.stringify(report.bootstrap_shortlist)}`);
   lines.push('families:');
   for (const family of report.families) {
     lines.push(`- ${family.family_id}: ${family.status}`);
@@ -397,7 +409,18 @@ function main() {
     return classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower);
   });
   const shortlist = families
-    .filter((family) => family.status === STATUS_OPEN_CANDIDATE)
+    .filter(
+      (family) =>
+        family.status === STATUS_OPEN_CANDIDATE &&
+        family.family_scope === FAMILY_SCOPE_REAL_SEED
+    )
+    .map((family) => family.family_id);
+  const bootstrapShortlist = families
+    .filter(
+      (family) =>
+        family.status === STATUS_OPEN_CANDIDATE &&
+        family.family_scope === FAMILY_SCOPE_BOOTSTRAP
+    )
     .map((family) => family.family_id);
 
   const report = {
@@ -413,6 +436,7 @@ function main() {
         ? VERDICT_SHORTLIST_READY
         : VERDICT_NO_CLEAN,
     shortlist,
+    bootstrap_shortlist: bootstrapShortlist,
     families
   };
 

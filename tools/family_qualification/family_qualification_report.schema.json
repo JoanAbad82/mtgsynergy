@@ -8,6 +8,7 @@
     "meta",
     "verdict",
     "shortlist",
+    "bootstrap_shortlist",
     "families"
   ],
   "properties": {
@@ -56,6 +57,12 @@
         "type": "string"
       }
     },
+    "bootstrap_shortlist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "families": {
       "type": "array",
       "items": {
@@ -63,6 +70,7 @@
         "additionalProperties": false,
         "required": [
           "family_id",
+          "family_scope",
           "status",
           "status_reason",
           "promotion_eligible_for_real_seed",
@@ -79,6 +87,13 @@
           "family_id": {
             "type": "string",
             "minLength": 1
+          },
+          "family_scope": {
+            "type": "string",
+            "enum": [
+              "REAL_SEED",
+              "BOOTSTRAP"
+            ]
           },
           "status": {
             "type": "string",

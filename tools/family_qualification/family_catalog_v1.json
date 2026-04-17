@@ -87,6 +87,7 @@
     },
     {
       "family_id": "bootstrap_insufficient_anchor_probe_min_v1",
+      "family_scope": "BOOTSTRAP",
       "label": "Bootstrap insufficient-anchor probe (non-engine)",
       "repo_contract_globs": [
         "tools/family_qualification/non_engine/probes/bootstrap_insufficient_anchor_probe_min_v1.contract.json"
@@ -106,6 +107,7 @@
     },
     {
       "family_id": "bootstrap_open_candidate_probe_min_v1",
+      "family_scope": "BOOTSTRAP",
       "label": "Bootstrap open-candidate probe (non-engine)",
       "repo_contract_globs": [
         "tools/family_qualification/non_engine/probes/bootstrap_open_candidate_probe_min_v1.contract.json"

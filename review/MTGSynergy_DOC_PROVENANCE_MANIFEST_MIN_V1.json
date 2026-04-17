@@ -110,6 +110,14 @@
       "move_now_recommended": false,
       "absorbed_elsewhere": false,
       "notes": "Directorio histórico de cierre previo; mantener su ubicación actual conserva la secuencia documental y evita sobreinterpretación de absorción."
+    },
+    {
+      "path": "maestros/v85/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v85_2026-04-17.txt",
+      "doc_class": "CANONICAL",
+      "authority_level": "PRIMARY",
+      "move_now_recommended": false,
+      "absorbed_elsewhere": false,
+      "notes": "Cierre documental real vigente post-bbf1a6b, materialmente cerrado en remoto; fija el estado heredado actual y mejora trazabilidad de la cadena documental sin autorizar reordenación física ni retorno al motor."
     }
   ],
   "conclusions": {

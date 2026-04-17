@@ -1,0 +1,82 @@
+{
+  "catalog_version": "fq_r2_real_seed_catalog_min_v1",
+  "families": [
+    {
+      "family_id": "life_gain_draw_cards_bridge_min_v1",
+      "label": "LIFE_GAIN -> DRAW_CARDS local bridge min v1",
+      "repo_contract_globs": [
+        "src/engine/semantic/contract/sem_life_gain_draw_cards_bridge_min_v1.json"
+      ],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_bridge_min_v1.test.ts"
+      ],
+      "repo_wiring_globs": [
+        "src/engine/semantic/overlay/sem_edges.ts"
+      ],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/contract/sem_life_gain_draw_cards_bridge_min_v1.json",
+        "src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_bridge_min_v1.test.ts"
+      ],
+      "closure_positive_terms": [
+        "LIFE_GAIN -> DRAW_CARDS local bridge min v1",
+        "la familia queda cerrada materialmente en repo remoto"
+      ],
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
+    },
+    {
+      "family_id": "draw_cards_add_counters_local_bridge_min_v1",
+      "label": "DRAW_CARDS -> ADD_COUNTERS local bridge min v1",
+      "repo_contract_globs": [
+        "src/engine/semantic/contract/sem_draw_cards_add_counters_local_bridge_min_v1.json"
+      ],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts"
+      ],
+      "repo_wiring_globs": [
+        "src/engine/semantic/overlay/sem_edges.ts"
+      ],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/contract/sem_draw_cards_add_counters_local_bridge_min_v1.json",
+        "src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts"
+      ],
+      "closure_positive_terms": [],
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
+    },
+    {
+      "family_id": "life_gain_draw_cards_diagnose_min_v1",
+      "label": "LIFE_GAIN -> DRAW_CARDS diagnose evidence (test-only)",
+      "repo_contract_globs": [],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_diagnose.test.ts"
+      ],
+      "repo_wiring_globs": [],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_diagnose.test.ts"
+      ],
+      "closure_positive_terms": [
+        "sem_overlay_life_gain_draw_cards_diagnose.test.ts"
+      ],
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
+    },
+    {
+      "family_id": "life_gain_draw_cards_pairing_inspect_min_v1",
+      "label": "LIFE_GAIN -> DRAW_CARDS pairing inspect evidence (test-only)",
+      "repo_contract_globs": [],
+      "repo_test_globs": [
+        "src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_pairing_inspect.test.ts"
+      ],
+      "repo_wiring_globs": [],
+      "untracked_homonym_globs": [
+        "src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_pairing_inspect.test.ts"
+      ],
+      "closure_positive_terms": [
+        "sem_overlay_life_gain_draw_cards_pairing_inspect.test.ts"
+      ],
+      "closure_negative_terms": [],
+      "closure_absorbed_terms": []
+    }
+  ]
+}

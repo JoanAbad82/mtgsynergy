@@ -1,0 +1,71 @@
+[v78] maestros/v78/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v78_2026-04-04_REGENERADO.txt
+LIFE_GAIN -> DRAW_CARDS local bridge min v1
+
+Archivos materialmente tocados:
+- src/engine/semantic/contract/sem_life_gain_draw_cards_bridge_min_v1.json
+- src/engine/semantic/overlay/sem_edges.ts
+- src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_bridge_min_v1.test.ts
+- src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_diagnose.test.ts
+- src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_pairing_inspect.test.ts
+
+Ring focal y vecinos ejecutado en verde:
+- sem_overlay_life_gain_draw_cards_bridge_min_v1.test.ts
+- sem_overlay_life_gain_draw_cards_diagnose.test.ts
+- sem_overlay_life_gain_draw_cards_pairing_inspect.test.ts
+- sem_overlay_life_gain_add_counters_bridge_min_v1.test.ts
+- sem_overlay_draw_cards_lose_life_local_bridge_min_v1.test.ts
+- sem_overlay_damage_with_lifelink_life_gain_bridge_min_v1.test.ts
+
+Sí queda demostrado:
+- existe una nueva familia real del motor, materializada y cerrada en remoto:
+  LIFE_GAIN -> DRAW_CARDS local bridge min v1
+- la familia se cerró con ancla Oracle limpia, guardrails estrechos y negativos
+  explícitos
+
+A partir de este cierre:
+- ya no puede sostenerse que LIFE_GAIN -> DRAW_CARDS sea hueco material
+- la familia queda cerrada materialmente en repo remoto
+
+Microfase cerrada materialmente en remoto:
+LIFE_GAIN -> DRAW_CARDS local bridge min v1
+
+[v79] maestros/v79/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v79_2026-04-16.txt
+Esta microfase SÍ cierra una capacidad nueva del sistema
+`family_qualification`, pero NO cierra una familia nueva del motor.
+
+Lo que NO queda demostrado todavía:
+- selección positiva de una familia real del motor;
+- que exista ya una candidata real limpia lista para freeze;
+- que el catálogo real de familias del motor esté suficientemente sembrado;
+
+El siguiente frente correcto pasa a ser:
+- abrir una nueva microfase metodológica estrecha para aplicar
+  `family_qualification` debootstrapado a un seed pequeño de familias
+  reales del motor, con catálogo y cierres documentales adecuados,
+  y decidir si emerge o no una candidata real limpia.
+
+Nombre operativo recomendado del siguiente frente:
+- FQ-R2 — real-seed catalog execution min v1
+
+[v80] maestros/v80/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v80_2026-04-16.txt
+LECTURA CORRECTA DEL CIERRE v80
+Esta microfase NO ejecuta todavía FQ-R2 sobre cierres reales del proyecto.
+
+Lo que NO queda cerrado todavía:
+- ejecución material de FQ-R2 contra cierres reales del proyecto
+- shortlist positiva real del motor
+- apertura de una microfase real del motor
+- autorización para volver a `src/engine/**`
+
+RIESGO METODOLÓGICO QUE SIGUE VIGENTE
+- Los documentos maestros/protocolo/cierres usados para abrir esta conversación
+  estaban presentes en worktree pero no como verdad git consolidada.
+- La fixture FQ-R2 añadida en v80 sirve como readiness controlado, no como
+  sustituto automático de ejecución material sobre cierres reales.
+
+OBJETIVO DEL SIGUIENTE FRENTE
+- preparar o ejecutar el runner contra un seed pequeño y mixto de familias reales
+- usar cierres/documentación reales adecuados
+- comprobar si emerge o no una shortlist material
+- mantener el trabajo dentro de `tools/family_qualification/**`
+- no tocar motor salvo que aparezca una candidata real limpia y verificable

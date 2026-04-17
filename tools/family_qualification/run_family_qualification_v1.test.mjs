@@ -170,6 +170,187 @@ function executeRunnerWithFqR2RealSeedFixture({
   return { tempDir, repoDir, reportPath, reportTextPath, report };
 }
 
+function executeRunnerWithRealSeedConsolidationFixture() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'family-qualification-v1-real-seed-consolidation-'));
+  const repoDir = path.join(tempDir, 'repo');
+  fs.mkdirSync(repoDir, { recursive: true });
+
+  const trackedFiles = [
+    [
+      'src/engine/semantic/contract/sem_life_gain_draw_cards_bridge_min_v1.json',
+      '{ "fixture": "real_seed_consolidation" }\n'
+    ],
+    [
+      'src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_bridge_min_v1.test.ts',
+      "export const fixture = 'life_gain_draw_cards_bridge_min_v1';\n"
+    ],
+    [
+      'src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_diagnose.test.ts',
+      "export const fixture = 'life_gain_draw_cards_diagnose_min_v1';\n"
+    ],
+    [
+      'src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_pairing_inspect.test.ts',
+      "export const fixture = 'life_gain_draw_cards_pairing_inspect_min_v1';\n"
+    ],
+    [
+      'src/engine/semantic/overlay/sem_edges.ts',
+      "export const fixture = 'sem_edges';\n"
+    ]
+  ];
+
+  for (const [relativePath, content] of trackedFiles) {
+    const absolutePath = path.join(repoDir, relativePath);
+    fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
+    fs.writeFileSync(absolutePath, content, 'utf8');
+  }
+
+  const closureFixturePath = path.join(tempDir, 'real_seed_closure.txt');
+  fs.writeFileSync(
+    closureFixturePath,
+    [
+      'LIFE_GAIN -> DRAW_CARDS local bridge min v1',
+      'la familia queda cerrada materialmente en repo remoto',
+      'sem_overlay_life_gain_draw_cards_diagnose.test.ts',
+      'sem_overlay_life_gain_draw_cards_pairing_inspect.test.ts'
+    ].join('\n'),
+    'utf8'
+  );
+
+  const catalogFixturePath = path.join(tempDir, 'real_seed_catalog.json');
+  const catalogFixture = {
+    catalog_version: 'real_seed_consolidation_fixture_min_v1',
+    families: [
+      {
+        family_id: 'life_gain_draw_cards_bridge_min_v1',
+        label: 'LIFE_GAIN -> DRAW_CARDS local bridge min v1',
+        repo_contract_globs: [
+          'src/engine/semantic/contract/sem_life_gain_draw_cards_bridge_min_v1.json'
+        ],
+        repo_test_globs: [
+          'src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_bridge_min_v1.test.ts'
+        ],
+        repo_wiring_globs: [
+          'src/engine/semantic/overlay/sem_edges.ts'
+        ],
+        untracked_homonym_globs: [
+          'src/engine/semantic/contract/sem_life_gain_draw_cards_bridge_min_v1.json',
+          'src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_bridge_min_v1.test.ts'
+        ],
+        closure_positive_terms: [
+          'LIFE_GAIN -> DRAW_CARDS local bridge min v1',
+          'la familia queda cerrada materialmente en repo remoto'
+        ],
+        closure_negative_terms: [],
+        closure_absorbed_terms: []
+      },
+      {
+        family_id: 'draw_cards_add_counters_local_bridge_min_v1',
+        label: 'DRAW_CARDS -> ADD_COUNTERS local bridge min v1',
+        repo_contract_globs: [
+          'src/engine/semantic/contract/sem_draw_cards_add_counters_local_bridge_min_v1.json'
+        ],
+        repo_test_globs: [
+          'src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts'
+        ],
+        repo_wiring_globs: [
+          'src/engine/semantic/overlay/sem_edges.ts'
+        ],
+        untracked_homonym_globs: [
+          'src/engine/semantic/contract/sem_draw_cards_add_counters_local_bridge_min_v1.json',
+          'src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts'
+        ],
+        closure_positive_terms: [],
+        closure_negative_terms: [],
+        closure_absorbed_terms: []
+      },
+      {
+        family_id: 'life_gain_draw_cards_diagnose_min_v1',
+        label: 'LIFE_GAIN -> DRAW_CARDS diagnose evidence (test-only)',
+        repo_contract_globs: [],
+        repo_test_globs: [
+          'src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_diagnose.test.ts'
+        ],
+        repo_wiring_globs: [],
+        untracked_homonym_globs: [
+          'src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_diagnose.test.ts'
+        ],
+        closure_positive_terms: [
+          'sem_overlay_life_gain_draw_cards_diagnose.test.ts'
+        ],
+        closure_negative_terms: [],
+        closure_absorbed_terms: []
+      },
+      {
+        family_id: 'life_gain_draw_cards_pairing_inspect_min_v1',
+        label: 'LIFE_GAIN -> DRAW_CARDS pairing inspect evidence (test-only)',
+        repo_contract_globs: [],
+        repo_test_globs: [
+          'src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_pairing_inspect.test.ts'
+        ],
+        repo_wiring_globs: [],
+        untracked_homonym_globs: [
+          'src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_pairing_inspect.test.ts'
+        ],
+        closure_positive_terms: [
+          'sem_overlay_life_gain_draw_cards_pairing_inspect.test.ts'
+        ],
+        closure_negative_terms: [],
+        closure_absorbed_terms: []
+      }
+    ]
+  };
+  fs.writeFileSync(catalogFixturePath, `${JSON.stringify(catalogFixture, null, 2)}\n`, 'utf8');
+
+  execFileSync('git', ['init'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['config', 'user.email', 'family-qualification-fixture@example.local'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+  execFileSync('git', ['config', 'user.name', 'family-qualification-fixture'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+  execFileSync('git', ['add', '.'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['commit', '-m', 'seed consolidation fixture'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['update-ref', 'refs/remotes/origin/main', 'HEAD'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+
+  const contaminatedHomonymPath = path.join(
+    repoDir,
+    'src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts'
+  );
+  fs.mkdirSync(path.dirname(contaminatedHomonymPath), { recursive: true });
+  fs.writeFileSync(
+    contaminatedHomonymPath,
+    "export const fixture = 'untracked_homonym';\n",
+    'utf8'
+  );
+
+  const reportPath = path.join(tempDir, 'family_qualification_report.json');
+  const reportTextPath = path.join(tempDir, 'family_qualification_report.txt');
+
+  execFileSync(
+    'node',
+    [
+      runnerPath,
+      '--closure',
+      closureFixturePath,
+      '--catalog',
+      catalogFixturePath,
+      '--report',
+      reportPath,
+      '--report-text',
+      reportTextPath
+    ],
+    { cwd: repoDir, stdio: 'pipe' }
+  );
+
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  return { tempDir, repoDir, reportPath, reportTextPath, report };
+}
+
 test('run_family_qualification_v1 bootstrap reconciled with post-v72 emits expected deterministic report', () => {
   const { reportPath, reportTextPath, report } = executeRunnerInTempDir();
 
@@ -288,6 +469,38 @@ test('fq-r2 real-seed fixture emits NO_CLEAN_CANDIDATE when open slot wiring is 
   });
   assert.equal(report.verdict, 'NO_CLEAN_CANDIDATE');
   assert.deepEqual(report.shortlist, []);
+});
+
+test('real-seed consolidation keeps auxiliary test-only out of promotion and surfaces contamination blocking', () => {
+  const { report } = executeRunnerWithRealSeedConsolidationFixture();
+  const byFamilyId = new Map(report.families.map((item) => [item.family_id, item]));
+
+  assert.equal(report.verdict, 'NO_CLEAN_CANDIDATE');
+  assert.deepEqual(report.shortlist, []);
+
+  const diagnose = byFamilyId.get('life_gain_draw_cards_diagnose_min_v1');
+  assert.ok(diagnose, 'missing diagnose family');
+  assert.equal(diagnose.status, 'INSUFFICIENT_ANCHOR');
+  assert.match(
+    diagnose.status_reason,
+    /real-seed non-eligible auxiliary\/test-only artifact: blocked from real promotion/
+  );
+
+  const pairingInspect = byFamilyId.get('life_gain_draw_cards_pairing_inspect_min_v1');
+  assert.ok(pairingInspect, 'missing pairing_inspect family');
+  assert.equal(pairingInspect.status, 'INSUFFICIENT_ANCHOR');
+  assert.match(
+    pairingInspect.status_reason,
+    /real-seed non-eligible auxiliary\/test-only artifact: blocked from real promotion/
+  );
+
+  const contaminated = byFamilyId.get('draw_cards_add_counters_local_bridge_min_v1');
+  assert.ok(contaminated, 'missing contaminated family');
+  assert.equal(contaminated.status, 'CONTAMINATED_BY_WORKTREE');
+  assert.match(
+    contaminated.status_reason,
+    /worktree contamination blocks real promotion: untracked homonym hit:/
+  );
 });
 
 test('runner --help prints usage and exits successfully', () => {

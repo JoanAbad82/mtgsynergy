@@ -12,6 +12,8 @@ const STATUS_INSUFFICIENT_ANCHOR = 'INSUFFICIENT_ANCHOR';
 const STATUS_OPEN_CANDIDATE = 'OPEN_CANDIDATE';
 const VERDICT_NO_CLEAN = 'NO_CLEAN_CANDIDATE';
 const VERDICT_SHORTLIST_READY = 'SHORTLIST_READY';
+const AUXILIARY_NON_ELIGIBLE_REASON =
+  'real-seed non-eligible auxiliary/test-only artifact: blocked from real promotion';
 
 function buildUsage(scriptPath) {
   const scriptName = scriptPath ? normalizePath(scriptPath) : 'tools/family_qualification/run_family_qualification_v1.mjs';
@@ -153,6 +155,28 @@ function parseUntrackedPaths(statusShortRaw) {
   return uniqueSorted(out);
 }
 
+function isAuxiliaryPatternFamily(family) {
+  const familyId = typeof family.family_id === 'string' ? family.family_id : '';
+  const label = typeof family.label === 'string' ? family.label : '';
+  const haystack = `${familyId} ${label}`.toLowerCase();
+  return (
+    haystack.includes('_diagnose_') ||
+    haystack.includes('_pairing_inspect_') ||
+    haystack.includes('-diagnose-') ||
+    haystack.includes('-pairing-inspect-') ||
+    haystack.includes(' diagnose ') ||
+    haystack.includes(' pairing_inspect ') ||
+    haystack.includes(' pairing inspect ')
+  );
+}
+
+function isCatalogTestOnlyShape(family) {
+  const hasTestGlobs = Array.isArray(family.repo_test_globs) && family.repo_test_globs.length > 0;
+  const hasContractGlobs = Array.isArray(family.repo_contract_globs) && family.repo_contract_globs.length > 0;
+  const hasWiringGlobs = Array.isArray(family.repo_wiring_globs) && family.repo_wiring_globs.length > 0;
+  return hasTestGlobs && !hasContractGlobs && !hasWiringGlobs;
+}
+
 function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) {
   const trackedContractHits = collectPathHits(trackedFiles, family.repo_contract_globs);
   const trackedTestHits = collectPathHits(trackedFiles, family.repo_test_globs);
@@ -161,6 +185,14 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
   const closurePositiveHits = collectClosureHits(closureTextLower, family.closure_positive_terms);
   const closureNegativeHits = collectClosureHits(closureTextLower, family.closure_negative_terms);
   const closureAbsorbedHits = collectClosureHits(closureTextLower, family.closure_absorbed_terms);
+  const isTrackedTestOnlyShape =
+    trackedTestHits.length > 0 &&
+    trackedContractHits.length === 0 &&
+    trackedWiringHits.length === 0;
+  const isAuxiliaryNonEligible =
+    isAuxiliaryPatternFamily(family) ||
+    isCatalogTestOnlyShape(family) ||
+    isTrackedTestOnlyShape;
 
   const hasClosedCondition =
     trackedContractHits.length > 0 &&
@@ -192,7 +224,10 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
     statusReason = `closure negative hit: ${closureNegativeHits.join(', ')}`;
   } else if (untrackedHomonymHits.length > 0) {
     status = STATUS_CONTAMINATED;
-    statusReason = `untracked homonym hit: ${untrackedHomonymHits.join(', ')}`;
+    statusReason = `worktree contamination blocks real promotion: untracked homonym hit: ${untrackedHomonymHits.join(', ')}`;
+  } else if (hasMaterialOpenCandidateCondition && isAuxiliaryNonEligible) {
+    status = STATUS_INSUFFICIENT_ANCHOR;
+    statusReason = AUXILIARY_NON_ELIGIBLE_REASON;
   } else if (hasMaterialOpenCandidateCondition) {
     status = STATUS_OPEN_CANDIDATE;
     statusReason = 'clean positive anchor: controlled material open-candidate fixture';
@@ -202,9 +237,15 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
   } else if (closureAbsorbedHits.length > 0) {
     status = STATUS_ABSORBED;
     statusReason = `closure absorbed hit: ${closureAbsorbedHits.join(', ')}`;
+  } else if (hasOpenCandidateCondition && isAuxiliaryNonEligible) {
+    status = STATUS_INSUFFICIENT_ANCHOR;
+    statusReason = AUXILIARY_NON_ELIGIBLE_REASON;
   } else if (hasOpenCandidateCondition) {
     status = STATUS_OPEN_CANDIDATE;
     statusReason = 'clean positive anchor: controlled open-candidate probe';
+  } else if (isAuxiliaryNonEligible) {
+    status = STATUS_INSUFFICIENT_ANCHOR;
+    statusReason = AUXILIARY_NON_ELIGIBLE_REASON;
   }
 
   return {

@@ -169,6 +169,12 @@ function applyDrawCardsLoseLifeBridge(profile: ReturnType<typeof buildSemanticCa
   return profile.produced.has(drawCardsKey) && profile.produced.has(loseLifeKey);
 }
 
+function applyDrawCardsAddCountersBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const addCountersKey = keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS);
+  return profile.produced.has(drawCardsKey) && profile.produced.has(addCountersKey);
+}
+
 function applyDrawSecondCreateTokenBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
   const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
@@ -443,6 +449,48 @@ function explicitDrawCardsLoseLifeTextEvidence(text: string): boolean {
     );
 
   return hasDrawTrigger && hasLoseLifeInSameSentence;
+}
+
+function explicitDrawCardsAddCountersTextEvidence(text: string, cardName?: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasDrawSecondPattern = /\bsecond\s+card\b[^.]*\beach\s+turn\b/i.test(normalized);
+  if (hasDrawSecondPattern) return false;
+
+  const hasDrawTrigger =
+    /\bwhen(?:ever)?\s+you\s+draw\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(normalized) ||
+    /\bwhen(?:ever)?\s+one\s+or\s+more\s+cards?\s+are\s+drawn\b/i.test(normalized);
+  if (!hasDrawTrigger) return false;
+
+  const hasTargetCreatureCounters =
+    /\bwhen(?:ever)?\b[^.]*\bdraw\b[^.]*\bput\b[^.]*\+1\/\+1\b[^.]*\bcounters?\b[^.]*\bon\s+target\s+creature\b/i.test(
+      normalized,
+    );
+  if (hasTargetCreatureCounters) return false;
+
+  const hasCastSpellTrigger = /\bwhen(?:ever)?\s+you\s+cast\b[^.]*\bspell\b/i.test(normalized);
+  if (hasCastSpellTrigger) return false;
+
+  const hasLifeGainTrigger = /\bwhen(?:ever)?\s+you\s+gain\s+life\b/i.test(normalized);
+  if (hasLifeGainTrigger) return false;
+
+  const putCounterClause =
+    "\\bput\\s+(?:a|an|one|two|three|four|\\d+)\\s+\\+1\\/\\+1\\s+counters?\\s+on\\s+";
+  const drawTriggerClause = "\\bwhen(?:ever)?\\s+you\\s+draw\\s+(?:a|an|one|two|three|four|\\d+)\\s+cards?\\b";
+
+  const selfReferencePattern = new RegExp(
+    `${drawTriggerClause}[^.]*${putCounterClause}(?:this\\s+creature|this\\s+permanent|itself)\\b`,
+    "i",
+  );
+  if (selfReferencePattern.test(normalized)) return true;
+
+  const normalizedCardName = (cardName ?? "").trim().toLowerCase();
+  if (normalizedCardName.length === 0) return false;
+
+  const cardNamePattern = new RegExp(
+    `${drawTriggerClause}[^.]*${putCounterClause}${escapeRegex(normalizedCardName)}\\b`,
+    "i",
+  );
+  return cardNamePattern.test(normalized);
 }
 
 function explicitLifelinkTextEvidence(text: string): boolean {
@@ -836,6 +884,26 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: drawCardsLoseLifeKey, weight: 1 },
       { key: loseLifeDrawCardsKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const drawCardsAddCountersKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const addCountersDrawCardsKey = keyOf(KeyKind.ACTION, ActionId.ADD_COUNTERS);
+  for (const card of cards) {
+    if (!applyDrawCardsAddCountersBridge(card.profile)) continue;
+    const cardName = (card as { name?: string }).name ?? "";
+    if (!explicitDrawCardsAddCountersTextEvidence(card.oracle_text ?? "", cardName)) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: drawCardsAddCountersKey, weight: 1 },
+      { key: addCountersDrawCardsKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

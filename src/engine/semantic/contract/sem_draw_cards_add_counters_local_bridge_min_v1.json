@@ -1,0 +1,87 @@
+{
+  "metadata": {
+    "document_id": "sem_draw_cards_add_counters_local_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-sem-draw-cards-add-counters-local-bridge-min-v1",
+    "source_note": "Minimal contract for a local-only DRAW_CARDS -> ADD_COUNTERS bridge with narrow explicit wording gate and no parser/lowering/runtime expansion."
+  },
+  "family": "DRAW_CARDS -> ADD_COUNTERS",
+  "bridge_name": "draw_cards_to_add_counters_local_bridge_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "deterministic_contract": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "no_runtime_stack_changes": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true
+  },
+  "bridge_kind": {
+    "id": "draw_cards_enables_local_add_counters",
+    "label": "draw_cards -> add_counters",
+    "event_origin": "ACTION:DRAW_CARDS",
+    "action_targets": [
+      "ACTION:ADD_COUNTERS"
+    ],
+    "causal_mode": "local_explicit_narrow",
+    "purpose": "Enable strict local closure where explicit draw trigger wording co-exists with explicit local +1/+1 counter payoff on self."
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile produces ACTION:DRAW_CARDS",
+      "Profile produces ACTION:ADD_COUNTERS"
+    ],
+    "text_evidence_policy": "Require explicit wording equivalent to 'Whenever you draw a card, put a +1/+1 counter on this creature/card name.'",
+    "honesty_constraints": [
+      "Do not infer bridge from draw text without explicit +1/+1 counters wording.",
+      "Do not infer bridge from counters text without explicit draw trigger wording.",
+      "Do not activate on target-creature counter wording.",
+      "Do not activate on cast-spell or life-gain trigger wording."
+    ]
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "ACTION:DRAW_CARDS",
+        "ACTION:ADD_COUNTERS"
+      ]
+    }
+  },
+  "acceptance_evidence": {
+    "focal_test": "src/engine/semantic/tests/sem_overlay_draw_cards_add_counters_local_bridge_min_v1.test.ts"
+  },
+  "invariants": [
+    "No parser expansion",
+    "No lowering changes",
+    "No runtime stack/priority changes",
+    "No UI/scoring/SPS changes",
+    "No cross-card closure"
+  ],
+  "non_goals": [
+    "DRAW_CARDS -> CREATE_TOKEN",
+    "DRAW_CARDS -> DEAL_DAMAGE",
+    "DRAW_CARDS -> LOSE_LIFE",
+    "DRAW_CARDS -> MILL",
+    "CAST_SPELL -> ADD_COUNTERS",
+    "LIFE_GAIN -> ADD_COUNTERS",
+    "COUNTERS -> COUNTERS_MATTER",
+    "General draw-matters closure"
+  ]
+}

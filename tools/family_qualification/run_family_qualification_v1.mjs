@@ -8,9 +8,11 @@ const STATUS_CLOSED = 'CLOSED';
 const STATUS_VETOED = 'VETOED';
 const STATUS_CONTAMINATED = 'CONTAMINATED_BY_WORKTREE';
 const STATUS_ABSORBED = 'ABSORBED';
+const STATUS_NEEDS_RECONCILIATION = 'NEEDS_RECONCILIATION';
 const STATUS_INSUFFICIENT_ANCHOR = 'INSUFFICIENT_ANCHOR';
 const STATUS_OPEN_CANDIDATE = 'OPEN_CANDIDATE';
 const VERDICT_NO_CLEAN = 'NO_CLEAN_CANDIDATE';
+const VERDICT_RECONCILIATION_REQUIRED = 'RECONCILIATION_REQUIRED';
 const VERDICT_SHORTLIST_READY = 'SHORTLIST_READY';
 const FAMILY_SCOPE_REAL_SEED = 'REAL_SEED';
 const FAMILY_SCOPE_BOOTSTRAP = 'BOOTSTRAP';
@@ -23,6 +25,11 @@ const PROMOTION_BLOCKER_AUXILIARY_TEST_ONLY_EXCLUSION = 'AUXILIARY_TEST_ONLY_EXC
 const PROMOTION_BLOCKER_ALREADY_CLOSED = 'ALREADY_CLOSED';
 const PROMOTION_BLOCKER_ALREADY_ABSORBED = 'ALREADY_ABSORBED';
 const PROMOTION_BLOCKER_CLOSURE_NEGATIVE = 'CLOSURE_NEGATIVE';
+const PROMOTION_BLOCKER_NEEDS_RECONCILIATION = 'NEEDS_RECONCILIATION';
+const CONTRADICTION_CLOSURE_POSITIVE_AND_ABSORBED_CONFLICT =
+  'CLOSURE_POSITIVE_AND_ABSORBED_CONFLICT';
+const CONTRADICTION_CLOSURE_ABSORBED_BUT_TRACKED_SLICE_PRESENT =
+  'CLOSURE_ABSORBED_BUT_TRACKED_SLICE_PRESENT';
 
 function buildUsage(scriptPath) {
   const scriptName = scriptPath ? normalizePath(scriptPath) : 'tools/family_qualification/run_family_qualification_v1.mjs';
@@ -239,10 +246,36 @@ function inferPromotionProvenance(status, statusReason) {
     };
   }
 
+  if (status === STATUS_NEEDS_RECONCILIATION) {
+    return {
+      promotionEligibleForRealSeed: false,
+      promotionBlockerKind: PROMOTION_BLOCKER_NEEDS_RECONCILIATION
+    };
+  }
+
   return {
     promotionEligibleForRealSeed: false,
     promotionBlockerKind: PROMOTION_BLOCKER_INSUFFICIENT_ANCHOR
   };
+}
+
+function collectContradictionFlags({
+  trackedContractHits,
+  trackedTestHits,
+  closurePositiveHits,
+  closureAbsorbedHits
+}) {
+  const flags = [];
+  const hasTrackedSlice = trackedContractHits.length > 0 || trackedTestHits.length > 0;
+
+  if (closurePositiveHits.length > 0 && closureAbsorbedHits.length > 0) {
+    flags.push(CONTRADICTION_CLOSURE_POSITIVE_AND_ABSORBED_CONFLICT);
+    if (hasTrackedSlice) {
+      flags.push(CONTRADICTION_CLOSURE_ABSORBED_BUT_TRACKED_SLICE_PRESENT);
+    }
+  }
+
+  return uniqueSorted(flags);
 }
 
 function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) {
@@ -254,6 +287,12 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
   const closurePositiveHits = collectClosureHits(closureTextLower, family.closure_positive_terms);
   const closureNegativeHits = collectClosureHits(closureTextLower, family.closure_negative_terms);
   const closureAbsorbedHits = collectClosureHits(closureTextLower, family.closure_absorbed_terms);
+  const contradictionFlags = collectContradictionFlags({
+    trackedContractHits,
+    trackedTestHits,
+    closurePositiveHits,
+    closureAbsorbedHits
+  });
   const isTrackedTestOnlyShape =
     trackedTestHits.length > 0 &&
     trackedContractHits.length === 0 &&
@@ -294,6 +333,9 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
   } else if (untrackedHomonymHits.length > 0) {
     status = STATUS_CONTAMINATED;
     statusReason = `worktree contamination blocks real promotion: untracked homonym hit: ${untrackedHomonymHits.join(', ')}`;
+  } else if (contradictionFlags.length > 0) {
+    status = STATUS_NEEDS_RECONCILIATION;
+    statusReason = `reconciliation required: ${contradictionFlags.join(', ')}`;
   } else if (hasMaterialOpenCandidateCondition && isAuxiliaryNonEligible) {
     status = STATUS_INSUFFICIENT_ANCHOR;
     statusReason = AUXILIARY_NON_ELIGIBLE_REASON;
@@ -317,6 +359,12 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
     statusReason = AUXILIARY_NON_ELIGIBLE_REASON;
   }
   const provenance = inferPromotionProvenance(status, statusReason);
+  const epistemicBasis = {
+    repo_inspection: true,
+    worktree_inspection: true,
+    closure_scan: true,
+    inference_used: false
+  };
 
   return {
     family_id: family.family_id,
@@ -331,7 +379,9 @@ function classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower) 
     untracked_homonym_hits: untrackedHomonymHits,
     closure_positive_hits: closurePositiveHits,
     closure_negative_hits: closureNegativeHits,
-    closure_absorbed_hits: closureAbsorbedHits
+    closure_absorbed_hits: closureAbsorbedHits,
+    contradiction_flags: contradictionFlags,
+    epistemic_basis: epistemicBasis
   };
 }
 
@@ -352,6 +402,7 @@ function renderTextReport(report) {
     lines.push(`  reason: ${family.status_reason}`);
     lines.push(`  promotion_eligible_for_real_seed: ${family.promotion_eligible_for_real_seed}`);
     lines.push(`  promotion_blocker_kind: ${family.promotion_blocker_kind}`);
+    lines.push(`  contradiction_flags: ${JSON.stringify(family.contradiction_flags)}`);
   }
   return `${lines.join('\n')}\n`;
 }
@@ -408,6 +459,9 @@ function main() {
     validateCatalogFamilyShape(family);
     return classifyFamily(family, trackedFiles, untrackedPaths, closureTextLower);
   });
+  const hasReconciliation = families.some(
+    (family) => family.status === STATUS_NEEDS_RECONCILIATION
+  );
   const shortlist = families
     .filter(
       (family) =>
@@ -434,7 +488,9 @@ function main() {
     verdict:
       shortlist.length > 0
         ? VERDICT_SHORTLIST_READY
-        : VERDICT_NO_CLEAN,
+        : hasReconciliation
+          ? VERDICT_RECONCILIATION_REQUIRED
+          : VERDICT_NO_CLEAN,
     shortlist,
     bootstrap_shortlist: bootstrapShortlist,
     families

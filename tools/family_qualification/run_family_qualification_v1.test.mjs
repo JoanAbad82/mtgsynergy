@@ -170,6 +170,113 @@ function executeRunnerWithFqR2RealSeedFixture({
   return { tempDir, repoDir, reportPath, reportTextPath, report };
 }
 
+function executeRunnerWithReconciliationConflictFixture() {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'family-qualification-v1-reconciliation-'));
+  const repoDir = path.join(tempDir, 'repo');
+  fs.mkdirSync(repoDir, { recursive: true });
+
+  const trackedFiles = [
+    [
+      'src/engine/semantic/contract/sem_reconciliation_conflict_bridge_min_v1.json',
+      '{ "fixture": "reconciliation_conflict" }\n'
+    ],
+    [
+      'src/engine/semantic/tests/sem_overlay_reconciliation_conflict_bridge_min_v1.test.ts',
+      "export const fixture = 'reconciliation_conflict_bridge_min_v1';\n"
+    ],
+    [
+      'src/engine/semantic/overlay/sem_edges.ts',
+      "export const fixture = 'sem_edges';\n"
+    ]
+  ];
+
+  for (const [relativePath, content] of trackedFiles) {
+    const absolutePath = path.join(repoDir, relativePath);
+    fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
+    fs.writeFileSync(absolutePath, content, 'utf8');
+  }
+
+  const closureFixturePath = path.join(tempDir, 'reconciliation_closure.txt');
+  fs.writeFileSync(
+    closureFixturePath,
+    [
+      'reconciliation_conflict_positive_anchor_min_v1',
+      'reconciliation_conflict_absorbed_marker_min_v1'
+    ].join('\n'),
+    'utf8'
+  );
+
+  const catalogFixturePath = path.join(tempDir, 'reconciliation_catalog.json');
+  const catalogFixture = {
+    catalog_version: 'reconciliation_conflict_fixture_min_v1',
+    families: [
+      {
+        family_id: 'reconciliation_conflict_bridge_min_v1',
+        label: 'Reconciliation conflict bridge min v1',
+        repo_contract_globs: [
+          'src/engine/semantic/contract/sem_reconciliation_conflict_bridge_min_v1.json'
+        ],
+        repo_test_globs: [
+          'src/engine/semantic/tests/sem_overlay_reconciliation_conflict_bridge_min_v1.test.ts'
+        ],
+        repo_wiring_globs: [
+          'src/engine/semantic/overlay/sem_edges.ts'
+        ],
+        untracked_homonym_globs: [
+          'src/engine/semantic/contract/sem_reconciliation_conflict_bridge_min_v1.json',
+          'src/engine/semantic/tests/sem_overlay_reconciliation_conflict_bridge_min_v1.test.ts'
+        ],
+        closure_positive_terms: [
+          'reconciliation_conflict_positive_anchor_min_v1'
+        ],
+        closure_negative_terms: [],
+        closure_absorbed_terms: [
+          'reconciliation_conflict_absorbed_marker_min_v1'
+        ]
+      }
+    ]
+  };
+  fs.writeFileSync(catalogFixturePath, `${JSON.stringify(catalogFixture, null, 2)}\n`, 'utf8');
+
+  execFileSync('git', ['init'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['config', 'user.email', 'family-qualification-fixture@example.local'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+  execFileSync('git', ['config', 'user.name', 'family-qualification-fixture'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+  execFileSync('git', ['add', '.'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['commit', '-m', 'seed reconciliation fixture'], { cwd: repoDir, stdio: 'pipe' });
+  execFileSync('git', ['update-ref', 'refs/remotes/origin/main', 'HEAD'], {
+    cwd: repoDir,
+    stdio: 'pipe'
+  });
+
+  const reportPath = path.join(tempDir, 'family_qualification_report.json');
+  const reportTextPath = path.join(tempDir, 'family_qualification_report.txt');
+
+  execFileSync(
+    'node',
+    [
+      runnerPath,
+      '--closure',
+      closureFixturePath,
+      '--catalog',
+      catalogFixturePath,
+      '--report',
+      reportPath,
+      '--report-text',
+      reportTextPath
+    ],
+    { cwd: repoDir, stdio: 'pipe' }
+  );
+
+  const report = JSON.parse(fs.readFileSync(reportPath, 'utf8'));
+  return { tempDir, repoDir, reportPath, reportTextPath, report };
+}
+
 function executeRunnerWithRealSeedConsolidationFixture() {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'family-qualification-v1-real-seed-consolidation-'));
   const repoDir = path.join(tempDir, 'repo');
@@ -365,8 +472,9 @@ test('run_family_qualification_v1 bootstrap reconciled with post-v72 emits expec
   assert.equal(typeof report.meta.closurePath, 'string');
   assert.equal(typeof report.meta.catalogPath, 'string');
 
-  assert.equal(report.verdict, 'SHORTLIST_READY');
-  assert.deepEqual(report.shortlist, ['bootstrap_open_candidate_probe_min_v1']);
+  assert.equal(report.verdict, 'NO_CLEAN_CANDIDATE');
+  assert.deepEqual(report.shortlist, []);
+  assert.deepEqual(report.bootstrap_shortlist, ['bootstrap_open_candidate_probe_min_v1']);
   assert.ok(Array.isArray(report.families), 'families must be an array');
   assert.equal(report.families.length, 6, 'must classify exactly 6 families');
 
@@ -394,6 +502,12 @@ test('run_family_qualification_v1 bootstrap reconciled with post-v72 emits expec
     assert.ok(Array.isArray(row.closure_positive_hits));
     assert.ok(Array.isArray(row.closure_negative_hits));
     assert.ok(Array.isArray(row.closure_absorbed_hits));
+    assert.ok(Array.isArray(row.contradiction_flags));
+    assert.ok(row.epistemic_basis && typeof row.epistemic_basis === 'object');
+    assert.equal(typeof row.epistemic_basis.repo_inspection, 'boolean');
+    assert.equal(typeof row.epistemic_basis.worktree_inspection, 'boolean');
+    assert.equal(typeof row.epistemic_basis.closure_scan, 'boolean');
+    assert.equal(typeof row.epistemic_basis.inference_used, 'boolean');
   }
 
   const produceMana = byFamilyId.get('produce_mana_enablement_closure_min_v1');
@@ -406,18 +520,20 @@ test('run_family_qualification_v1 bootstrap reconciled with post-v72 emits expec
   );
 });
 
-test('bootstrap_open_candidate_probe_min_v1 emits controlled OPEN_CANDIDATE shortlist promotion', () => {
+test('bootstrap_open_candidate_probe_min_v1 stays separated from real shortlist post-v90', () => {
   const { report } = executeRunnerInTempDir();
   const byFamilyId = new Map(report.families.map((item) => [item.family_id, item]));
 
   const openProbe = byFamilyId.get('bootstrap_open_candidate_probe_min_v1');
   assert.ok(openProbe, 'missing open-candidate probe row');
   assert.equal(openProbe.status, 'OPEN_CANDIDATE');
+  assert.equal(openProbe.family_scope, 'BOOTSTRAP');
   assert.equal(openProbe.promotion_eligible_for_real_seed, true);
   assert.equal(openProbe.promotion_blocker_kind, 'NONE');
-  assert.equal(report.verdict, 'SHORTLIST_READY');
-  assert.equal(report.shortlist.length, 1);
-  assert.deepEqual(report.shortlist, ['bootstrap_open_candidate_probe_min_v1']);
+  assert.equal(report.verdict, 'NO_CLEAN_CANDIDATE');
+  assert.equal(report.shortlist.length, 0);
+  assert.deepEqual(report.shortlist, []);
+  assert.deepEqual(report.bootstrap_shortlist, ['bootstrap_open_candidate_probe_min_v1']);
 
   const insufficientAnchor = byFamilyId.get('bootstrap_insufficient_anchor_probe_min_v1');
   assert.ok(insufficientAnchor, 'missing insufficient-anchor probe row');
@@ -475,6 +591,32 @@ test('fq-r2 real-seed fixture emits NO_CLEAN_CANDIDATE when open slot wiring is 
   });
   assert.equal(report.verdict, 'NO_CLEAN_CANDIDATE');
   assert.deepEqual(report.shortlist, []);
+  assert.ok(!report.families.some((item) => item.status === 'NEEDS_RECONCILIATION'));
+  const byFamilyId = new Map(report.families.map((item) => [item.family_id, item]));
+  assert.equal(
+    byFamilyId.get('draw_cards_add_counters_local_bridge_min_v1')?.status,
+    'CONTAMINATED_BY_WORKTREE'
+  );
+});
+
+test('closure contradiction emits NEEDS_RECONCILIATION and RECONCILIATION_REQUIRED', () => {
+  const { report } = executeRunnerWithReconciliationConflictFixture();
+  assert.equal(report.verdict, 'RECONCILIATION_REQUIRED');
+  assert.deepEqual(report.shortlist, []);
+  assert.deepEqual(report.bootstrap_shortlist, []);
+  assert.equal(report.families.length, 1);
+
+  const row = report.families[0];
+  assert.equal(row.family_id, 'reconciliation_conflict_bridge_min_v1');
+  assert.equal(row.status, 'NEEDS_RECONCILIATION');
+  assert.equal(row.promotion_eligible_for_real_seed, false);
+  assert.equal(row.promotion_blocker_kind, 'NEEDS_RECONCILIATION');
+  assert.ok(row.contradiction_flags.includes('CLOSURE_POSITIVE_AND_ABSORBED_CONFLICT'));
+  assert.ok(row.contradiction_flags.includes('CLOSURE_ABSORBED_BUT_TRACKED_SLICE_PRESENT'));
+  assert.equal(row.epistemic_basis.repo_inspection, true);
+  assert.equal(row.epistemic_basis.worktree_inspection, true);
+  assert.equal(row.epistemic_basis.closure_scan, true);
+  assert.equal(row.epistemic_basis.inference_used, false);
 });
 
 test('real-seed consolidation keeps auxiliary test-only out of promotion and surfaces contamination blocking', () => {

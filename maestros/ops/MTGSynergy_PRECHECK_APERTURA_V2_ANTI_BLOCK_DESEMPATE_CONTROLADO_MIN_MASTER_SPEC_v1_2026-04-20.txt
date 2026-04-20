@@ -1,0 +1,182 @@
+MTGSynergy — PRECHECK DE APERTURA V2
+Addendum Anti-Block: Desempate Controlado Mínimo
+Versión: v1
+Fecha: 2026-04-20
+Ámbito: maestros/ops/
+Proyecto: MTGSynergy / PÁGINA WEB MAGIC
+Estado: addendum canónico operativo (aditivo, no sustitutivo)
+
+=====================================================================
+0) OBJETO DEL DOCUMENTO
+=====================================================================
+
+Este documento introduce un mecanismo excepcional y mínimo para desbloquear
+casos donde el intake V2 termina en NO_OPEN por empate competitivo entre dos
+frentes plausibles, pese a existir base material suficiente.
+
+Este addendum:
+- preserva íntegramente PRECHECK V2 (tres carriles),
+- preserva íntegramente el protocolo post-v33,
+- no rebaja rigor ni unicidad,
+- no autoriza implementación del motor por sí mismo.
+
+=====================================================================
+1) PROBLEMA OPERATIVO QUE CORRIGE
+=====================================================================
+
+Se corrige un único bloqueo metodológico:
+- hay evidencia real suficiente para más de un frente plausible,
+- el gate V2 ordinario no derrota materialmente uno sobre otro,
+- la salida queda en NO_OPEN por bloqueo competitivo persistente.
+
+Sin este addendum, el sistema puede bloquear aperturas legítimas sin falta
+de evidencia, solo por empate entre dos candidatas fuertes.
+
+=====================================================================
+2) INVARIANTES QUE NO PUEDE VIOLAR
+=====================================================================
+
+Este addendum NO puede violar:
+
+1. NO_OPEN sigue siendo salida canónica normal.
+2. Carriles A/B/C de V2 permanecen intactos.
+3. Anillos A/B/C de post-v33 permanecen intactos.
+4. Se mantiene una única candidata por apertura.
+5. Evidencia auxiliar nunca sustituye evidencia primaria.
+6. No se autoriza tocar motor, runtime, UI ni ejecución técnica por este acto.
+7. No se permite abrir dos frentes en paralelo.
+
+=====================================================================
+3) DEFINICIÓN DE "NO_OPEN POR EMPATE COMPETITIVO"
+=====================================================================
+
+Se define "NO_OPEN por empate competitivo" cuando se cumple TODO:
+
+1. Base git real válida.
+2. Snapshot tracked válido del área candidata.
+3. Higiene de evidencia correcta (sin rutas auxiliares como prueba primaria).
+4. Evidencia suficiente para al menos dos frentes plausibles.
+5. El gate V2 ordinario no logra derrotar materialmente uno frente al otro.
+
+Consecuencia:
+- la salida sigue siendo NO_OPEN,
+- pero se clasifica en la subclase metodológica
+  "NO_OPEN por empate competitivo".
+
+=====================================================================
+4) CONDICIONES DE ENTRADA AL DESEMPATE CONTROLADO
+=====================================================================
+
+El desempate controlado solo puede ejecutarse si:
+
+1. Se confirma exactamente una situación de empate competitivo.
+2. Existen exactamente dos candidatas finalistas.
+3. Ambas candidatas son compatibles con microfase estrecha contractual.
+4. No hay evidencia material de derrota clara en el gate ordinario.
+5. Se mantiene prohibición de usar evidencia no primaria.
+
+Regla dura:
+- si hay una sola candidata real, no hay desempate controlado;
+- si hay más de dos candidatas, no se ejecuta desempate controlado y se mantiene NO_OPEN.
+
+=====================================================================
+5) MATRIZ MÍNIMA OBLIGATORIA DE DESEMPATE
+=====================================================================
+
+La comparación debe hacerse con dos finalistas y con esta matriz mínima
+obligatoria (campos exactos):
+
+- candidata_id
+- carril_propuesto (OPEN_A / OPEN_B / OPEN_C)
+- evidencia_a_favor
+- evidencia_en_contra
+- grado_de_cierre_previo
+- riesgo_de_expansion_lateral
+- necesidad_de_nuevo_contrato
+- necesidad_de_nuevo_wiring
+- necesidad_de_nuevo_test
+- necesidad_de_nuevo_diagnostico
+- compatibilidad_con_microfase_estrecha
+- decision_final
+
+Formato mínimo de uso:
+- una fila para candidata_1
+- una fila para candidata_2
+- decisión comparativa explícita y auditable
+
+=====================================================================
+6) REGLAS DE DECISIÓN Y SALIDA
+=====================================================================
+
+Tras la matriz obligatoria, solo hay dos salidas válidas:
+
+1. Ganadora única legítima:
+   - OPEN_A, o OPEN_B, o OPEN_C
+   - exactamente una candidata ganadora
+
+2. Mantenimiento explícito de NO_OPEN:
+   - cuando no hay derrota material suficiente tras el desempate controlado
+
+Regla de seguridad:
+- el desempate controlado NO autoriza implementación por sí mismo;
+- solo autoriza seleccionar una única candidata para posible freeze posterior.
+
+=====================================================================
+7) PROHIBICIONES EXPRESAS
+=====================================================================
+
+Queda prohibido en este mecanismo:
+
+1. Abrir dos frentes.
+2. Usar continuidad temática como prueba primaria.
+3. Usar ausencia de contract JSON como prueba suficiente.
+4. Usar review/, .working, fixtures/, backups o tooling espejo como evidencia primaria.
+5. Convertir presión operativa en criterio de apertura.
+6. Reetiquetar evidencia auxiliar como evidencia de repo-real tracked.
+
+=====================================================================
+8) RELACIÓN CON V2 Y CON POST-v33
+=====================================================================
+
+Relación exacta y no ambigua:
+
+- V2 = intake / clasificación del frente.
+- post-v33 = ejecución disciplinada (freeze, implementación, anillos, cierre).
+- este addendum = desbloqueo metodológico excepcional para empates competitivos,
+  sin rebaja de rigor y sin sustituir V2 ni post-v33.
+
+Orden operativo correcto:
+1. aplicar V2 ordinario;
+2. si hay NO_OPEN por empate competitivo, aplicar este addendum;
+3. solo si emerge ganadora única, habilitar posible freeze posterior bajo post-v33.
+
+=====================================================================
+9) CRITERIO DE USO FUTURO
+=====================================================================
+
+Este addendum debe usarse solo cuando:
+- exista bloqueo competitivo persistente entre dos finalistas plausibles,
+- y no por falta de evidencia.
+
+No debe usarse:
+- para forzar aperturas,
+- para relajar unicidad,
+- para acelerar implementación sin freeze.
+
+=====================================================================
+10) CIERRE / DECISIÓN EJECUTIVA
+=====================================================================
+
+Decisión ejecutiva:
+- se adopta PRECHECK_V2_ANTI_BLOCK_DESEMPATE_CONTROLADO_MIN_V1 como addendum
+  metodológico mínimo y aditivo.
+- NO_OPEN se mantiene como salida normal del sistema.
+- se añade la subclase "NO_OPEN por empate competitivo" para trazabilidad.
+- el desempate controlado queda limitado a dos finalistas y a una única salida:
+  ganadora única legítima o mantenimiento explícito de NO_OPEN.
+
+Este documento no abre microfase del motor ni autoriza implementación técnica.
+
+=====================================================================
+END OF DOCUMENT
+=====================================================================

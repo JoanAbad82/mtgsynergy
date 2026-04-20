@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "document_id": "sem_draw_cards_create_token_local_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "post-draw-cards-cluster-canonical-symmetry-restore-min-v1",
+    "source_note": "Minimal contract for a local-only DRAW_CARDS -> CREATE_TOKEN bridge with explicit wording gate and no parser/lowering/runtime expansion."
+  },
+  "family": "DRAW_CARDS -> CREATE_TOKEN",
+  "bridge_name": "draw_cards_to_create_token_local_bridge_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "scope_rules": {
+    "single_bridge_only": true,
+    "deterministic_contract": true,
+    "parser_v1_compatible": true,
+    "lowering_unchanged": true,
+    "no_runtime_stack_changes": true,
+    "no_global_scoring_changes": true,
+    "no_cross_card_inference": true
+  },
+  "bridge_kind": {
+    "id": "draw_cards_enables_local_create_token",
+    "label": "draw_cards -> create_token",
+    "event_origin": "ACTION:DRAW_CARDS",
+    "action_targets": [
+      "ACTION:CREATE_TOKEN"
+    ],
+    "causal_mode": "local_explicit_narrow",
+    "purpose": "Enable strict local closure where explicit draw trigger wording co-exists with explicit local create-token payoff wording."
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile produces ACTION:DRAW_CARDS",
+      "Profile produces ACTION:CREATE_TOKEN"
+    ],
+    "text_evidence_policy": "Require explicit wording equivalent to 'Whenever you draw a card, create a token.' in the same local sentence.",
+    "honesty_constraints": [
+      "Do not infer bridge from isolated draw text without explicit create-token wording.",
+      "Do not infer bridge from isolated create-token text without explicit draw trigger wording.",
+      "Do not activate on draw-second-card wording.",
+      "Do not infer across adjacent draw payoff families."
+    ]
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "ACTION:DRAW_CARDS",
+        "ACTION:CREATE_TOKEN"
+      ]
+    }
+  },
+  "acceptance_evidence": {
+    "focal_test": "src/engine/semantic/tests/sem_overlay_draw_cards_create_token_bridge_min_v1.test.ts"
+  },
+  "invariants": [
+    "No parser expansion",
+    "No lowering changes",
+    "No runtime stack/priority changes",
+    "No UI/scoring/SPS changes",
+    "No cross-card closure"
+  ],
+  "non_goals": [
+    "DRAW_SECOND_CARD_TURN -> CREATE_TOKEN",
+    "DRAW_CARDS -> DEAL_DAMAGE",
+    "DRAW_CARDS -> MILL",
+    "DRAW_CARDS -> LOSE_LIFE",
+    "DRAW_CARDS -> ADD_COUNTERS",
+    "General draw-matters closure"
+  ]
+}

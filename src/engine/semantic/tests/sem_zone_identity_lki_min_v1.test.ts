@@ -78,6 +78,35 @@ describe("sem_zone_identity_lki_min_v1", () => {
     expect(codes).not.toContain("CREATURE_DIES_DERIVED");
   });
 
+  it("does not derive CREATURE_DIES for battlefield to graveyard when pre-change creature state is not true", () => {
+    const objectRef = createObjectInstanceRef({
+      objectInstanceId: "obj-2b",
+      objectKind: "card",
+      oracleCardName: "Ornithopter",
+      ownerId: "p1",
+      controllerId: "p1"
+    });
+
+    const record = buildZoneChangeRecord({
+      objectRef,
+      fromZone: "BATTLEFIELD",
+      toZone: "GRAVEYARD",
+      wasCreatureImmediatelyBeforeChange: false,
+      sourceTextHint: "Put target artifact card from the battlefield into its owner's graveyard."
+    });
+
+    expect(deriveLeavesBattlefieldFromZoneChange(record)).toBe(true);
+    expect(deriveCreatureDiesFromZoneChange(record)).toBe(false);
+
+    const result = evaluateZoneSemantics(record);
+    const codes = reasonCodes(result);
+
+    expect(result.derivesLeavesBattlefield).toBe(true);
+    expect(result.derivesCreatureDies).toBe(false);
+    expect(codes).toContain("LEAVES_BATTLEFIELD_DERIVED");
+    expect(codes).not.toContain("CREATURE_DIES_DERIVED");
+  });
+
   it("does not overclaim LEAVES_BATTLEFIELD or CREATURE_DIES when the change does not start on the battlefield", () => {
     const objectRef = createObjectInstanceRef({
       objectInstanceId: "obj-3",
@@ -133,6 +162,65 @@ describe("sem_zone_identity_lki_min_v1", () => {
     expect(result.derivesCreatureDies).toBe(false);
     expect(result.tokenCeasesToExistAfterZoneChangeSba).toBe(true);
     expect(codes).toContain("TOKEN_EXTINGUISHES_AFTER_LEAVE");
+  });
+
+  it("does not overclaim token extinction when token zone change does not start on battlefield", () => {
+    const objectRef = createObjectInstanceRef({
+      objectInstanceId: "tok-2",
+      objectKind: "token",
+      oracleCardName: "Treasure Token",
+      ownerId: "p1",
+      controllerId: "p1"
+    });
+
+    const record = buildZoneChangeRecord({
+      objectRef,
+      fromZone: "EXILE",
+      toZone: "GRAVEYARD",
+      wasCreatureImmediatelyBeforeChange: false,
+      sourceTextHint: "Move exiled token to graveyard."
+    });
+
+    expect(isTokenExtinguishedAfterLeave(record)).toBe(false);
+
+    const result = evaluateZoneSemantics(record);
+    const codes = reasonCodes(result);
+
+    expect(result.derivesLeavesBattlefield).toBe(false);
+    expect(result.derivesCreatureDies).toBe(false);
+    expect(result.tokenCeasesToExistAfterZoneChangeSba).toBe(false);
+    expect(codes).not.toContain("LEAVES_BATTLEFIELD_DERIVED");
+    expect(codes).not.toContain("CREATURE_DIES_DERIVED");
+    expect(codes).not.toContain("TOKEN_EXTINGUISHES_AFTER_LEAVE");
+  });
+
+  it("derives LEAVES_BATTLEFIELD for non-creature permanent leaving battlefield without deriving CREATURE_DIES", () => {
+    const objectRef = createObjectInstanceRef({
+      objectInstanceId: "obj-2c",
+      objectKind: "card",
+      oracleCardName: "Ichor Wellspring",
+      ownerId: "p1",
+      controllerId: "p1"
+    });
+
+    const record = buildZoneChangeRecord({
+      objectRef,
+      fromZone: "BATTLEFIELD",
+      toZone: "HAND",
+      wasCreatureImmediatelyBeforeChange: false,
+      sourceTextHint: "Return target artifact to its owner's hand."
+    });
+
+    expect(deriveLeavesBattlefieldFromZoneChange(record)).toBe(true);
+    expect(deriveCreatureDiesFromZoneChange(record)).toBe(false);
+
+    const result = evaluateZoneSemantics(record);
+    const codes = reasonCodes(result);
+
+    expect(result.derivesLeavesBattlefield).toBe(true);
+    expect(result.derivesCreatureDies).toBe(false);
+    expect(codes).toContain("LEAVES_BATTLEFIELD_DERIVED");
+    expect(codes).not.toContain("CREATURE_DIES_DERIVED");
   });
 
   it("captures and resolves minimal LKI without inventing extra semantics", () => {

@@ -173,6 +173,15 @@ const BASE_ABILITY_TEMPLATES: Record<string, BaseAbilityTemplate> = {
     guarded_follow_up: null,
     opaque_remainder: null,
   },
+  "Q Symbol Canonical Carrier": {
+    kind: "Activated",
+    cost: ["UNTAP"],
+    trigger_event: null,
+    condition: null,
+    effects: [{ type: "DRAW_CARDS", detail: "a card" }],
+    guarded_follow_up: null,
+    opaque_remainder: null,
+  },
 };
 
 const EXPECTED_ACTION_BY_CARD: Record<string, ActionId> = {
@@ -183,6 +192,7 @@ const EXPECTED_ACTION_BY_CARD: Record<string, ActionId> = {
   "Crystal Ball": ActionId.SCRY,
   "Millstone": ActionId.MILL_CARDS,
   "Howling Mine": ActionId.DRAW_CARDS,
+  "Q Symbol Canonical Carrier": ActionId.DRAW_CARDS,
 };
 
 function matchesRuntimeHowlingMine(text: string): boolean {

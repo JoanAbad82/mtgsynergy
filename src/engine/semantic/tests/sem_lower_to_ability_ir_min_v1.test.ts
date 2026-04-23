@@ -212,4 +212,37 @@ describe("lowerToAbilityIrMinV1", () => {
       restrictionClass: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION",
     });
   });
+
+  it("lowers canonical {Q} creature case with summoning sickness tap/q coverage", () => {
+    const lowered = lowerToAbilityIrMinV1({
+      name: "Q Symbol Canonical Carrier",
+      oracle_text: "{Q}: Draw a card.",
+      type_line: "Creature — Human Wizard",
+    });
+
+    expect(lowered?.kind).toBe("Activated");
+    expect(lowered?.cost).toContain("UNTAP");
+    expect(lowered?.effects).toEqual([{ type: "DRAW_CARDS", detail: "a card" }]);
+    expect(lowered?.semantic_hints?.cost_target_legality_min).toEqual({
+      cost_kinds: ["UNTAP"],
+      target_kinds: [],
+      legality_kinds: ["SUMMONING_SICKNESS_TAP_Q_RESTRICTION"],
+      target_count: 0,
+      legality_count: 1,
+    });
+    expect(lowered?.semantic_hints?.legality_summoning_sickness_tap_q_min).toEqual({
+      appliesTo: "ACTIVATE",
+      sourceKind: "CREATURE",
+      tapSymbolPresent: false,
+      untapSymbolPresent: true,
+      restrictionClass: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION",
+    });
+    expect(lowered?.legality?.summoning_sickness_tap_q_min).toEqual({
+      appliesTo: "ACTIVATE",
+      sourceKind: "CREATURE",
+      tapSymbolPresent: false,
+      untapSymbolPresent: true,
+      restrictionClass: "SUMMONING_SICKNESS_TAP_Q_RESTRICTION",
+    });
+  });
 });

@@ -11,13 +11,32 @@ describe("cost target legality min v1 service", () => {
     expect(result.legalityGates).toHaveLength(0);
   });
 
-  it("detects additional sacrifice cost and one creature target for Bone Splinters", () => {
+  it("keeps Bone Splinters additional cost in CostIR and formal target in TargetSpec without collapsing them", () => {
     const text = "As an additional cost to cast this spell, sacrifice a creature. Destroy target creature.";
     const result = analyzeCostTargetLegalityMinV1(text);
 
-    expect(result.costIr.items.some((item) => item.kind === "SACRIFICE")).toBe(true);
-    expect(result.targetSpecs).toHaveLength(1);
-    expect(result.targetSpecs[0]?.targetKinds).toEqual(["CREATURE"]);
+    const sacrificeItems = result.costIr.items.filter((item) => item.kind === "SACRIFICE");
+    expect(sacrificeItems).toHaveLength(1);
+    expect(sacrificeItems[0]).toEqual({
+      kind: "SACRIFICE",
+      detail: "sacrifice a creature",
+      sourceTextSpan: "As an additional cost to cast this spell, sacrifice a creature."
+    });
+
+    expect(result.targetSpecs).toEqual([
+      {
+        required: true,
+        minTargets: 1,
+        maxTargets: 1,
+        targetKinds: ["CREATURE"],
+        sourceTextSpan: "target creature"
+      }
+    ]);
+
+    expect(sacrificeItems[0]?.sourceTextSpan.toLowerCase()).not.toContain("target creature");
+    expect(result.targetSpecs[0]?.sourceTextSpan.toLowerCase()).not.toContain("sacrifice");
+    expect(result.semantics.separatesCostFromEffect).toBe(true);
+    expect(result.semantics.separatesTargetFromReferenceText).toBe(true);
     expect(result.legalityGates).toHaveLength(0);
   });
 

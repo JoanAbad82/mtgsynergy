@@ -175,6 +175,12 @@ function applyDrawCardsAddCountersBridge(profile: ReturnType<typeof buildSemanti
   return profile.produced.has(drawCardsKey) && profile.produced.has(addCountersKey);
 }
 
+function applyDrawCardsAddManaBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const addManaKey = keyOf(KeyKind.ACTION, ActionId.PRODUCE_MANA);
+  return profile.produced.has(drawCardsKey) && profile.produced.has(addManaKey);
+}
+
 function applyDrawSecondCreateTokenBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const drawSecondKey = keyOf(KeyKind.EVENT, EventId.DRAW_EXTRA_CARD_TURN);
   const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
@@ -449,6 +455,22 @@ function explicitDrawCardsLoseLifeTextEvidence(text: string): boolean {
     );
 
   return hasDrawTrigger && hasLoseLifeInSameSentence;
+}
+
+function explicitDrawCardsAddManaTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasDrawSecondPattern = /\bsecond\s+card\b[^.]*\beach\s+turn\b/i.test(normalized);
+  if (hasDrawSecondPattern) return false;
+
+  const drawClause = "\\bdraw\\s+(?:a|an|one|two|three|four|\\d+)\\s+cards?\\b";
+  const addManaClause =
+    "\\badd\\s+(?:\\{[wubrgc]\\}|\\{c\\}\\{c\\}|one\\s+mana\\s+of\\s+any\\s+color|three\\s+mana\\s+of\\s+any\\s+one\\s+color|mana)";
+  const hasDrawThenAddManaSameSentence = new RegExp(`${drawClause}[^.]*${addManaClause}`, "i").test(normalized);
+  const hasDrawThenAddManaNextSentence = new RegExp(`${drawClause}[^.]*\\.\\s*${addManaClause}`, "i").test(
+    normalized,
+  );
+
+  return hasDrawThenAddManaSameSentence || hasDrawThenAddManaNextSentence;
 }
 
 function explicitDrawCardsAddCountersTextEvidence(text: string, cardName?: string): boolean {
@@ -865,6 +887,26 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: drawCardsDealDamageKey, weight: 1 },
       { key: dealDamageDrawCardsKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const drawCardsAddManaKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const addManaDrawCardsKey = keyOf(KeyKind.ACTION, ActionId.PRODUCE_MANA);
+  for (const card of cards) {
+    const apply = applyDrawCardsAddManaBridge(card.profile);
+    const textEvidence = explicitDrawCardsAddManaTextEvidence(card.oracle_text ?? "");
+    if (!apply && !textEvidence) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: drawCardsAddManaKey, weight: 1 },
+      { key: addManaDrawCardsKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

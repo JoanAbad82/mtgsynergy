@@ -29,6 +29,10 @@ describe("legality zone permission minimum v1", () => {
         text: "Cast this card only from your graveyard.",
         expected: { type: "ONLY_FROM_ZONE", zone: "GRAVEYARD" },
       },
+      {
+        text: "Cast this card only from exile.",
+        expected: { type: "ONLY_FROM_ZONE", zone: "EXILE" },
+      },
     ];
 
     for (const row of positives) {
@@ -54,6 +58,7 @@ describe("legality zone permission minimum v1", () => {
       "Return this card from your graveyard",
       "You may play an additional land",
       "Exile this card from your graveyard",
+      "You may cast creature spells from your graveyard",
     ] as const;
 
     for (const text of negatives) {

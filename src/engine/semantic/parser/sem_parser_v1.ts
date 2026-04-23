@@ -298,6 +298,9 @@ function classifyZonePermissionMinV1(oracleText: string): ZonePermissionMinV1 | 
   if (/\bcast this card only from your graveyard\b/i.test(text)) {
     return { type: "ONLY_FROM_ZONE", zone: "GRAVEYARD" };
   }
+  if (/\bcast this card only from exile\b/i.test(text)) {
+    return { type: "ONLY_FROM_ZONE", zone: "EXILE" };
+  }
 
   return null;
 }

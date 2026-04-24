@@ -44,10 +44,13 @@ const countOccurrences = (text: string, term: string) =>
 describe("SemanticOverlayPanel copy", () => {
   it("usa texto en español para los encabezados principales", () => {
     expect(SEMANTIC_OVERLAY_COPY.title).toContain("Superposición semántica");
+    expect(SEMANTIC_OVERLAY_COPY.coverageLabel).toBe("Cobertura semántica");
+    expect(SEMANTIC_OVERLAY_COPY.reasonsTitle).toBe("Qué falta por cubrir");
     expect(SEMANTIC_OVERLAY_COPY.edgesTitle).toContain("Conexiones");
     expect(SEMANTIC_OVERLAY_COPY.noEdges).toContain("No hay conexiones");
     expect(SEMANTIC_OVERLAY_COPY.redundancyNotApplicable).toContain("efectos repetidos");
     expect(SEMANTIC_OVERLAY_COPY.redundancyNotApplicable.toLowerCase()).not.toContain("sin señal");
+    expect(SEMANTIC_OVERLAY_AUDIT_TITLE).toBe("Cartas no tierra pendientes de cobertura");
   });
 
   it("evita encabezados en inglés y duplicados", () => {
@@ -115,44 +118,84 @@ describe("SemanticOverlayPanel semantic summary helpers", () => {
         { reasonId: "NO_ORACLE", count: 2, examples: ["Card A", "Card B"] },
         { reasonId: "EMPTY_TEXT", count: 1, examples: ["Empty Card"] },
         { reasonId: "LAND_RULES_UNMODELED_V1", count: 3, examples: ["Dusty Flats"] },
-        { reasonId: "NO_MATCH_V1_TEMPLATES", count: 0, examples: ["Ignored"] },
+        { reasonId: "NO_MATCH_V1_TEMPLATES", count: 2, examples: ["Magma Opus"] },
       ],
     } as any;
 
     const reasons = buildCoverageReasonsFromReport(coverageReport);
-    expect(reasons.map((r) => r.key)).toEqual([
-      "LAND_RULES_UNMODELED_V1",
-      "NO_ORACLE",
-      "EMPTY_TEXT",
-      "PARSE_ERROR",
-    ]);
-    expect(reasons[0].label).toBe("Tierras con reglas no modeladas (v1)");
-    expect(reasons[0].count).toBe(3);
-    expect(reasons[0].examples).toEqual(["Dusty Flats"]);
-    expect(reasons[1].label).toBe(SEMANTIC_OVERLAY_COPY.reasonMissingIndex);
-    expect(reasons[1].count).toBe(2);
-    expect(reasons[1].examples).toEqual(["Card A", "Card B"]);
-    expect(reasons[2].label).toBe("Texto vacío tras normalización");
-    expect(reasons[2].count).toBe(1);
-    expect(reasons[2].examples).toEqual(["Empty Card"]);
-    expect(reasons[3].label).toBe("Error de parseo (v1)");
-    expect(reasons[3].count).toBe(1);
-    expect(reasons[3].examples).toEqual(["Alpha"]);
+    const byKey = new Map(reasons.map((row) => [row.key, row]));
+
+    expect(byKey.get("NO_ORACLE")?.label).toBe(SEMANTIC_OVERLAY_COPY.reasonMissingIndex);
+    expect(byKey.get("NO_ORACLE")?.count).toBe(2);
+    expect(byKey.get("NO_ORACLE")?.examples).toEqual(["Card A", "Card B"]);
+
+    expect(byKey.get("EMPTY_TEXT")?.label).toBe("Sin texto analizable tras normalización");
+    expect(byKey.get("EMPTY_TEXT")?.count).toBe(1);
+    expect(byKey.get("EMPTY_TEXT")?.examples).toEqual(["Empty Card"]);
+
+    expect(byKey.get("PARSE_ERROR")?.label).toBe("Texto reconocido, pero no interpretable por parser v1");
+    expect(byKey.get("PARSE_ERROR")?.count).toBe(1);
+    expect(byKey.get("PARSE_ERROR")?.examples).toEqual(["Alpha"]);
+
+    expect(byKey.get("NO_MATCH_V1_TEMPLATES")?.label).toBe(SEMANTIC_OVERLAY_COPY.reasonUnrecognized);
+    expect(byKey.get("NO_MATCH_V1_TEMPLATES")?.count).toBe(2);
+    expect(byKey.get("NO_MATCH_V1_TEMPLATES")?.examples).toEqual(["Magma Opus"]);
+
+    expect(byKey.get("LAND_RULES_UNMODELED_V1")?.label).toBe(
+      "Carta reconocida (tierra), con reglas aún no modeladas en v1",
+    );
+    expect(byKey.get("LAND_RULES_UNMODELED_V1")?.count).toBe(3);
+    expect(byKey.get("LAND_RULES_UNMODELED_V1")?.examples).toEqual(["Dusty Flats"]);
   });
 
-  it("renders uncoveredNonLand audit list when present", () => {
+  it("renders uncoveredNonLand audit list with honest labels", () => {
     const coverageReport = {
       uncoveredNonLand: [
+        { name: "Nameless Relic", reasonId: "EMPTY_TEXT" },
         { name: "Magma Opus", reasonId: "NO_MATCH_V1_TEMPLATES" },
         { name: "Unknown Tome", reasonId: "NO_ORACLE" },
+        { name: "Broken Syntax", reasonId: "PARSE_ERROR" },
+        { name: "Dusty Flats", reasonId: "LAND_RULES_UNMODELED_V1" },
       ],
     } as any;
 
     const audit = buildUncoveredNonLandAudit(coverageReport);
     expect(audit?.title).toBe(SEMANTIC_OVERLAY_AUDIT_TITLE);
     expect(audit?.items).toEqual([
-      { name: "Magma Opus", reasonId: "NO_MATCH_V1_TEMPLATES", label: "No reconocido (v1)" },
-      { name: "Unknown Tome", reasonId: "NO_ORACLE", label: "No encontrada en índice o sin texto" },
+      { name: "Nameless Relic", reasonId: "EMPTY_TEXT", label: "Sin texto analizable tras normalización" },
+      {
+        name: "Magma Opus",
+        reasonId: "NO_MATCH_V1_TEMPLATES",
+        label: "Carta reconocida, pero texto aún fuera de plantillas v1",
+      },
+      { name: "Unknown Tome", reasonId: "NO_ORACLE", label: "No encontrada en índice o sin texto de reglas" },
+      {
+        name: "Broken Syntax",
+        reasonId: "PARSE_ERROR",
+        label: "Texto reconocido, pero no interpretable por parser v1",
+      },
+      {
+        name: "Dusty Flats",
+        reasonId: "LAND_RULES_UNMODELED_V1",
+        label: "Carta reconocida (tierra), con reglas aún no modeladas en v1",
+      },
     ]);
+  });
+
+  it("keeps uncoveredNonLand audit deterministic and does not mutate input data", () => {
+    const coverageReport = {
+      uncoveredNonLand: [
+        { name: "Magma Opus", reasonId: "NO_MATCH_V1_TEMPLATES" },
+        { name: "Unknown Tome", reasonId: "NO_ORACLE" },
+      ],
+    } as any;
+    const snapshot = JSON.parse(JSON.stringify(coverageReport));
+
+    const auditA = buildUncoveredNonLandAudit(coverageReport);
+    const auditB = buildUncoveredNonLandAudit(coverageReport);
+
+    expect(auditA).toEqual(auditB);
+    expect(coverageReport).toEqual(snapshot);
+    expect(coverageReport.uncoveredNonLand).toEqual(snapshot.uncoveredNonLand);
   });
 });

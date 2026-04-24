@@ -6,7 +6,7 @@ export const SEMANTIC_OVERLAY_COPY = {
   title: "Superposición semántica (experimental)",
   intro:
     "Esto es experimental. Busca conexiones por “producido/consumido” a partir del texto de reglas.\nEl objetivo es detectar patrones entre cartas sin depender de roles manuales.",
-  coverageLabel: "Cobertura",
+  coverageLabel: "Cobertura semántica",
   resolvedLabel: "únicas resueltas",
   missingLabel: "únicas faltantes",
   entriesLabel: "entradas del mazo",
@@ -15,10 +15,10 @@ export const SEMANTIC_OVERLAY_COPY = {
   signalFoundLabel: "✅ Señal encontrada (experimental)",
   signalMissingLabel: "⚠️ Sin señal (experimental)",
   signalMissingHint: "Normal en mazos simples o reglas aún no cubiertas.",
-  reasonsTitle: "Motivos (v1)",
+  reasonsTitle: "Qué falta por cubrir",
   reasonsNone: "Sin incidencias destacables.",
   reasonMissingIndex: "No encontrada en índice o sin texto de reglas",
-  reasonUnrecognized: "Texto aún no reconocido (v1)",
+  reasonUnrecognized: "Carta reconocida, pero texto aún fuera de plantillas v1",
   edgesTitle: "Conexiones semánticas principales",
   noEdges: "No hay conexiones semánticas.",
   edgeScoreLabel: "puntuación",
@@ -58,7 +58,7 @@ type UncoveredAuditItem = {
   label: string;
 };
 
-export const SEMANTIC_OVERLAY_AUDIT_TITLE = "Audit (no-Land)";
+export const SEMANTIC_OVERLAY_AUDIT_TITLE = "Cartas no tierra pendientes de cobertura";
 
 export function buildCoverageSummary(
   metrics: SemanticOverlayMetrics,
@@ -107,17 +107,18 @@ export function buildCoverageReasons(
 export function mapCoverageReasonId(reasonId: SemanticCoverageReasonId | string): string {
   if (reasonId === "NO_ORACLE") return SEMANTIC_OVERLAY_COPY.reasonMissingIndex;
   if (reasonId === "NO_MATCH_V1_TEMPLATES") return SEMANTIC_OVERLAY_COPY.reasonUnrecognized;
-  if (reasonId === "LAND_RULES_UNMODELED_V1") return "Tierras con reglas no modeladas (v1)";
-  if (reasonId === "EMPTY_TEXT") return "Texto vacío tras normalización";
-  if (reasonId === "PARSE_ERROR") return "Error de parseo (v1)";
+  if (reasonId === "LAND_RULES_UNMODELED_V1") return "Carta reconocida (tierra), con reglas aún no modeladas en v1";
+  if (reasonId === "EMPTY_TEXT") return "Sin texto analizable tras normalización";
+  if (reasonId === "PARSE_ERROR") return "Texto reconocido, pero no interpretable por parser v1";
   return `Motivo: ${reasonId}`;
 }
 
 export function mapAuditReasonId(reasonId: SemanticCoverageReasonId | string): string {
-  if (reasonId === "NO_ORACLE") return "No encontrada en índice o sin texto";
-  if (reasonId === "EMPTY_TEXT") return "Texto vacío";
-  if (reasonId === "NO_MATCH_V1_TEMPLATES") return "No reconocido (v1)";
-  if (reasonId === "PARSE_ERROR") return "Error de parseo (v1)";
+  if (reasonId === "NO_ORACLE") return "No encontrada en índice o sin texto de reglas";
+  if (reasonId === "EMPTY_TEXT") return "Sin texto analizable tras normalización";
+  if (reasonId === "NO_MATCH_V1_TEMPLATES") return "Carta reconocida, pero texto aún fuera de plantillas v1";
+  if (reasonId === "PARSE_ERROR") return "Texto reconocido, pero no interpretable por parser v1";
+  if (reasonId === "LAND_RULES_UNMODELED_V1") return "Carta reconocida (tierra), con reglas aún no modeladas en v1";
   return mapCoverageReasonId(reasonId);
 }
 

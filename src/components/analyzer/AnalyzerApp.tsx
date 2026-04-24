@@ -508,10 +508,8 @@ export default function AnalyzerApp({ buildSha }: Props) {
             )}
           {mcParams.enabled && (
             <div className="panel">
-              <h2>Monte Carlo (experimental)</h2>
-              <p className="muted">
-                {es.mc.summary.line1} {es.mc.summary.line2} {es.mc.summary.line3}
-              </p>
+              <h2>{MONTE_CARLO_PANEL_COPY.title}</h2>
+              <p className="muted">{MONTE_CARLO_PANEL_COPY.intro}</p>
               {(() => {
                 const omittedReason =
                   mcStatus === "done" && mcResult?.base?.sps <= 0
@@ -545,6 +543,10 @@ export default function AnalyzerApp({ buildSha }: Props) {
                       : robustGuide.level === "low"
                         ? "Para mejorarlo: duplica habilitadores y añade un segundo motor."
                         : "";
+                const zeroRobustnessNote = formatMonteCarloZeroRobustnessNote(
+                  mcResult?.metrics?.robust_sps ?? null,
+                  mcResult?.base?.sps ?? null,
+                );
                 return (
                   <div className="metric-coach-block">
                     <MetricCoach
@@ -578,13 +580,10 @@ export default function AnalyzerApp({ buildSha }: Props) {
                     <MetricCoach
                       label={es.mc.labels.robustness}
                       value={
-                        mcResult?.metrics?.robust_sps != null &&
-                        mcResult?.base?.sps != null
-                          ? `${mapMcLabel("robust_sps")} vs ${mapMcLabel("base_sps")}: ${formatNumberCompact(
-                              mcResult.metrics.robust_sps,
-                              1,
-                            )} / ${formatNumberCompact(mcResult.base.sps, 1)}`
-                          : undefined
+                        formatMonteCarloStabilityLine(
+                          mcResult?.metrics?.robust_sps ?? null,
+                          mcResult?.base?.sps ?? null,
+                        )
                       }
                       level={robustGuide.level}
                       meaning={robustGuide.meaning}
@@ -594,7 +593,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
                       label={es.mc.labels.fragility}
                       value={
                         mcResult?.metrics?.fragility != null
-                          ? `${mapMcLabel("fragility")}: ${formatNumberCompact(
+                          ? `${MONTE_CARLO_PANEL_COPY.fragilityPrefix}: ${formatNumberCompact(
                               mcResult.metrics.fragility,
                               1,
                             )}`
@@ -607,6 +606,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
                     {improvementNote && (
                       <p className="muted">{improvementNote}</p>
                     )}
+                    {zeroRobustnessNote && <p className="muted">{zeroRobustnessNote}</p>}
                   </div>
                 );
               })()}
@@ -628,7 +628,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
                         : mcStatus === "done" && !mcResult
                           ? "MC no disponible (sin resultados)."
                           : mcStatus === "done" && mcResult?.base?.sps <= 0
-                            ? "MC omitido: SPS base ≤ 0 (no hay relaciones suficientes). Prueba con un mazo con sinergias."
+                            ? MONTE_CARLO_PANEL_COPY.insufficientRelationsNote
                             : mcStatus === "done" && mcResult?.dist?.effective_n === 0
                               ? `MC omitido: conjunto elegible degenerado (effective_n=0). Revisa el deck (exceso de LAND o roles insuficientes).${
                                   mcResult?.warnings?.some(
@@ -768,6 +768,41 @@ export type EdgeUi = {
   weight?: number;
   score?: number;
 };
+
+export const MONTE_CARLO_PANEL_COPY = {
+  title: "Simulación de estabilidad",
+  intro: "Estima si el plan del mazo aguanta pequeñas variaciones.",
+  stabilityPrefix: "Resultado simulado",
+  basePrefix: "referencia base",
+  zeroRobustnessNote:
+    "En esta simulación, las conexiones principales no se mantienen cuando el mazo se perturba.",
+  insufficientRelationsNote:
+    "No hay relaciones suficientes para ejecutar una simulación útil.",
+  fragilityPrefix: "Fragilidad estimada",
+} as const;
+
+export function formatMonteCarloStabilityLine(robustSps: unknown, baseSps: unknown): string | undefined {
+  if (typeof robustSps !== "number" || !Number.isFinite(robustSps)) return undefined;
+  if (typeof baseSps !== "number" || !Number.isFinite(baseSps)) return undefined;
+  return `${MONTE_CARLO_PANEL_COPY.stabilityPrefix}: ${formatNumberCompact(
+    robustSps,
+    1,
+  )} · ${MONTE_CARLO_PANEL_COPY.basePrefix}: ${formatNumberCompact(baseSps, 1)}`;
+}
+
+export function formatMonteCarloZeroRobustnessNote(robustSps: unknown, baseSps: unknown): string | null {
+  if (typeof robustSps !== "number" || !Number.isFinite(robustSps)) return null;
+  if (typeof baseSps !== "number" || !Number.isFinite(baseSps)) return null;
+  if (baseSps > 0 && robustSps <= 0) {
+    return MONTE_CARLO_PANEL_COPY.zeroRobustnessNote;
+  }
+  return null;
+}
+
+export function formatMonteCarloInsufficientRelationsNote(baseSps: unknown): string | null {
+  if (typeof baseSps !== "number" || !Number.isFinite(baseSps)) return null;
+  return baseSps <= 0 ? MONTE_CARLO_PANEL_COPY.insufficientRelationsNote : null;
+}
 
 export function formatBuildShaShort(sha?: string): string {
   if (!sha) return "unknown";

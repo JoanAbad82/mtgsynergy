@@ -1,13 +1,16 @@
+export const FAQ_SECTION_COPY = {
+  title: "FAQ",
+  privacyLine: "¿Se guarda mi mazo? No, todo ocurre en tu navegador.",
+  simulationLine:
+    "¿Qué mide la simulación de estabilidad? Estima si el plan del mazo aguanta pequeñas variaciones.",
+} as const;
+
 export default function FaqSection() {
   return (
     <div className="panel">
-      <h2>FAQ</h2>
-      <p className="muted">
-        ¿Se guarda mi mazo? No, todo ocurre en tu navegador.
-      </p>
-      <p className="muted">
-        ¿Por qué solo structural? La simulación llegará en una siguiente fase.
-      </p>
+      <h2>{FAQ_SECTION_COPY.title}</h2>
+      <p className="muted">{FAQ_SECTION_COPY.privacyLine}</p>
+      <p className="muted">{FAQ_SECTION_COPY.simulationLine}</p>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   MONTE_CARLO_PANEL_COPY,
+  buildMonteCarloRecommendation,
   formatMonteCarloInsufficientRelationsNote,
   formatMonteCarloStabilityLine,
   formatMonteCarloZeroRobustnessNote,
@@ -17,6 +18,7 @@ describe("Analyzer Monte Carlo panel copy", () => {
       "No hay relaciones suficientes para ejecutar una simulación útil.",
     );
     expect(MONTE_CARLO_PANEL_COPY.fragilityPrefix).toBe("Variación estimada");
+    expect(MONTE_CARLO_PANEL_COPY.recommendationPrefix).toBe("Recomendación");
   });
 
   it("evita copy técnico legacy como principal", () => {
@@ -26,6 +28,7 @@ describe("Analyzer Monte Carlo panel copy", () => {
     expect(copyText).not.toContain("Estado MC");
     expect(copyText).not.toContain("SPS base");
     expect(copyText).not.toContain("SPS robust");
+    expect(copyText).not.toContain("Para mejorarlo:");
   });
 });
 
@@ -75,5 +78,31 @@ describe("Analyzer Monte Carlo panel formatters", () => {
     const omittedA = formatMonteCarloInsufficientRelationsNote(0);
     const omittedB = formatMonteCarloInsufficientRelationsNote(0);
     expect(omittedA).toBe(omittedB);
+  });
+
+  it("buildMonteCarloRecommendation aplica reglas de recomendación friendly", () => {
+    expect(buildMonteCarloRecommendation("mid", "high")).toBe(
+      "Añade redundancia y cartas puente entre roles.",
+    );
+    expect(buildMonteCarloRecommendation("low", "mid")).toBe(
+      "Añade redundancia y cartas puente entre roles.",
+    );
+    expect(buildMonteCarloRecommendation("na", "na")).toBe(
+      "Añade redundancia, piezas equivalentes o prueba otro mazo.",
+    );
+    expect(buildMonteCarloRecommendation("high", "mid")).toBeNull();
+  });
+
+  it("buildMonteCarloRecommendation nunca devuelve prefijo técnico repetido", () => {
+    const cases = [
+      buildMonteCarloRecommendation("mid", "high"),
+      buildMonteCarloRecommendation("low", "mid"),
+      buildMonteCarloRecommendation("na", "na"),
+      buildMonteCarloRecommendation("high", "high"),
+    ];
+    for (const value of cases) {
+      if (!value) continue;
+      expect(value).not.toContain("Para mejorarlo:");
+    }
   });
 });

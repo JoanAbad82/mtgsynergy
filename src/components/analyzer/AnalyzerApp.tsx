@@ -535,14 +535,10 @@ export default function AnalyzerApp({ buildSha }: Props) {
                   fragilityGuide.level === "na"
                 )
                   return null;
-                const improvementNote =
-                  statusGuide.level === "low" && omittedReason
-                    ? "Añade redundancia, piezas equivalentes o prueba otro mazo."
-                    : fragilityGuide.level === "high"
-                      ? "Añade redundancia y cartas puente entre roles."
-                      : robustGuide.level === "low"
-                        ? "Añade redundancia y cartas puente entre roles."
-                        : "";
+                const recommendation = buildMonteCarloRecommendation(
+                  robustGuide.level,
+                  fragilityGuide.level,
+                );
                 const zeroRobustnessNote = formatMonteCarloZeroRobustnessNote(
                   mcResult?.metrics?.robust_sps ?? null,
                   mcResult?.base?.sps ?? null,
@@ -564,7 +560,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
                       }
                       level={statusGuide.level}
                       meaning={statusGuide.meaning}
-                      advice={statusGuide.advice}
+                      advice={undefined}
                     />
                     <MetricCoach
                       label={es.mc.labels.samples}
@@ -575,7 +571,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
                       }
                       level={effectiveGuide.level}
                       meaning={effectiveGuide.meaning}
-                      advice={effectiveGuide.advice}
+                      advice={undefined}
                     />
                     <MetricCoach
                       label={es.mc.labels.robustness}
@@ -587,7 +583,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
                       }
                       level={robustGuide.level}
                       meaning={robustGuide.meaning}
-                      advice={robustGuide.advice}
+                      advice={undefined}
                     />
                     <MetricCoach
                       label={es.mc.labels.fragility}
@@ -601,10 +597,12 @@ export default function AnalyzerApp({ buildSha }: Props) {
                       }
                       level={fragilityGuide.level}
                       meaning={fragilityGuide.meaning}
-                      advice={fragilityGuide.advice}
+                      advice={undefined}
                     />
-                    {improvementNote && (
-                      <p className="muted">{improvementNote}</p>
+                    {recommendation && (
+                      <p className="muted">
+                        {MONTE_CARLO_PANEL_COPY.recommendationPrefix}: {recommendation}
+                      </p>
                     )}
                     {zeroRobustnessNote && <p className="muted">{zeroRobustnessNote}</p>}
                   </div>
@@ -775,6 +773,9 @@ export const MONTE_CARLO_PANEL_COPY = {
   statusHeading: "Estado de la simulación",
   stabilityPrefix: "Resultado simulado",
   basePrefix: "referencia base",
+  recommendationPrefix: "Recomendación",
+  recommendationFallback: "Añade redundancia, piezas equivalentes o prueba otro mazo.",
+  recommendationBridge: "Añade redundancia y cartas puente entre roles.",
   zeroRobustnessNote:
     "En esta simulación, las conexiones principales no se mantienen cuando el mazo se perturba.",
   insufficientRelationsNote:
@@ -803,6 +804,22 @@ export function formatMonteCarloZeroRobustnessNote(robustSps: unknown, baseSps: 
 export function formatMonteCarloInsufficientRelationsNote(baseSps: unknown): string | null {
   if (typeof baseSps !== "number" || !Number.isFinite(baseSps)) return null;
   return baseSps <= 0 ? MONTE_CARLO_PANEL_COPY.insufficientRelationsNote : null;
+}
+
+export function buildMonteCarloRecommendation(
+  robustLevel: "low" | "mid" | "high" | "na",
+  fragilityLevel: "low" | "mid" | "high" | "na",
+): string | null {
+  if (robustLevel === "na" && fragilityLevel === "na") {
+    return MONTE_CARLO_PANEL_COPY.recommendationFallback;
+  }
+  if (fragilityLevel === "high") {
+    return MONTE_CARLO_PANEL_COPY.recommendationBridge;
+  }
+  if (robustLevel === "low") {
+    return MONTE_CARLO_PANEL_COPY.recommendationBridge;
+  }
+  return null;
 }
 
 export function formatBuildShaShort(sha?: string): string {

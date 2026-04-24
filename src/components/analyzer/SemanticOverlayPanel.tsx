@@ -64,6 +64,12 @@ type UncoveredAuditItem = {
   reasonId: SemanticCoverageReasonId | string;
   label: string;
 };
+type UncoveredAuditGroup = {
+  reasonId: SemanticCoverageReasonId | string;
+  label: string;
+  count: number;
+  cards: string[];
+};
 
 const SEMANTIC_KEY_TOKEN_UI_LABELS: Record<string, string> = {
   ENTERS_BATTLEFIELD: "entra al campo de batalla",
@@ -88,6 +94,9 @@ const SEMANTIC_KEY_TOKEN_UI_LABELS: Record<string, string> = {
 };
 
 export const SEMANTIC_OVERLAY_AUDIT_TITLE = "Cartas no tierra pendientes de cobertura";
+export const SEMANTIC_OVERLAY_AUDIT_HELP =
+  "Agrupamos estas cartas por el motivo por el que todavía no entran en la cobertura semántica v1.";
+export const SEMANTIC_OVERLAY_AUDIT_EXAMPLES_LIMIT = 3;
 
 export function formatSemanticKeyLabelForUi(label: string): string {
   const match = label.match(/^(Event|Action|Resource)\s*·\s*(.+)$/);
@@ -182,6 +191,52 @@ export function buildUncoveredNonLandAudit(
   return { title: SEMANTIC_OVERLAY_AUDIT_TITLE, items };
 }
 
+export function buildUncoveredNonLandAuditGroups(
+  audit: { title: string; items: UncoveredAuditItem[] } | null,
+): UncoveredAuditGroup[] {
+  if (!audit || audit.items.length === 0) return [];
+  const grouped = new Map<string, UncoveredAuditGroup>();
+
+  for (const item of audit.items) {
+    const key = `${item.reasonId}::${item.label}`;
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.count += 1;
+      existing.cards.push(item.name);
+      continue;
+    }
+    grouped.set(key, {
+      reasonId: item.reasonId,
+      label: item.label,
+      count: 1,
+      cards: [item.name],
+    });
+  }
+
+  return Array.from(grouped.values())
+    .map((group) => ({
+      ...group,
+      cards: [...group.cards].sort((a, b) => a.localeCompare(b)),
+    }))
+    .sort((a, b) => {
+      if (a.count !== b.count) return b.count - a.count;
+      const byLabel = a.label.localeCompare(b.label);
+      if (byLabel !== 0) return byLabel;
+      return String(a.reasonId).localeCompare(String(b.reasonId));
+    });
+}
+
+export function formatUncoveredAuditExamples(
+  cards: string[],
+  maxExamples = SEMANTIC_OVERLAY_AUDIT_EXAMPLES_LIMIT,
+): string {
+  const limit = Math.max(1, Math.floor(maxExamples));
+  const examples = cards.slice(0, limit);
+  const remaining = Math.max(0, cards.length - examples.length);
+  if (remaining > 0) return `${examples.join(", ")} y ${remaining} más`;
+  return examples.join(", ");
+}
+
 export function buildCoverageReasonsFromReport(
   coverageReport?: SemanticCoverageReport,
 ): CoverageReasonView[] {
@@ -261,6 +316,7 @@ export default function SemanticOverlayPanel({
   const excessTop = metrics.excess_producers.slice(0, 10);
   const groups = filterRedundancyGroups(metrics.redundancy_groups);
   const audit = buildUncoveredNonLandAudit(coverageReport);
+  const auditGroups = buildUncoveredNonLandAuditGroups(audit);
 
   return (
     <div className="panel">
@@ -295,10 +351,12 @@ export default function SemanticOverlayPanel({
       {audit && (
         <details>
           <summary>{audit.title}</summary>
+          <p className="muted">{SEMANTIC_OVERLAY_AUDIT_HELP}</p>
           <ul>
-            {audit.items.map((item) => (
-              <li key={`${item.name}-${item.reasonId}`}>
-                {item.name} · {item.label}
+            {auditGroups.map((group) => (
+              <li key={`${group.reasonId}-${group.label}`}>
+                {group.label} · {group.count}
+                <div className="muted">{formatUncoveredAuditExamples(group.cards)}</div>
               </li>
             ))}
           </ul>

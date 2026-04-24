@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   formatSemanticKeyLabelForUi,
+  formatUncoveredAuditExamples,
   partitionSemanticEdgesByStrength,
   SEMANTIC_OVERLAY_AUDIT_TITLE,
+  SEMANTIC_OVERLAY_AUDIT_HELP,
   SEMANTIC_OVERLAY_COPY,
   buildCoverageReasons,
   buildCoverageReasonsFromReport,
   buildCoverageSummary,
   buildUncoveredNonLandAudit,
+  buildUncoveredNonLandAuditGroups,
   filterRedundancyGroups,
   getSignalStatus,
 } from "../SemanticOverlayPanel";
@@ -40,6 +43,8 @@ const panelCopyText = [
   SEMANTIC_OVERLAY_COPY.redundancyNotApplicable,
   SEMANTIC_OVERLAY_COPY.glossaryTitle,
   ...SEMANTIC_OVERLAY_COPY.glossaryItems,
+  SEMANTIC_OVERLAY_AUDIT_TITLE,
+  SEMANTIC_OVERLAY_AUDIT_HELP,
 ].join(" ");
 
 const countOccurrences = (text: string, term: string) =>
@@ -63,6 +68,9 @@ describe("SemanticOverlayPanel copy", () => {
     expect(SEMANTIC_OVERLAY_COPY.redundancyNotApplicable).toContain("efectos repetidos");
     expect(SEMANTIC_OVERLAY_COPY.redundancyNotApplicable.toLowerCase()).not.toContain("sin señal");
     expect(SEMANTIC_OVERLAY_AUDIT_TITLE).toBe("Cartas no tierra pendientes de cobertura");
+    expect(SEMANTIC_OVERLAY_AUDIT_HELP).toBe(
+      "Agrupamos estas cartas por el motivo por el que todavía no entran en la cobertura semántica v1.",
+    );
   });
 
   it("evita encabezados en inglés y duplicados", () => {
@@ -75,6 +83,8 @@ describe("SemanticOverlayPanel copy", () => {
     expect(panelCopyText).not.toContain("SOS:");
     expect(panelCopyText).not.toContain("puntuación total de conexiones");
     expect(panelCopyText).not.toContain("Señales débiles o locales");
+    expect(panelCopyText).not.toContain("reasonId");
+    expect(panelCopyText).not.toContain("NO_MATCH_V1_TEMPLATES");
 
     expect(countOccurrences(panelCopyText, SEMANTIC_OVERLAY_COPY.coverageLabel)).toBe(1);
 
@@ -268,5 +278,55 @@ describe("SemanticOverlayPanel semantic summary helpers", () => {
     expect(auditA).toEqual(auditB);
     expect(coverageReport).toEqual(snapshot);
     expect(coverageReport.uncoveredNonLand).toEqual(snapshot.uncoveredNonLand);
+  });
+
+  it("groups uncoveredNonLand audit by reason with deterministic ordering", () => {
+    const coverageReport = {
+      uncoveredNonLand: [
+        { name: "Kappa", reasonId: "NO_ORACLE" },
+        { name: "Beta", reasonId: "NO_MATCH_V1_TEMPLATES" },
+        { name: "Eta", reasonId: "PARSE_ERROR" },
+        { name: "Alpha", reasonId: "NO_MATCH_V1_TEMPLATES" },
+        { name: "Zeta", reasonId: "PARSE_ERROR" },
+      ],
+    } as any;
+
+    const audit = buildUncoveredNonLandAudit(coverageReport);
+    const auditSnapshot = JSON.parse(JSON.stringify(audit));
+    const groupsA = buildUncoveredNonLandAuditGroups(audit);
+    const groupsB = buildUncoveredNonLandAuditGroups(audit);
+
+    expect(groupsA).toEqual(groupsB);
+    expect(groupsA).toEqual([
+      {
+        reasonId: "NO_MATCH_V1_TEMPLATES",
+        label: "Carta reconocida, pero texto aún fuera de plantillas v1",
+        count: 2,
+        cards: ["Alpha", "Beta"],
+      },
+      {
+        reasonId: "PARSE_ERROR",
+        label: "Texto reconocido, pero no interpretable por parser v1",
+        count: 2,
+        cards: ["Eta", "Zeta"],
+      },
+      {
+        reasonId: "NO_ORACLE",
+        label: "No encontrada en índice o sin texto de reglas",
+        count: 1,
+        cards: ["Kappa"],
+      },
+    ]);
+    expect(audit).toEqual(auditSnapshot);
+  });
+
+  it("limits grouped examples with 'y N más' and does not mutate cards", () => {
+    const cards = ["Alpha", "Beta", "Delta", "Gamma"];
+    const snapshot = [...cards];
+
+    expect(formatUncoveredAuditExamples(cards)).toBe("Alpha, Beta, Delta y 1 más");
+    expect(formatUncoveredAuditExamples(cards, 2)).toBe("Alpha, Beta y 2 más");
+    expect(formatUncoveredAuditExamples(["Alpha", "Beta"])).toBe("Alpha, Beta");
+    expect(cards).toEqual(snapshot);
   });
 });

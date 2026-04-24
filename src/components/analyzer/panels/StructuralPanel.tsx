@@ -4,24 +4,47 @@ type Props = {
   summary: StructuralSummary;
 };
 
+export const STRUCTURAL_PANEL_COPY = {
+  title: "Estructura interna del mazo",
+  intro: "Lectura rápida de cómo se conectan los roles del mazo.",
+  nodesActiveLabel: "Nodos activos",
+  relationsLabel: "Relaciones",
+  densityLabel: "Densidad",
+  cyclesDetectedLabel: "Ciclos detectados",
+  connectedComponentsLabel: "Componentes conectados",
+  sourceRolesLabel: "Roles origen",
+  destinationRolesLabel: "Roles destino",
+} as const;
+
+export function buildStructuralSummaryLines(summary: StructuralSummary): {
+  activity: string;
+  topology: string;
+  roleFlow: string;
+} {
+  return {
+    activity: `${STRUCTURAL_PANEL_COPY.nodesActiveLabel}: ${summary.nodes_active} / ${summary.nodes_total} · ${STRUCTURAL_PANEL_COPY.relationsLabel}: ${summary.edges_total} · ${STRUCTURAL_PANEL_COPY.densityLabel}: ${summary.density.toFixed(3)}`,
+    topology: `${STRUCTURAL_PANEL_COPY.cyclesDetectedLabel}: ${summary.cycles_present ? "sí" : "no"} · ${STRUCTURAL_PANEL_COPY.connectedComponentsLabel}: ${summary.components_weak.count}`,
+    roleFlow: `${STRUCTURAL_PANEL_COPY.sourceRolesLabel}: ${summary.sources.join(", ") || "—"} · ${STRUCTURAL_PANEL_COPY.destinationRolesLabel}: ${summary.sinks.join(", ") || "—"}`,
+  };
+}
+
 export default function StructuralPanel({ summary }: Props) {
+  const lines = buildStructuralSummaryLines(summary);
+
   return (
     <div className="panel">
-      <h2>Resumen estructural</h2>
+      <h2>{STRUCTURAL_PANEL_COPY.title}</h2>
       <p className="muted">
-        Vista del grafo de roles y su densidad.
+        {STRUCTURAL_PANEL_COPY.intro}
       </p>
       <p className="muted">
-        Nodos activos: {summary.nodes_active} / {summary.nodes_total} · Relaciones:{" "}
-        {summary.edges_total} · Densidad: {summary.density.toFixed(3)}
+        {lines.activity}
       </p>
       <p className="muted">
-        Cycles: {summary.cycles_present ? "sí" : "no"} · Components (weak):{" "}
-        {summary.components_weak.count}
+        {lines.topology}
       </p>
       <p className="muted">
-        Sources: {summary.sources.join(", ") || "—"} · Sinks:{" "}
-        {summary.sinks.join(", ") || "—"}
+        {lines.roleFlow}
       </p>
     </div>
   );

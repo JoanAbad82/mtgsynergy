@@ -29,6 +29,8 @@ const panelCopyText = [
   SEMANTIC_OVERLAY_COPY.signalMissingLabel,
   SEMANTIC_OVERLAY_COPY.signalMissingHint,
   SEMANTIC_OVERLAY_COPY.edgesTitle,
+  SEMANTIC_OVERLAY_COPY.weakEdgesTitle,
+  SEMANTIC_OVERLAY_COPY.weakEdgesHint,
   SEMANTIC_OVERLAY_COPY.noEdges,
   SEMANTIC_OVERLAY_COPY.edgeScoreLabel,
   SEMANTIC_OVERLAY_COPY.orphanTitle,
@@ -48,8 +50,13 @@ describe("SemanticOverlayPanel copy", () => {
     expect(SEMANTIC_OVERLAY_COPY.title).toContain("Superposición semántica");
     expect(SEMANTIC_OVERLAY_COPY.coverageLabel).toBe("Cobertura semántica");
     expect(SEMANTIC_OVERLAY_COPY.reasonsTitle).toBe("Qué falta por cubrir");
+    expect(SEMANTIC_OVERLAY_COPY.sosLabel).toBe("Fuerza semántica");
+    expect(SEMANTIC_OVERLAY_COPY.totalEdgeScoreLabel).toBe("conexiones explicadas");
     expect(SEMANTIC_OVERLAY_COPY.edgesTitle).toBe("Conexiones principales detectadas");
-    expect(SEMANTIC_OVERLAY_COPY.weakEdgesTitle).toBe("Señales débiles o locales");
+    expect(SEMANTIC_OVERLAY_COPY.weakEdgesTitle).toBe("Señales locales de una sola carta");
+    expect(SEMANTIC_OVERLAY_COPY.weakEdgesHint).toBe(
+      "Estas señales describen relaciones internas de una carta; no son sinergias entre cartas distintas.",
+    );
     expect(SEMANTIC_OVERLAY_COPY.excessTitle).toBe("Señales detectadas aún sin conexión clara");
     expect(SEMANTIC_OVERLAY_COPY.redundancyTitle).toBe("Patrones repetidos detectados");
     expect(SEMANTIC_OVERLAY_COPY.noEdges).toContain("No hay conexiones");
@@ -65,6 +72,9 @@ describe("SemanticOverlayPanel copy", () => {
     expect(panelCopyText).not.toContain("Conexiones semánticas principales");
     expect(panelCopyText).not.toContain("Generas más de lo que usas");
     expect(panelCopyText).not.toContain("Efectos repetidos");
+    expect(panelCopyText).not.toContain("SOS:");
+    expect(panelCopyText).not.toContain("puntuación total de conexiones");
+    expect(panelCopyText).not.toContain("Señales débiles o locales");
 
     expect(countOccurrences(panelCopyText, SEMANTIC_OVERLAY_COPY.coverageLabel)).toBe(1);
 

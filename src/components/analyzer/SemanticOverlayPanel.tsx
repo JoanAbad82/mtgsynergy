@@ -10,8 +10,8 @@ export const SEMANTIC_OVERLAY_COPY = {
   resolvedLabel: "únicas resueltas",
   missingLabel: "únicas faltantes",
   entriesLabel: "entradas del mazo",
-  sosLabel: "SOS",
-  totalEdgeScoreLabel: "puntuación total de conexiones",
+  sosLabel: "Fuerza semántica",
+  totalEdgeScoreLabel: "conexiones explicadas",
   signalFoundLabel: "✅ Señal encontrada (experimental)",
   signalMissingLabel: "⚠️ Sin señal (experimental)",
   signalMissingHint: "Normal en mazos simples o reglas aún no cubiertas.",
@@ -22,9 +22,9 @@ export const SEMANTIC_OVERLAY_COPY = {
   edgesTitle: "Conexiones principales detectadas",
   edgesIntro:
     "Estas conexiones muestran relaciones que el motor puede explicar con el texto de reglas.",
-  weakEdgesTitle: "Señales débiles o locales",
+  weakEdgesTitle: "Señales locales de una sola carta",
   weakEdgesHint:
-    "Estas señales pueden ser correctas, pero tienen menor fuerza estructural o solo explican una carta consigo misma.",
+    "Estas señales describen relaciones internas de una carta; no son sinergias entre cartas distintas.",
   noEdges: "No hay conexiones semánticas.",
   edgeScoreLabel: "puntuación",
   orphanTitle: "Efectos sin pareja",
@@ -37,7 +37,7 @@ export const SEMANTIC_OVERLAY_COPY = {
   glossaryTitle: "Glosario rápido",
   glossaryItems: [
     "Porcentaje de cartas con alguna señal semántica.",
-    "SOS: magnitud logarítmica del total de conexiones detectadas.",
+    "Fuerza semántica: magnitud logarítmica del total de conexiones detectadas.",
     "Eventos consumidos sin productores en el mazo.",
     "Señales producidas sin consumidores en el mazo.",
     "Grupos con señales iguales.",

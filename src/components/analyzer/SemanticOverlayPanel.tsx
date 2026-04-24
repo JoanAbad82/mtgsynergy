@@ -58,7 +58,43 @@ type UncoveredAuditItem = {
   label: string;
 };
 
+const SEMANTIC_KEY_TOKEN_UI_LABELS: Record<string, string> = {
+  ENTERS_BATTLEFIELD: "entra al campo de batalla",
+  CREATURE_DIES: "una criatura muere",
+  LEAVES_BATTLEFIELD: "deja el campo de batalla",
+  CAST_SPELL: "se lanza un hechizo",
+  DRAW_CARDS: "robar cartas",
+  DRAW_EXTRA_CARD_TURN: "robar carta adicional del turno",
+  DEAL_DAMAGE: "hacer daño",
+  GAIN_LIFE: "ganar vida",
+  LOSE_LIFE: "perder vida",
+  CREATE_TOKEN: "crear fichas",
+  ADD_COUNTERS: "poner contadores",
+  PRODUCE_MANA: "producir maná",
+  MILL_CARDS: "moler cartas",
+  LIFE: "vida",
+  MANA: "maná",
+};
+
 export const SEMANTIC_OVERLAY_AUDIT_TITLE = "Cartas no tierra pendientes de cobertura";
+
+export function formatSemanticKeyLabelForUi(label: string): string {
+  const match = label.match(/^(Event|Action|Resource)\s*·\s*(.+)$/);
+  if (!match) return label;
+
+  const category = match[1];
+  const token = match[2]?.trim() ?? "";
+  if (token.length === 0) return label;
+
+  const normalizedToken = token.toUpperCase();
+  const translatedToken =
+    SEMANTIC_KEY_TOKEN_UI_LABELS[normalizedToken] ??
+    normalizedToken.toLowerCase().replace(/_/g, " ");
+
+  if (category === "Event") return `Evento: ${translatedToken}`;
+  if (category === "Action") return `Acción: ${translatedToken}`;
+  return `Recurso: ${translatedToken}`;
+}
 
 export function buildCoverageSummary(
   metrics: SemanticOverlayMetrics,
@@ -273,7 +309,8 @@ export default function SemanticOverlayPanel({
                   <div className="muted">
                     {reasons.map((reason) => {
                       const label = explainKeyHuman(reason.key, reasonKeys);
-                      const shown = label !== "Unknown" ? label : explainKey(reason.key);
+                      const raw = label !== "Unknown" ? label : explainKey(reason.key);
+                      const shown = formatSemanticKeyLabelForUi(raw);
                       return (
                         <div key={`${edge.from}-${edge.to}-${reason.key}`}>
                           {shown} × {reason.weight}
@@ -295,7 +332,8 @@ export default function SemanticOverlayPanel({
         <ul>
           {orphanTop.map((row) => {
             const label = explainKeyHuman(row.key);
-            const shown = label !== "Unknown" ? label : explainKey(row.key);
+            const raw = label !== "Unknown" ? label : explainKey(row.key);
+            const shown = formatSemanticKeyLabelForUi(raw);
             return (
               <li key={`orphan-${row.key}`}>
                 {shown} · {row.consumed}
@@ -312,7 +350,8 @@ export default function SemanticOverlayPanel({
         <ul>
           {excessTop.map((row) => {
             const label = explainKeyHuman(row.key);
-            const shown = label !== "Unknown" ? label : explainKey(row.key);
+            const raw = label !== "Unknown" ? label : explainKey(row.key);
+            const shown = formatSemanticKeyLabelForUi(raw);
             return (
               <li key={`excess-${row.key}`}>
                 {shown} · {row.produced}

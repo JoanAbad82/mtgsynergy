@@ -1,5 +1,15 @@
 import { describe, expect, test } from "vitest";
-import { buildNameMapFromDeckState, explainEdgeKind, formatBuildShaShort, formatEdgeLine, formatNumberCompact, getSpsNumber, groupEdgesForPanel, parseMcParams } from "../AnalyzerApp";
+import {
+  buildNameMapFromDeckState,
+  explainEdgeKind,
+  formatBuildShaShort,
+  formatEdgeCopiesLine,
+  formatEdgeLine,
+  formatNumberCompact,
+  getSpsNumber,
+  groupEdgesForPanel,
+  parseMcParams,
+} from "../AnalyzerApp";
 
 describe("AnalyzerApp edges panel grouping", () => {
   test("groups edges by kind", () => {
@@ -25,15 +35,23 @@ describe("AnalyzerApp edges panel grouping", () => {
     expect(groups[0][0]).toBe("burn_supports_threat");
     expect(groups[1][0]).toBe("anthem_supports_tokens");
     expect(groups[0][1][0].from).toBe("lightning strike");
-    const line = `${groups[0][1][0].from} → ${groups[0][1][0].to} (x${groups[0][1][0].weight ?? 0} | score ${groups[0][1][0].score ?? 0})`;
-    expect(line).toContain("lightning strike → monastery swiftspear (x16 | score 28.8)");
+    const line = `${groups[0][1][0].from} → ${groups[0][1][0].to} (x${groups[0][1][0].weight ?? 0} | puntuación ${groups[0][1][0].score ?? 0})`;
+    expect(line).toContain("lightning strike → monastery swiftspear (x16 | puntuación 28.8)");
     expect(`${groups[1][1][0].score ?? 0}`).toBe("6.9");
   });
 });
 
 describe("AnalyzerApp edges helpers", () => {
   test("explainEdgeKind burn", () => {
-    expect(explainEdgeKind("burn_supports_threat")).toContain("Burn");
+    const label = explainEdgeKind("burn_supports_threat");
+    expect(label).toContain("Daño");
+    expect(label).not.toContain("burn_supports_threat");
+  });
+
+  test("explainEdgeKind spells_support_prowess", () => {
+    const label = explainEdgeKind("spells_support_prowess");
+    expect(label).toContain("lanzar hechizos");
+    expect(label).not.toContain("spells_support_prowess");
   });
 
   test("buildNameMapFromDeckState maps names", () => {
@@ -59,7 +77,8 @@ describe("AnalyzerApp edges helpers", () => {
     const line = formatEdgeLine(edge, map);
     expect(line).toContain("Lightning Strike → Monastery Swiftspear");
     expect(line).toContain("x16");
-    expect(line).toContain("score 28.8");
+    expect(line).toContain("puntuación 28.8");
+    expect(line).not.toContain("score");
   });
 
   test("formatEdgeLine handles missing values", () => {
@@ -68,7 +87,8 @@ describe("AnalyzerApp edges helpers", () => {
     const line = formatEdgeLine(edge, map);
     expect(line).toContain("a → b");
     expect(line).toContain("x0");
-    expect(line).toContain("score 0");
+    expect(line).toContain("puntuación 0");
+    expect(line).not.toContain("score");
   });
 
   test("formatEdgeLine rounds noisy float score", () => {
@@ -80,7 +100,32 @@ describe("AnalyzerApp edges helpers", () => {
     };
     const map = new Map<string, string>();
     const line = formatEdgeLine(edge, map);
-    expect(line).toContain("score 28.8");
+    expect(line).toContain("puntuación 28.8");
+    expect(line).not.toContain("score");
+  });
+
+  test("formatEdgeCopiesLine uses friendly label and handles missing counts", () => {
+    const counts = new Map<string, number>([
+      ["lightning strike", 4],
+      ["monastery swiftspear", 4],
+    ]);
+    const withCounts = formatEdgeCopiesLine(
+      {
+        from: "lightning strike",
+        to: "monastery swiftspear",
+      },
+      counts,
+    );
+    expect(withCounts).toBe("copias: 4×4");
+
+    const missingCounts = formatEdgeCopiesLine(
+      {
+        from: "a",
+        to: "b",
+      },
+      new Map<string, number>(),
+    );
+    expect(missingCounts).toBeNull();
   });
 });
 

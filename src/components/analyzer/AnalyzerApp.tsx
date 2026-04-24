@@ -725,20 +725,19 @@ export default function AnalyzerApp({ buildSha }: Props) {
               edgesByKind.map(([kind, list]) => (
                 <div key={kind}>
                   <h3>
-                    {kind} ({list.length})
+                    {formatEdgeKindLabel(kind)} ({list.length})
                   </h3>
                   <p className="muted">{explainEdgeKind(kind)}</p>
                   <ul>
-                    {list.map((e) => (
-                      <li key={`${e.kind}|${e.from}|${e.to}`}>
-                        {formatEdgeLine(e, nameMap)}
-                        {countsMap.has(e.from) && countsMap.has(e.to) && (
-                          <div className="muted">
-                            counts: {countsMap.get(e.from)}×{countsMap.get(e.to)}
-                          </div>
-                        )}
-                      </li>
-                    ))}
+                    {list.map((e) => {
+                      const copiesLine = formatEdgeCopiesLine(e, countsMap);
+                      return (
+                        <li key={`${e.kind}|${e.from}|${e.to}`}>
+                          {formatEdgeLine(e, nameMap)}
+                          {copiesLine && <div className="muted">{copiesLine}</div>}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))
@@ -788,15 +787,22 @@ export function parseMcParams(
 
 export function explainEdgeKind(kind?: string): string {
   if (kind === "burn_supports_threat") {
-    return "Burn elimina bloqueadores y abre ataques para amenazas baratas.";
+    return "Daño o removal que apoya una amenaza o condición de victoria.";
   }
   if (kind === "spells_support_prowess") {
-    return "Instant/Sorcery disparan prowess y convierten hechizos en daño extra.";
+    return "Hechizos que alimentan cartas que premian lanzar hechizos.";
   }
   if (kind === "anthem_supports_tokens") {
-    return "Anthem multiplica el valor de tokens y anchos de mesa.";
+    return "Efectos globales que mejoran fichas o criaturas.";
   }
-  return "Relación detectada por heurísticas (beta).";
+  return "Relación detectada por el motor estructural.";
+}
+
+export function formatEdgeKindLabel(kind?: string): string {
+  if (kind === "burn_supports_threat") return "Daño/removal que apoya amenazas";
+  if (kind === "spells_support_prowess") return "Hechizos que alimentan recompensas por lanzar hechizos";
+  if (kind === "anthem_supports_tokens") return "Efectos globales que mejoran fichas/criaturas";
+  return "Relación estructural";
 }
 
 export function buildNameMapFromDeckState(deckState: any): Map<string, string> {
@@ -817,7 +823,17 @@ export function formatEdgeLine(
   const to = nameMap.get(e.to) ?? e.to;
   const weightStr = formatNumberCompact(e.weight ?? 0, 0);
   const scoreStr = formatNumberCompact(e.score ?? 0, 1);
-  return `${from} → ${to} (x${weightStr} | score ${scoreStr})`;
+  return `${from} → ${to} (x${weightStr} | puntuación ${scoreStr})`;
+}
+
+export function formatEdgeCopiesLine(
+  e: EdgeUi,
+  countsMap: Map<string, number>,
+): string | null {
+  const fromCount = countsMap.get(e.from);
+  const toCount = countsMap.get(e.to);
+  if (fromCount == null || toCount == null) return null;
+  return `copias: ${fromCount}×${toCount}`;
 }
 
 export function formatNumberCompact(n: unknown, decimals = 1): string {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatSemanticKeyLabelForUi,
   SEMANTIC_OVERLAY_AUDIT_TITLE,
   SEMANTIC_OVERLAY_COPY,
   buildCoverageReasons,
@@ -86,6 +87,23 @@ describe("SemanticOverlayPanel redundancy filtering", () => {
 });
 
 describe("SemanticOverlayPanel semantic summary helpers", () => {
+  it("formats semantic key labels to friendly UI copy", () => {
+    const eventLabel = formatSemanticKeyLabelForUi("Event · ENTERS_BATTLEFIELD");
+    expect(eventLabel).toContain("Evento:");
+    expect(eventLabel).toContain("entra al campo de batalla");
+
+    const actionLabel = formatSemanticKeyLabelForUi("Action · DEAL_DAMAGE");
+    expect(actionLabel).toContain("Acción:");
+    expect(actionLabel).toContain("hacer daño");
+
+    const resourceLabel = formatSemanticKeyLabelForUi("Resource · LIFE");
+    expect(resourceLabel).toContain("Recurso:");
+    expect(resourceLabel).toContain("vida");
+
+    const fallback = formatSemanticKeyLabelForUi("Unknown");
+    expect(fallback).toBe("Unknown");
+  });
+
   it("formats signal status lines", () => {
     const withVisibleEdges = getSignalStatus({ SOS: 0 } as any, 2);
     expect(withVisibleEdges.label).toContain("Señal encontrada");

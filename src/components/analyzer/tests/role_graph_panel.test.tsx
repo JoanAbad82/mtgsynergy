@@ -3,12 +3,19 @@ import {
   ROLE_GRAPH_PANEL_COPY,
   buildRoleGraphRows,
   formatRoleLabelForUi,
+  hasAnyRoleCentrality,
 } from "../panels/RoleGraphPanel";
 
 describe("RoleGraphPanel copy", () => {
   it("usa copy friendly en español", () => {
     expect(ROLE_GRAPH_PANEL_COPY.title).toBe("Roles y centralidad");
     expect(ROLE_GRAPH_PANEL_COPY.intro).toBe("Muestra qué funciones del mazo tienen más presencia.");
+    expect(ROLE_GRAPH_PANEL_COPY.helpText).toBe(
+      "Cartas indica cuántas copias cumplen ese rol. Peso en el plan indica cuánto conecta ese rol dentro del grafo del mazo.",
+    );
+    expect(ROLE_GRAPH_PANEL_COPY.zeroCentralityNote).toBe(
+      "Los roles están presentes, pero este análisis no ha detectado un rol que concentre peso estructural propio.",
+    );
     expect(ROLE_GRAPH_PANEL_COPY.roleHeader).toBe("Rol");
     expect(ROLE_GRAPH_PANEL_COPY.countHeader).toBe("Cartas");
     expect(ROLE_GRAPH_PANEL_COPY.centralityHeader).toBe("Peso en el plan");
@@ -64,5 +71,30 @@ describe("RoleGraphPanel rows", () => {
       { role: "UTILITY", roleLabel: "Utilidad", count: 2, centrality: 0.25 },
     ]);
     expect(summary).toEqual(snapshot);
+  });
+
+  it("hasAnyRoleCentrality detecta centralidad positiva y mantiene determinismo sin mutar", () => {
+    const zeroRows = [
+      { role: "DRAW", roleLabel: "Robo de cartas", count: 8, centrality: 0 },
+      { role: "ENGINE", roleLabel: "Motor", count: 4, centrality: 0 },
+    ];
+    const positiveRows = [
+      { role: "DRAW", roleLabel: "Robo de cartas", count: 8, centrality: 0 },
+      { role: "ENGINE", roleLabel: "Motor", count: 4, centrality: 0.2 },
+    ];
+    const zeroSnapshot = JSON.parse(JSON.stringify(zeroRows));
+    const positiveSnapshot = JSON.parse(JSON.stringify(positiveRows));
+
+    const zeroFirst = hasAnyRoleCentrality(zeroRows);
+    const zeroSecond = hasAnyRoleCentrality(zeroRows);
+    const positiveFirst = hasAnyRoleCentrality(positiveRows);
+    const positiveSecond = hasAnyRoleCentrality(positiveRows);
+
+    expect(zeroFirst).toBe(false);
+    expect(zeroSecond).toBe(false);
+    expect(positiveFirst).toBe(true);
+    expect(positiveSecond).toBe(true);
+    expect(zeroRows).toEqual(zeroSnapshot);
+    expect(positiveRows).toEqual(positiveSnapshot);
   });
 });

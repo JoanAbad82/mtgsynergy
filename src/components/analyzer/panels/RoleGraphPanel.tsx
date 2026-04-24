@@ -7,6 +7,10 @@ type Props = {
 export const ROLE_GRAPH_PANEL_COPY = {
   title: "Roles y centralidad",
   intro: "Muestra qué funciones del mazo tienen más presencia.",
+  helpText:
+    "Cartas indica cuántas copias cumplen ese rol. Peso en el plan indica cuánto conecta ese rol dentro del grafo del mazo.",
+  zeroCentralityNote:
+    "Los roles están presentes, pero este análisis no ha detectado un rol que concentre peso estructural propio.",
   roleHeader: "Rol",
   countHeader: "Cartas",
   centralityHeader: "Peso en el plan",
@@ -44,31 +48,44 @@ export function buildRoleGraphRows(summary: StructuralSummary): Array<{
     }));
 }
 
+export function hasAnyRoleCentrality(rows: Array<{ centrality: number }>): boolean {
+  return rows.some((row) => row.centrality > 0);
+}
+
 export default function RoleGraphPanel({ summary }: Props) {
   const rows = buildRoleGraphRows(summary);
+  const hasPositiveCentrality = hasAnyRoleCentrality(rows);
 
   return (
     <div className="panel">
       <h2>{ROLE_GRAPH_PANEL_COPY.title}</h2>
       <p className="muted">{ROLE_GRAPH_PANEL_COPY.intro}</p>
-      <table>
+      <p className="muted">{ROLE_GRAPH_PANEL_COPY.helpText}</p>
+      <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0.5rem 0" }}>
         <thead>
           <tr>
-            <th>{ROLE_GRAPH_PANEL_COPY.roleHeader}</th>
-            <th>{ROLE_GRAPH_PANEL_COPY.countHeader}</th>
-            <th>{ROLE_GRAPH_PANEL_COPY.centralityHeader}</th>
+            <th style={{ textAlign: "left" }}>{ROLE_GRAPH_PANEL_COPY.roleHeader}</th>
+            <th style={{ textAlign: "right", whiteSpace: "nowrap", paddingRight: "1rem" }}>
+              {ROLE_GRAPH_PANEL_COPY.countHeader}
+            </th>
+            <th style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+              {ROLE_GRAPH_PANEL_COPY.centralityHeader}
+            </th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.role}>
               <td>{row.roleLabel}</td>
-              <td>{row.count}</td>
-              <td>{row.centrality}</td>
+              <td style={{ textAlign: "right", paddingRight: "1rem" }}>{row.count}</td>
+              <td style={{ textAlign: "right" }}>{row.centrality}</td>
             </tr>
           ))}
         </tbody>
       </table>
+      {!hasPositiveCentrality && rows.length > 0 && (
+        <p className="muted">{ROLE_GRAPH_PANEL_COPY.zeroCentralityNote}</p>
+      )}
     </div>
   );
 }

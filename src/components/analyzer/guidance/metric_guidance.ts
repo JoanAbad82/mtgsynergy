@@ -288,8 +288,8 @@ export type McLabelKey =
 
 export function mapMcLabel(key: McLabelKey): string {
   const labels: Record<McLabelKey, string> = {
-    samples: "muestras válidas / solicitadas",
-    no_op: "sin cambios (no_op)",
+    samples: "muestras analizadas",
+    no_op: "sin cambios útiles",
     base_sps: "referencia base",
     robust_sps: "resultado simulado",
     fragility: "variación estimada",

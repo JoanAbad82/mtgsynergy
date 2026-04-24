@@ -55,7 +55,7 @@ export const es = {
   },
   mc: {
     summary: {
-      line1: "Simula pequeñas variaciones para estimar estabilidad.",
+      line1: "Simula pequeñas variaciones del mazo para estimar estabilidad.",
       line2: "Compara el resultado simulado con la referencia base.",
       line3:
         "Si el resultado cae o la variación es alta: añade redundancia y cartas puente.",
@@ -67,7 +67,7 @@ export const es = {
     labels: {
       guided: "Lectura guiada",
       status: "Estado de la simulación",
-      samples: "Muestras",
+      samples: "Muestras analizadas",
       robustness: "Estabilidad simulada",
       fragility: "Variación estimada",
     },

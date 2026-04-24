@@ -139,7 +139,6 @@ describe("AnalysisStatusPanel helpers", () => {
     const mc = model.sections.find((s) => s.id === "mc");
     expect(mc?.summary.toLowerCase()).toContain("no aplica");
     expect(mc?.summary).toContain("sin relaciones suficientes");
-    expect(mc?.summary).toContain("effective_n=0");
     expect(mc?.summary).not.toContain("SPS base ≤ 0");
   });
 

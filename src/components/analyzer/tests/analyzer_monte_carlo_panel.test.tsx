@@ -3,6 +3,7 @@ import {
   MONTE_CARLO_PANEL_COPY,
   buildMonteCarloRecommendation,
   formatMonteCarloInsufficientRelationsNote,
+  formatMonteCarloNoUsefulSamplesMessage,
   formatMonteCarloStabilityLine,
   formatMonteCarloZeroRobustnessNote,
 } from "../AnalyzerApp";
@@ -10,6 +11,15 @@ import {
 describe("Analyzer Monte Carlo panel copy", () => {
   it("expone copy friendly para título y ayuda", () => {
     expect(MONTE_CARLO_PANEL_COPY.title).toBe("Simulación de estabilidad");
+    expect(MONTE_CARLO_PANEL_COPY.entryBadgeTitle).toBe(
+      "Simulación de estabilidad experimental",
+    );
+    expect(MONTE_CARLO_PANEL_COPY.toggleLabel).toBe(
+      "Activar simulación de estabilidad",
+    );
+    expect(MONTE_CARLO_PANEL_COPY.toggleHint).toContain(
+      "Simula pequeñas variaciones del mazo",
+    );
     expect(MONTE_CARLO_PANEL_COPY.intro).toBe(
       "Estima si el plan del mazo aguanta pequeñas variaciones.",
     );
@@ -29,6 +39,8 @@ describe("Analyzer Monte Carlo panel copy", () => {
     expect(copyText).not.toContain("SPS base");
     expect(copyText).not.toContain("SPS robust");
     expect(copyText).not.toContain("Para mejorarlo:");
+    expect(copyText).not.toContain("Monte Carlo experimental");
+    expect(copyText).not.toContain("Calcula estabilidad/robustez");
   });
 });
 
@@ -104,5 +116,13 @@ describe("Analyzer Monte Carlo panel formatters", () => {
       if (!value) continue;
       expect(value).not.toContain("Para mejorarlo:");
     }
+  });
+
+  it("formatea mensaje friendly cuando no hubo muestras útiles", () => {
+    const message = formatMonteCarloNoUsefulSamplesMessage();
+    expect(message).toContain("no hubo muestras útiles");
+    expect(message).toContain("tierras");
+    expect(message).not.toContain("effective_n=0");
+    expect(message).not.toContain("LAND");
   });
 });

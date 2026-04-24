@@ -43,7 +43,10 @@ describe("metric guidance MC", () => {
   });
 
   test("mc label mapping", () => {
-    expect(mapMcLabel("samples")).toContain("muestras");
+    expect(mapMcLabel("samples")).toContain("muestras analizadas");
+    expect(mapMcLabel("samples")).not.toContain("válidas / solicitadas");
+    expect(mapMcLabel("no_op")).toContain("sin cambios útiles");
+    expect(mapMcLabel("no_op")).not.toContain("no_op");
     expect(mapMcLabel("base_sps")).not.toContain("SPS base");
     expect(mapMcLabel("robust_sps")).not.toContain("SPS robusto");
     expect(mapMcLabel("base_sps").toLowerCase()).toMatch(/base|referencia/);

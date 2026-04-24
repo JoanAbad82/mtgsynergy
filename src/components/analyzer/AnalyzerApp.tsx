@@ -331,7 +331,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
   return (
     <div className="analyzer">
       <div className="panel">
-        <span className="badge">Simulación de estabilidad (Monte Carlo experimental)</span>
+        <span className="badge">{MONTE_CARLO_PANEL_COPY.entryBadgeTitle}</span>
         <p className="muted" style={{ marginTop: "10px" }}>
           Pega un export de MTG Arena para analizar la estructura.
         </p>
@@ -367,10 +367,10 @@ export default function AnalyzerApp({ buildSha }: Props) {
             checked={mcParams.enabled}
             onChange={(e) => handleToggleMonteCarlo(e.currentTarget.checked)}
           />
-          <span>Activar simulación de estabilidad (experimental)</span>
+          <span>{MONTE_CARLO_PANEL_COPY.toggleLabel}</span>
         </label>
         <p className="muted" style={{ marginTop: "6px" }}>
-          Calcula estabilidad/robustez. Puede tardar y no siempre aplica.
+          {MONTE_CARLO_PANEL_COPY.toggleHint}
         </p>
       </div>
 
@@ -513,9 +513,9 @@ export default function AnalyzerApp({ buildSha }: Props) {
               {(() => {
                 const omittedReason =
                   mcStatus === "done" && mcResult?.base?.sps <= 0
-                    ? "sin relaciones suficientes"
+                    ? MONTE_CARLO_PANEL_COPY.insufficientRelationsNote
                     : mcStatus === "done" && mcResult?.dist?.effective_n === 0
-                      ? "effective_n=0"
+                      ? MONTE_CARLO_PANEL_COPY.noUsefulSamplesReason
                       : null;
                 const statusGuide = interpretMcStatus(mcStatus, omittedReason);
                 const effectiveN = mcResult?.dist?.effective_n ?? null;
@@ -628,13 +628,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
                           : mcStatus === "done" && mcResult?.base?.sps <= 0
                             ? "Simulación no ejecutada: no hay relaciones suficientes."
                             : mcStatus === "done" && mcResult?.dist?.effective_n === 0
-                              ? `Simulación no ejecutada: la muestra elegible es insuficiente (effective_n=0). Revisa el mazo (exceso de LAND o roles insuficientes).${
-                                  mcResult?.warnings?.some(
-                                    (w: any) => w.code === "DEGENERATE_ELIGIBLE_SET",
-                                  )
-                                    ? " (aviso: DEGENERATE_ELIGIBLE_SET)"
-                                    : ""
-                                }`
+                              ? formatMonteCarloNoUsefulSamplesMessage()
                               : mcStatus === "idle"
                                 ? "Lista para ejecutar: analiza un mazo para lanzar la simulación."
                                 : "Simulación lista."}
@@ -770,9 +764,14 @@ export type EdgeUi = {
 export const MONTE_CARLO_PANEL_COPY = {
   title: "Simulación de estabilidad",
   intro: "Estima si el plan del mazo aguanta pequeñas variaciones.",
+  entryBadgeTitle: "Simulación de estabilidad experimental",
+  toggleLabel: "Activar simulación de estabilidad",
+  toggleHint:
+    "Simula pequeñas variaciones del mazo para estimar si el plan se mantiene. Puede tardar unos segundos.",
   statusHeading: "Estado de la simulación",
   stabilityPrefix: "Resultado simulado",
   basePrefix: "referencia base",
+  noUsefulSamplesReason: "no hubo muestras útiles",
   recommendationPrefix: "Recomendación",
   recommendationFallback: "Añade redundancia, piezas equivalentes o prueba otro mazo.",
   recommendationBridge: "Añade redundancia y cartas puente entre roles.",
@@ -804,6 +803,10 @@ export function formatMonteCarloZeroRobustnessNote(robustSps: unknown, baseSps: 
 export function formatMonteCarloInsufficientRelationsNote(baseSps: unknown): string | null {
   if (typeof baseSps !== "number" || !Number.isFinite(baseSps)) return null;
   return baseSps <= 0 ? MONTE_CARLO_PANEL_COPY.insufficientRelationsNote : null;
+}
+
+export function formatMonteCarloNoUsefulSamplesMessage(): string {
+  return "Simulación no ejecutada: no hubo muestras útiles. Revisa el mazo (exceso de tierras o roles insuficientes).";
 }
 
 export function buildMonteCarloRecommendation(

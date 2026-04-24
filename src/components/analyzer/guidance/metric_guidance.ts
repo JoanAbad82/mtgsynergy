@@ -131,7 +131,7 @@ export function interpretMcStatus(
     return {
       level: "mid",
       title: "Medio",
-      meaning: "Calculando estabilidad…",
+      meaning: "Calculando simulación…",
       advice: "Espera; puede tardar.",
     };
   }
@@ -139,15 +139,15 @@ export function interpretMcStatus(
     return {
       level: "mid",
       title: "Medio",
-      meaning: "Listo para ejecutarse…",
-      advice: "Pulsa Analizar para correr MC.",
+      meaning: "Lista para ejecutarse…",
+      advice: "Pulsa Analizar para ejecutar la simulación.",
     };
   }
   if (status === "error") {
     return {
       level: "low",
       title: "Bajo",
-      meaning: "MC falló…",
+      meaning: "La simulación falló…",
       advice: "Baja iteraciones o recarga.",
     };
   }
@@ -162,9 +162,9 @@ export function interpretMcStatus(
   return {
     level: "high",
     title: "Alto",
-    meaning: "MC completado; ya estimamos estabilidad bajo perturbaciones.",
+    meaning: "Simulación completada; ya estimamos la estabilidad bajo pequeñas variaciones.",
     advice:
-      "Si fragilidad es alta, añade redundancia; si robustez cae mucho, añade cartas puente.",
+      "Si el resultado simulado cae o la variación estimada es alta, añade redundancia, piezas equivalentes o cartas puente entre roles.",
   };
 }
 
@@ -212,10 +212,9 @@ export function interpretRobustVsBase(
     return {
       level: "low",
       title: "Bajo",
-      meaning:
-        "En algunos mazos la robustez puede colapsar a 0; suele indicar dependencia extrema o que la perturbación anula las sinergias.",
+      meaning: "El plan depende demasiado de pocas piezas.",
       advice:
-        "Duplica habilitadores (efectos similares), añade un segundo motor, y reduce cartas únicas imprescindibles.",
+        "Añade redundancia, piezas equivalentes o cartas puente entre roles.",
     };
   }
   const ratio = robustSps / baseSps;
@@ -238,8 +237,8 @@ export function interpretRobustVsBase(
   return {
     level: "low",
     title: "Bajo",
-    meaning: "Dependencia alta de pocas piezas.",
-    advice: "Añade redundancia y reduce cuellos de botella.",
+    meaning: "El plan depende demasiado de pocas piezas.",
+    advice: "Añade redundancia, piezas equivalentes o cartas puente entre roles.",
   };
 }
 
@@ -291,9 +290,9 @@ export function mapMcLabel(key: McLabelKey): string {
   const labels: Record<McLabelKey, string> = {
     samples: "muestras válidas / solicitadas",
     no_op: "sin cambios (no_op)",
-    base_sps: "SPS base",
-    robust_sps: "SPS robusto",
-    fragility: "Fragilidad",
+    base_sps: "referencia base",
+    robust_sps: "resultado simulado",
+    fragility: "variación estimada",
     percentiles: "Percentiles",
     mean_stdev: "media ± desviación",
     iqr: "rango intercuartílico (IQR)",

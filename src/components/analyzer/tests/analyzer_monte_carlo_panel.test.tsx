@@ -12,15 +12,20 @@ describe("Analyzer Monte Carlo panel copy", () => {
     expect(MONTE_CARLO_PANEL_COPY.intro).toBe(
       "Estima si el plan del mazo aguanta pequeñas variaciones.",
     );
+    expect(MONTE_CARLO_PANEL_COPY.statusHeading).toBe("Estado de la simulación");
     expect(MONTE_CARLO_PANEL_COPY.insufficientRelationsNote).toBe(
       "No hay relaciones suficientes para ejecutar una simulación útil.",
     );
+    expect(MONTE_CARLO_PANEL_COPY.fragilityPrefix).toBe("Variación estimada");
   });
 
   it("evita copy técnico legacy como principal", () => {
     const copyText = Object.values(MONTE_CARLO_PANEL_COPY).join(" ");
     expect(copyText).not.toContain("MC-SSL");
     expect(copyText).not.toContain("SPS robust vs SPS base");
+    expect(copyText).not.toContain("Estado MC");
+    expect(copyText).not.toContain("SPS base");
+    expect(copyText).not.toContain("SPS robust");
   });
 });
 

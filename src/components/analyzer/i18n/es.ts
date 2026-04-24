@@ -29,15 +29,15 @@ export const es = {
         actionAnalyzeFirst: "Siguiente paso: analiza un mazo primero.",
       },
       mc: {
-        title: "Monte Carlo (MC-SSL)",
-        summaryDisabled: "Monte Carlo desactivado.",
+        title: "Simulación de estabilidad",
+        summaryDisabled: "Simulación desactivada.",
         summaryIdleEnabled:
-          "Monte Carlo activado, listo para ejecutarse (pulsa Analizar).",
-        summaryRunning: "Monte Carlo en ejecución.",
-        summaryError: "Monte Carlo falló.",
+          "Simulación activada, lista para ejecutarse (pulsa Analizar).",
+        summaryRunning: "Simulación en ejecución.",
+        summaryError: "La simulación falló.",
         summaryOmitted: "No aplica con este mazo (señal insuficiente).",
-        summaryReady: "Monte Carlo listo.",
-        actionEnable: "Siguiente paso: activa Monte Carlo.",
+        summaryReady: "Simulación lista.",
+        actionEnable: "Siguiente paso: activa la simulación.",
         actionAnalyze: "Siguiente paso: pulsa Analizar.",
         actionWait: "Siguiente paso: espera.",
         actionRetry: "Siguiente paso: baja iteraciones o recarga.",
@@ -49,16 +49,16 @@ export const es = {
       details: "Detalles",
       hide: "Ocultar",
       focusInput: "Ir a entrada",
-      enableMc: "Activar Monte Carlo",
+      enableMc: "Activar simulación",
       reanalyze: "Reanalizar",
     },
   },
   mc: {
     summary: {
-      line1: "Simula perturbaciones para estimar estabilidad.",
-      line2: "Mira fragilidad y robustez frente a la base.",
+      line1: "Simula pequeñas variaciones para estimar estabilidad.",
+      line2: "Compara el resultado simulado con la referencia base.",
       line3:
-        "Si robustez cae a 0 o fragilidad es alta: añade redundancia y cartas puente.",
+        "Si el resultado cae o la variación es alta: añade redundancia y cartas puente.",
     },
     toggles: {
       details: "Detalles técnicos",
@@ -66,10 +66,10 @@ export const es = {
     },
     labels: {
       guided: "Lectura guiada",
-      status: "Estado MC",
+      status: "Estado de la simulación",
       samples: "Muestras",
-      robustness: "Robustez",
-      fragility: "Fragilidad",
+      robustness: "Estabilidad simulada",
+      fragility: "Variación estimada",
     },
   },
 } as const;

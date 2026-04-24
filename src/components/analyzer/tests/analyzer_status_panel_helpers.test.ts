@@ -39,7 +39,7 @@ describe("AnalysisStatusPanel helpers", () => {
     expect(model.title).toContain("Estado del análisis");
     const titles = model.sections.map((s) => s.title).join(" | ");
     expect(titles).toContain("Índice de cartas");
-    expect(titles).toContain("Monte Carlo");
+    expect(titles).toContain("Simulación de estabilidad");
   });
 
   test("maps TAGGING_ACTIVE to OK", () => {
@@ -89,7 +89,7 @@ describe("AnalysisStatusPanel helpers", () => {
   test("MC disabled/enabled + running/done/error", () => {
     const disabled = buildAnalysisStatusModel(baseInput);
     const disabledMc = disabled.sections.find((s) => s.id === "mc");
-    expect(disabledMc?.summary.toLowerCase()).toContain("desactivado");
+    expect(disabledMc?.summary.toLowerCase()).toContain("desactivad");
 
     const running = buildAnalysisStatusModel({
       ...baseInput,
@@ -106,7 +106,7 @@ describe("AnalysisStatusPanel helpers", () => {
       mcResult: { base: { sps: 10 }, dist: { effective_n: 10 } },
     });
     const doneMc = done.sections.find((s) => s.id === "mc");
-    expect(doneMc?.summary.toLowerCase()).toContain("listo");
+    expect(doneMc?.summary.toLowerCase()).toContain("list");
 
     const error = buildAnalysisStatusModel({
       ...baseInput,
@@ -138,8 +138,9 @@ describe("AnalysisStatusPanel helpers", () => {
     });
     const mc = model.sections.find((s) => s.id === "mc");
     expect(mc?.summary.toLowerCase()).toContain("no aplica");
-    expect(mc?.summary).toContain("SPS base");
+    expect(mc?.summary).toContain("sin relaciones suficientes");
     expect(mc?.summary).toContain("effective_n=0");
+    expect(mc?.summary).not.toContain("SPS base ≤ 0");
   });
 
   test("i18n shape includes key labels", () => {

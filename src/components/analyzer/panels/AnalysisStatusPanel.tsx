@@ -89,7 +89,7 @@ function getMcOmittedReason(mcResult: any | null): { omitted: boolean; reason?: 
   if (!omitted) return { omitted: false };
 
   const reasons: string[] = [];
-  if (baseSps != null && baseSps <= 0) reasons.push("SPS base ≤ 0");
+  if (baseSps != null && baseSps <= 0) reasons.push("sin relaciones suficientes");
   if (effectiveN === 0) reasons.push("effective_n=0");
   if (warnings.length > 0) reasons.push(`warnings: ${warnings.join(", ")}`);
 

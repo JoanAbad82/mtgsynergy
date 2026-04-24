@@ -28,16 +28,25 @@ describe("metric guidance MC", () => {
     expect(interpretRobustVsBase(100, 40).level).toBe("low");
     const collapsed = interpretRobustVsBase(100, 0);
     expect(collapsed.level).toBe("low");
-    expect(collapsed.meaning.toLowerCase()).toContain("colapsar");
+    expect(collapsed.meaning).toContain("depende demasiado de pocas piezas");
+    expect(collapsed.advice).toContain("Añade redundancia");
+    expect(collapsed.advice).toContain("cartas puente entre roles");
+    expect(collapsed.meaning.toLowerCase()).not.toContain("dependencia extrema");
+    expect(collapsed.meaning.toLowerCase()).not.toContain("perturbación anula");
   });
 
   test("mc status levels", () => {
-    expect(interpretMcStatus("done", null).level).toBe("high");
+    const done = interpretMcStatus("done", null);
+    expect(done.level).toBe("high");
+    expect(done.meaning).toContain("Simulación completada");
     expect(interpretMcStatus("error").level).toBe("low");
   });
 
   test("mc label mapping", () => {
     expect(mapMcLabel("samples")).toContain("muestras");
-    expect(mapMcLabel("robust_sps")).toContain("SPS robusto");
+    expect(mapMcLabel("base_sps")).not.toContain("SPS base");
+    expect(mapMcLabel("robust_sps")).not.toContain("SPS robusto");
+    expect(mapMcLabel("base_sps").toLowerCase()).toMatch(/base|referencia/);
+    expect(mapMcLabel("robust_sps")).toContain("resultado simulado");
   });
 });

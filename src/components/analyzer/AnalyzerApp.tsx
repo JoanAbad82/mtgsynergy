@@ -331,7 +331,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
   return (
     <div className="analyzer">
       <div className="panel">
-        <span className="badge">Monte Carlo (experimental)</span>
+        <span className="badge">Simulación de estabilidad (Monte Carlo experimental)</span>
         <p className="muted" style={{ marginTop: "10px" }}>
           Pega un export de MTG Arena para analizar la estructura.
         </p>
@@ -367,7 +367,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
             checked={mcParams.enabled}
             onChange={(e) => handleToggleMonteCarlo(e.currentTarget.checked)}
           />
-          <span>Activar Monte Carlo (experimental)</span>
+          <span>Activar simulación de estabilidad (experimental)</span>
         </label>
         <p className="muted" style={{ marginTop: "6px" }}>
           Calcula estabilidad/robustez. Puede tardar y no siempre aplica.
@@ -513,7 +513,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
               {(() => {
                 const omittedReason =
                   mcStatus === "done" && mcResult?.base?.sps <= 0
-                    ? "SPS base ≤ 0"
+                    ? "sin relaciones suficientes"
                     : mcStatus === "done" && mcResult?.dist?.effective_n === 0
                       ? "effective_n=0"
                       : null;
@@ -537,11 +537,11 @@ export default function AnalyzerApp({ buildSha }: Props) {
                   return null;
                 const improvementNote =
                   statusGuide.level === "low" && omittedReason
-                    ? "Para mejorarlo: añade redundancia o prueba otro mazo."
+                    ? "Añade redundancia, piezas equivalentes o prueba otro mazo."
                     : fragilityGuide.level === "high"
-                      ? "Para mejorarlo: añade redundancia y cartas puente entre roles."
+                      ? "Añade redundancia y cartas puente entre roles."
                       : robustGuide.level === "low"
-                        ? "Para mejorarlo: duplica habilitadores y añade un segundo motor."
+                        ? "Añade redundancia y cartas puente entre roles."
                         : "";
                 const zeroRobustnessNote = formatMonteCarloZeroRobustnessNote(
                   mcResult?.metrics?.robust_sps ?? null,
@@ -553,14 +553,14 @@ export default function AnalyzerApp({ buildSha }: Props) {
                       label={es.mc.labels.status}
                       value={
                         mcStatus === "running"
-                          ? "MC ejecutándose"
+                          ? "Simulación en ejecución"
                           : mcStatus === "error"
-                            ? "MC con error"
+                            ? "Simulación con error"
                             : mcStatus === "done"
                               ? omittedReason
-                                ? "MC omitido"
-                                : "MC listo"
-                              : "MC listo para ejecutar"
+                                ? "Simulación no ejecutada"
+                                : "Simulación lista"
+                              : "Lista para ejecutar"
                       }
                       level={statusGuide.level}
                       meaning={statusGuide.meaning}
@@ -620,17 +620,17 @@ export default function AnalyzerApp({ buildSha }: Props) {
               {mcDetailsOpen && (
                 <div>
                   <p className="muted">
-                    Estado MC / motivo:{" "}
+                    {MONTE_CARLO_PANEL_COPY.statusHeading}:{" "}
                     {mcStatus === "running"
-                      ? "Calculando Monte Carlo… (puede tardar)"
+                      ? "Simulación en ejecución… (puede tardar)"
                       : mcStatus === "error"
                         ? `Error: ${mcError ?? "Error desconocido"}`
                         : mcStatus === "done" && !mcResult
-                          ? "MC no disponible (sin resultados)."
+                          ? "Simulación no disponible (sin resultados)."
                           : mcStatus === "done" && mcResult?.base?.sps <= 0
-                            ? MONTE_CARLO_PANEL_COPY.insufficientRelationsNote
+                            ? "Simulación no ejecutada: no hay relaciones suficientes."
                             : mcStatus === "done" && mcResult?.dist?.effective_n === 0
-                              ? `MC omitido: conjunto elegible degenerado (effective_n=0). Revisa el deck (exceso de LAND o roles insuficientes).${
+                              ? `Simulación no ejecutada: la muestra elegible es insuficiente (effective_n=0). Revisa el mazo (exceso de LAND o roles insuficientes).${
                                   mcResult?.warnings?.some(
                                     (w: any) => w.code === "DEGENERATE_ELIGIBLE_SET",
                                   )
@@ -638,8 +638,8 @@ export default function AnalyzerApp({ buildSha }: Props) {
                                     : ""
                                 }`
                               : mcStatus === "idle"
-                                ? "MC pendiente: analiza un mazo para ejecutar."
-                                : "MC listo."}
+                                ? "Lista para ejecutar: analiza un mazo para lanzar la simulación."
+                                : "Simulación lista."}
                   </p>
                   {mcStatus === "done" && mcResult && (
                 <>
@@ -772,13 +772,14 @@ export type EdgeUi = {
 export const MONTE_CARLO_PANEL_COPY = {
   title: "Simulación de estabilidad",
   intro: "Estima si el plan del mazo aguanta pequeñas variaciones.",
+  statusHeading: "Estado de la simulación",
   stabilityPrefix: "Resultado simulado",
   basePrefix: "referencia base",
   zeroRobustnessNote:
     "En esta simulación, las conexiones principales no se mantienen cuando el mazo se perturba.",
   insufficientRelationsNote:
     "No hay relaciones suficientes para ejecutar una simulación útil.",
-  fragilityPrefix: "Fragilidad estimada",
+  fragilityPrefix: "Variación estimada",
 } as const;
 
 export function formatMonteCarloStabilityLine(robustSps: unknown, baseSps: unknown): string | undefined {

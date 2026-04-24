@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatSemanticKeyLabelForUi,
+  partitionSemanticEdgesByStrength,
   SEMANTIC_OVERLAY_AUDIT_TITLE,
   SEMANTIC_OVERLAY_COPY,
   buildCoverageReasons,
@@ -47,7 +48,10 @@ describe("SemanticOverlayPanel copy", () => {
     expect(SEMANTIC_OVERLAY_COPY.title).toContain("Superposición semántica");
     expect(SEMANTIC_OVERLAY_COPY.coverageLabel).toBe("Cobertura semántica");
     expect(SEMANTIC_OVERLAY_COPY.reasonsTitle).toBe("Qué falta por cubrir");
-    expect(SEMANTIC_OVERLAY_COPY.edgesTitle).toContain("Conexiones");
+    expect(SEMANTIC_OVERLAY_COPY.edgesTitle).toBe("Conexiones principales detectadas");
+    expect(SEMANTIC_OVERLAY_COPY.weakEdgesTitle).toBe("Señales débiles o locales");
+    expect(SEMANTIC_OVERLAY_COPY.excessTitle).toBe("Señales detectadas aún sin conexión clara");
+    expect(SEMANTIC_OVERLAY_COPY.redundancyTitle).toBe("Patrones repetidos detectados");
     expect(SEMANTIC_OVERLAY_COPY.noEdges).toContain("No hay conexiones");
     expect(SEMANTIC_OVERLAY_COPY.redundancyNotApplicable).toContain("efectos repetidos");
     expect(SEMANTIC_OVERLAY_COPY.redundancyNotApplicable.toLowerCase()).not.toContain("sin señal");
@@ -58,6 +62,9 @@ describe("SemanticOverlayPanel copy", () => {
     expect(panelCopyText).not.toContain("Coverage");
     expect(panelCopyText).not.toContain("Orphan");
     expect(panelCopyText).not.toContain("Excess");
+    expect(panelCopyText).not.toContain("Conexiones semánticas principales");
+    expect(panelCopyText).not.toContain("Generas más de lo que usas");
+    expect(panelCopyText).not.toContain("Efectos repetidos");
 
     expect(countOccurrences(panelCopyText, SEMANTIC_OVERLAY_COPY.coverageLabel)).toBe(1);
 
@@ -100,8 +107,44 @@ describe("SemanticOverlayPanel semantic summary helpers", () => {
     expect(resourceLabel).toContain("Recurso:");
     expect(resourceLabel).toContain("vida");
 
+    const castSpellLabel = formatSemanticKeyLabelForUi("Action · CAST_SPELL");
+    expect(castSpellLabel).toContain("Acción:");
+    expect(castSpellLabel).toContain("lanzar hechizo");
+
+    const drawExtraLabel = formatSemanticKeyLabelForUi("Action · DRAW_EXTRA_CARD_TURN");
+    expect(drawExtraLabel).toContain("robar carta adicional del turno");
+
+    const tokenCreatedLabel = formatSemanticKeyLabelForUi("Resource · TOKEN_CREATED");
+    expect(tokenCreatedLabel).toContain("ficha creada");
+
+    const tokenGenericLabel = formatSemanticKeyLabelForUi("Resource · TOKEN_GENERIC");
+    expect(tokenGenericLabel).toContain("ficha genérica");
+
+    const bloodLabel = formatSemanticKeyLabelForUi("Resource · BLOOD");
+    expect(bloodLabel).toContain("sangre");
+
+    const scryLabel = formatSemanticKeyLabelForUi("Action · SCRY");
+    expect(scryLabel).toContain("adivinar");
+
     const fallback = formatSemanticKeyLabelForUi("Unknown");
     expect(fallback).toBe("Unknown");
+  });
+
+  it("partitions semantic edges by score without mutating input", () => {
+    const edges = [
+      { from: 1, to: 2, score: 2, reasons: [] },
+      { from: 2, to: 2, score: 0, reasons: [] },
+      { from: 3, to: 4, score: -1, reasons: [] },
+    ] as any;
+    const snapshot = JSON.parse(JSON.stringify(edges));
+
+    const first = partitionSemanticEdgesByStrength(edges);
+    const second = partitionSemanticEdgesByStrength(edges);
+
+    expect(first).toEqual(second);
+    expect(first.mainEdges.map((edge) => edge.score)).toEqual([2]);
+    expect(first.weakEdges.map((edge) => edge.score)).toEqual([0, -1]);
+    expect(edges).toEqual(snapshot);
   });
 
   it("formats signal status lines", () => {

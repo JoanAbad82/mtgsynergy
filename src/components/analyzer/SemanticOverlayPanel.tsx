@@ -19,13 +19,20 @@ export const SEMANTIC_OVERLAY_COPY = {
   reasonsNone: "Sin incidencias destacables.",
   reasonMissingIndex: "No encontrada en índice o sin texto de reglas",
   reasonUnrecognized: "Carta reconocida, pero texto aún fuera de plantillas v1",
-  edgesTitle: "Conexiones semánticas principales",
+  edgesTitle: "Conexiones principales detectadas",
+  edgesIntro:
+    "Estas conexiones muestran relaciones que el motor puede explicar con el texto de reglas.",
+  weakEdgesTitle: "Señales débiles o locales",
+  weakEdgesHint:
+    "Estas señales pueden ser correctas, pero tienen menor fuerza estructural o solo explican una carta consigo misma.",
   noEdges: "No hay conexiones semánticas.",
   edgeScoreLabel: "puntuación",
   orphanTitle: "Efectos sin pareja",
-  excessTitle: "Generas más de lo que usas",
+  excessTitle: "Señales detectadas aún sin conexión clara",
+  excessHint:
+    "El motor reconoce estas señales, pero todavía no siempre puede conectarlas con otra carta.",
   noneDetected: "No se detectaron.",
-  redundancyTitle: "Efectos repetidos",
+  redundancyTitle: "Patrones repetidos detectados",
   redundancyNotApplicable: "No se detectaron efectos repetidos relevantes.",
   glossaryTitle: "Glosario rápido",
   glossaryItems: [
@@ -62,13 +69,17 @@ const SEMANTIC_KEY_TOKEN_UI_LABELS: Record<string, string> = {
   ENTERS_BATTLEFIELD: "entra al campo de batalla",
   CREATURE_DIES: "una criatura muere",
   LEAVES_BATTLEFIELD: "deja el campo de batalla",
-  CAST_SPELL: "se lanza un hechizo",
+  CAST_SPELL: "lanzar hechizo",
   DRAW_CARDS: "robar cartas",
   DRAW_EXTRA_CARD_TURN: "robar carta adicional del turno",
   DEAL_DAMAGE: "hacer daño",
   GAIN_LIFE: "ganar vida",
   LOSE_LIFE: "perder vida",
   CREATE_TOKEN: "crear fichas",
+  TOKEN_CREATED: "ficha creada",
+  TOKEN_GENERIC: "ficha genérica",
+  BLOOD: "sangre",
+  SCRY: "adivinar",
   ADD_COUNTERS: "poner contadores",
   PRODUCE_MANA: "producir maná",
   MILL_CARDS: "moler cartas",
@@ -205,6 +216,15 @@ export function getSignalStatus(
   };
 }
 
+export function partitionSemanticEdgesByStrength(
+  edges: SemanticEdge[],
+): { mainEdges: SemanticEdge[]; weakEdges: SemanticEdge[] } {
+  return {
+    mainEdges: edges.filter((edge) => edge.score > 0),
+    weakEdges: edges.filter((edge) => edge.score <= 0),
+  };
+}
+
 type Props = {
   metrics: SemanticOverlayMetrics;
   edges: SemanticEdge[];
@@ -235,6 +255,7 @@ export default function SemanticOverlayPanel({
       ? reportReasons
       : buildCoverageReasons(metrics, resolvedUnique, missingUnique);
   const edgesTop = edges.slice(0, 10);
+  const { mainEdges, weakEdges } = partitionSemanticEdgesByStrength(edgesTop);
   const status = getSignalStatus(metrics, edgesTop.length);
   const orphanTop = metrics.orphan_listeners.slice(0, 10);
   const excessTop = metrics.excess_producers.slice(0, 10);
@@ -293,11 +314,12 @@ export default function SemanticOverlayPanel({
       </p>
 
       <h3>{SEMANTIC_OVERLAY_COPY.edgesTitle}</h3>
-      {edgesTop.length === 0 ? (
+      <p className="muted">{SEMANTIC_OVERLAY_COPY.edgesIntro}</p>
+      {mainEdges.length === 0 ? (
         <p className="muted">{SEMANTIC_OVERLAY_COPY.noEdges}</p>
       ) : (
         <ul>
-          {edgesTop.map((edge) => {
+          {mainEdges.map((edge) => {
             const fromName = idToName[edge.from] ?? String(edge.from);
             const toName = idToName[edge.to] ?? String(edge.to);
             const reasons = edge.reasons.slice(0, 3);
@@ -324,6 +346,39 @@ export default function SemanticOverlayPanel({
           })}
         </ul>
       )}
+      {weakEdges.length > 0 && (
+        <>
+          <h3>{SEMANTIC_OVERLAY_COPY.weakEdgesTitle}</h3>
+          <p className="muted">{SEMANTIC_OVERLAY_COPY.weakEdgesHint}</p>
+          <ul>
+            {weakEdges.map((edge) => {
+              const fromName = idToName[edge.from] ?? String(edge.from);
+              const toName = idToName[edge.to] ?? String(edge.to);
+              const reasons = edge.reasons.slice(0, 3);
+              const reasonKeys = edge.reasons.map((reason) => reason.key);
+              return (
+                <li key={`${edge.from}-${edge.to}-${edge.score}`}>
+                  {fromName} → {toName} ({SEMANTIC_OVERLAY_COPY.edgeScoreLabel} {edge.score})
+                  {reasons.length > 0 && (
+                    <div className="muted">
+                      {reasons.map((reason) => {
+                        const label = explainKeyHuman(reason.key, reasonKeys);
+                        const raw = label !== "Unknown" ? label : explainKey(reason.key);
+                        const shown = formatSemanticKeyLabelForUi(raw);
+                        return (
+                          <div key={`${edge.from}-${edge.to}-${reason.key}`}>
+                            {shown} × {reason.weight}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
 
       <h3>{SEMANTIC_OVERLAY_COPY.orphanTitle}</h3>
       {orphanTop.length === 0 ? (
@@ -344,6 +399,7 @@ export default function SemanticOverlayPanel({
       )}
 
       <h3>{SEMANTIC_OVERLAY_COPY.excessTitle}</h3>
+      <p className="muted">{SEMANTIC_OVERLAY_COPY.excessHint}</p>
       {excessTop.length === 0 ? (
         <p className="muted">{SEMANTIC_OVERLAY_COPY.noneDetected}</p>
       ) : (

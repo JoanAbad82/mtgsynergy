@@ -1,10 +1,10 @@
 {
   "source": "scryfall",
   "bulk_type": "oracle_cards",
-  "bulk_download_uri": "https://data.scryfall.io/oracle-cards/oracle-cards-20260228220321.json",
-  "bulk_updated_at": "2026-02-28T22:03:21.434+00:00",
-  "generated_at": "2026-03-01T00:06:22.467Z",
-  "record_count": 35757,
-  "sha256_gz": "003cb8693476dd272820af41b76c1bb7ccbbdc0ad8d6fd0c5a5aa5fe7725b45d",
+  "bulk_download_uri": "https://data.scryfall.io/oracle-cards/oracle-cards-20260424090248.json",
+  "bulk_updated_at": "2026-04-24T09:02:48.310+00:00",
+  "generated_at": "2026-04-24T15:51:09.196Z",
+  "record_count": 36063,
+  "sha256_gz": "4d19e8506079ad139a9a83f97548b422bf700e1af37191a18ad2ae5fa775aa74",
   "schema_version": "cardrecordmin-v1"
 }

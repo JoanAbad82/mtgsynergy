@@ -1,0 +1,570 @@
+MTGSynergy — MOTOR CAPABILITY INVENTORY AND GAP MAP V1
+Fecha: 2026-04-24
+Proyecto: MTGSynergy / PÁGINA WEB MAGIC
+Tipo: documento canónico de inventario técnico
+Microfase: MOTOR_CAPABILITY_INVENTORY_AND_GAP_MAP_V1
+Estado: inventario documental basado en evidencia del repo vivo
+Commit base canónico: 4afb47b
+Rama: main
+HEAD == origin/main: confirmado en 4afb47b
+
+=====================================================================
+0. PROPÓSITO
+=====================================================================
+
+Este documento inventaría qué domina realmente el motor de MTGSynergy y qué falta por integrar.
+
+No es una spec de implementación.
+No autoriza cambios de motor.
+No autoriza cambios de UI.
+No autoriza cambios de scoring.
+No autoriza nuevos bridges.
+
+Su función es convertir el estado acumulado del repo en una matriz operativa:
+- capacidades ya asentadas,
+- capacidades mínimas / parciales,
+- gaps explícitos,
+- límites declarados,
+- ring estable recomendado,
+- próximas microfases razonables.
+
+=====================================================================
+1. ESTADO BASE DEL REPO
+=====================================================================
+
+Estado confirmado por evidence scan:
+
+- HEAD local: 4afb47b
+- origin/main: 4afb47b
+- working tree tracked: limpio
+- commit remoto canónico vigente:
+  - 4afb47b chore(data): refresh cards index bulk
+
+La fase inmediatamente anterior actualizó el índice de cartas:
+
+- bulk_type: oracle_cards
+- bulk_updated_at: 2026-04-24T09:02:48.310+00:00
+- generated_at: 2026-04-24T15:51:09.196Z
+- record_count: 36063
+- sha256_gz: 4d19e8506079ad139a9a83f97548b422bf700e1af37191a18ad2ae5fa775aa74
+- schema_version: cardrecordmin-v1
+
+Lectura correcta:
+- El catálogo de entrada está actualizado.
+- El motor tiene acceso a Oracle text actualizado para 36063 registros.
+- Esto no implica que el motor entienda todas las habilidades.
+- La distinción correcta es:
+  - carta reconocida por índice,
+  - carta analizada parcialmente,
+  - carta con plantilla soportada,
+  - carta reconocida pero semántica todavía no modelada.
+
+=====================================================================
+2. CAPACIDADES FUNDACIONALES PRESENTES
+=====================================================================
+
+Contratos fundacionales presentes en el repo:
+
+- sem_ontology_min_v1.json
+- sem_ability_ir_min_v1.json
+- sem_relation_rules_min_v1.json
+- sem_deck_relation_metrics_min_v1.json
+- sem_validation_policy_min_v1.json
+- sem_anchor_corpus_matrix_v1.json
+- sem_cost_target_legality_min_v1.json
+- sem_cost_target_legality_focal_corpus_v1.json
+- sem_zone_identity_lki_min_v1.json
+
+Lectura:
+- El proyecto ya no es solo un parser de texto.
+- Existe una arquitectura semántica mínima con:
+  - ontología,
+  - AbilityIR,
+  - corpus ancla,
+  - reglas relacionales,
+  - métricas,
+  - validación anti-drift,
+  - coste/target/legalidad mínima,
+  - zona/identidad/LKI mínima.
+
+=====================================================================
+3. CAPACIDADES SEMÁNTICAS INTERNAS
+=====================================================================
+
+El contrato principal sem_ability_ir_min_v1.json declara y el lowering cablea semantic_hints para:
+
+- triggered_ability_min
+- replacement_prevention_min
+- linked_ability_min
+- continuous_layers_min
+- cost_min_v1
+- target_min_v1
+- mode_selection_min
+- legality_gate_min_v1
+- zone_permission_min
+- legality_actor_constraint_min
+- legality_condition_min
+- legality_static_ability_restrictions_min_v1
+- loyalty_ability_min
+- loyalty_symbol_cost_min_v1
+- loyalty_once_each_turn_restriction_min_v1
+- mana_ability_min
+- triggered_mana_ability_min
+
+Lectura:
+- Muchas capacidades son internas y declarativas.
+- No todas tienen surface visible.
+- No todas tienen runtime enforcement.
+- Varias son “min v1”, no modelado completo de Comprehensive Rules.
+
+Capacidades internas confirmadas:
+
+1. Triggered abilities
+   - NORMAL
+   - INTERVENING_IF
+   - ZONE_CHANGE
+   - DELAYED
+   - REFLEXIVE
+   - fallback LINKED
+
+2. Replacement / prevention
+   - clasificación mínima REPLACEMENT / PREVENTION
+   - no motor completo de reemplazo/prevención
+
+3. Linked abilities
+   - clasificación mínima LINKED
+   - no CR 607 completa
+
+4. Continuous effects / layers
+   - TYPE_CHANGE
+   - COLOR_CHANGE
+   - ABILITY_CHANGE
+   - PT_CHANGE
+   - MULTI_LAYER
+   - ordering_risk: NONE / TIMESTAMP_OR_DEPENDENCY
+   - no CR 613 full resolver
+
+5. Cost / target / legality
+   - CostIR mínimo
+   - TargetSpec mínimo
+   - LegalityGate mínimo
+   - zone_permission_min
+   - legality_actor_constraint_min
+   - legality_condition_min
+   - legality_static_ability_restrictions_min_v1
+   - summoning sickness / tap / Q coverage mínima
+
+6. Loyalty
+   - loyalty ability classification
+   - loyalty symbol cost
+   - once each turn declarative restriction
+   - no runtime enforcement completo
+
+7. Mana abilities
+   - mana ability classification
+   - triggered mana ability classification
+   - no runtime mana engine
+
+8. Mode selection
+   - choose one / choose two mínimos
+   - separación respecto a CostIR / TargetSpec / LegalityGate / EffectIR
+
+=====================================================================
+4. CAPACIDADES DE OVERLAY / BRIDGES PRESENTES
+=====================================================================
+
+Contratos de bridge / familias cerradas localizados:
+
+- sem_overlay_bridge_min_v1.json
+- sem_creature_dies_payoff_bridge_min_v1.json
+- sem_cast_spell_create_token_local_bridge_min_v1.json
+- sem_cast_spell_draw_cards_local_bridge_min_v1.json
+- sem_draw_cards_add_counters_local_bridge_min_v1.json
+- sem_draw_cards_create_token_local_bridge_min_v1.json
+- sem_draw_cards_deal_damage_local_bridge_min_v1.json
+- sem_draw_cards_lose_life_local_bridge_min_v1.json
+- sem_draw_cards_mill_local_bridge_min_v1.json
+- sem_leaves_battlefield_draw_cards_local_bridge_min_v1.json
+- sem_life_gain_add_counters_bridge_min_v1.json
+- sem_life_gain_draw_cards_bridge_min_v1.json
+- sem_deal_damage_lose_life_bridge_min_v1.json
+- sem_damage_with_lifelink_life_gain_bridge_min_v1.json
+- sem_counters_matter_local_bridge_min_v1.json
+- sem_produce_mana_enablement_closure_min_v1.json
+- sem_tapped_status_local_enablement_bridge_min_v1.json
+
+Familias o relaciones ya presentes:
+
+- SACRIFICE -> CREATURE_DIES
+- CREATURE_DIES -> payoff actions
+- CAST_SPELL -> DEAL_DAMAGE
+- CAST_SPELL -> CREATE_TOKEN
+- CAST_SPELL -> DRAW_CARDS
+- CAST_SPELL -> ADD_MANA / PRODUCE_MANA
+- DRAW_CARDS -> ADD_COUNTERS
+- DRAW_CARDS -> CREATE_TOKEN
+- DRAW_CARDS -> DEAL_DAMAGE
+- DRAW_CARDS -> LOSE_LIFE
+- DRAW_CARDS -> MILL_CARDS
+- DRAW_CARDS -> ADD_MANA / PRODUCE_MANA
+- LEAVES_BATTLEFIELD -> DRAW_CARDS
+- LIFE_GAIN -> ADD_COUNTERS
+- LIFE_GAIN -> DRAW_CARDS
+- DEAL_DAMAGE -> LOSE_LIFE
+- DAMAGE_WITH_LIFELINK -> LIFE_GAIN
+- PRODUCE_MANA -> enablement closure
+- TAPPED_STATUS -> local enablement
+- COUNTERS -> COUNTERS_MATTER
+
+Lectura:
+- El overlay ya contiene una red considerable de bridges locales.
+- Muchos bridges son intra-profile / local-only.
+- La mayoría no implementan cross-card closure general.
+- La mayoría no tocan parser/lowering/runtime/scoring/UI.
+- Ese límite es deliberado y correcto para evitar overclaim.
+
+=====================================================================
+5. CAPACIDADES ESTRUCTURALES PRESENTES
+=====================================================================
+
+Además de la capa semántica, el repo contiene capa estructural:
+
+- analyzer/enrich.ts
+- edges/generate.ts
+- edges/factors.ts
+- structural/sps.ts
+- montecarlo/*
+
+Capacidades estructurales:
+
+- roles por cards_index
+- tagging estructural
+- spell-matter payoff detection
+- cast spell token engine detection
+- edges estructurales
+- edge weights
+- edge score
+- SPS v1.1
+- MC-SSL v1
+- análisis 100% client-side
+
+Lectura:
+- Structural = chasis / baseline / fallback.
+- Semantic overlay = capa principal de ambición diferencial.
+- UI = surface de explicación, no lugar para maquillar carencias internas.
+
+=====================================================================
+6. CAPACIDADES VISIBLES EN UI
+=====================================================================
+
+La UI ya expone:
+
+- Resultado rápido
+- SPS
+- sinergias detectadas
+- densidad
+- roles dominantes
+- resumen estructural
+- relaciones / sinergias
+- superposición semántica experimental
+- cobertura semántica
+- SOS
+- puntuación total de conexiones
+- conexiones semánticas principales
+- efectos sin pareja
+- productores en exceso
+- efectos repetidos
+- glosario rápido
+- Monte Carlo opcional
+
+Lectura:
+- El valor técnico ya es visible.
+- La UI aún mezcla lenguaje de producto con diagnóstico técnico.
+- Hay exceso de conceptos simultáneos para usuario no experto.
+- El siguiente trabajo de UI debe ser claridad/honestidad, no estética superficial.
+
+=====================================================================
+7. GAPS Y LÍMITES DECLARADOS
+=====================================================================
+
+Gaps explícitos localizados en contratos y notas de scope:
+
+1. No runtime stack / priority
+   - varios bridges declaran no runtime stack/priority changes
+
+2. No cross-card closure general
+   - múltiples contratos declaran no cross-card closure
+   - cross-card closure aparece como futuro v2+ en varias familias
+
+3. No parser expansion en muchos bridges
+   - muchos contratos son overlay-only o local-only
+
+4. No lowering changes en muchos bridges
+   - varios bridges operan sin modificar AbilityIR
+
+5. No runtime mana engine
+   - PRODUCE_MANA enablement no simula motor de maná
+
+6. No runtime counters engine
+   - counters_matter no abre motor de contadores completo
+
+7. No full CR 613 resolver
+   - continuous_layers_min no resuelve layers/dependency/timestamp de forma completa
+
+8. No full CR 607 linked abilities
+   - linked_ability_min no cubre linked general
+
+9. No runtime enforcement completo de legalidad
+   - legality y loyalty restrictions son declarativas en varios casos
+
+10. Anchor coverage parcial
+   - indestructible static clause not modeled
+   - ETB tapped clause intentionally left out en algunos anchors
+   - mana cost intentionally left out en algunos anchors
+   - target player clause intentionally left out en algunos anchors
+
+11. Any target no tratado como always-player
+   - en DEAL_DAMAGE -> LOSE_LIFE se evita sobreafirmar “any target” como siempre jugador
+
+12. UI no distingue aún con suficiente claridad:
+   - carta reconocida,
+   - carta analizada,
+   - carta reconocida pero semántica no soportada,
+   - texto opaco,
+   - plantilla no modelada.
+
+=====================================================================
+8. MATRIZ CAPABILITY / GAP
+=====================================================================
+
+Área: Cards index / Oracle catalog
+Estado: consolidado
+Evidencia: cards_index.manifest.json record_count 36063
+Visible en UI: parcialmente, TAGGING_ACTIVE y cards indexed count
+Limitación: índice no equivale a comprensión semántica
+Próximo paso: distinguir carta reconocida vs analizada vs no soportada
+
+Área: Parser / normalizer
+Estado: consolidado mínimo
+Evidencia: sem_parser_v1.ts, sem_normalize_v1, tests parser
+Visible en UI: indirectamente
+Limitación: no cubre todas las plantillas Oracle
+Próximo paso: no ampliar sin gap priorizado
+
+Área: AbilityIR / lowering
+Estado: fuerte, incremental
+Evidencia: sem_ability_ir_min_v1.json, lower_to_ability_ir_min_v1.ts
+Visible en UI: poco
+Limitación: muchos hints no tienen surface visible
+Próximo paso: inventariar salida honesta por carta
+
+Área: Cost / target / legality
+Estado: mínimo avanzado
+Evidencia: cost_min, target_min, legality tests
+Visible en UI: no claramente
+Limitación: no runtime legality engine completo
+Próximo paso: coverage/honest reasons antes de expandir runtime
+
+Área: Zone / identity / LKI
+Estado: mínimo consolidado
+Evidencia: sem_zone_identity_lki_min_v1, tests zone identity
+Visible en UI: parcialmente por eventos
+Limitación: no engine de zonas completo
+Próximo paso: mantener como guardrail
+
+Área: Triggered abilities
+Estado: mínimo consolidado
+Evidencia: triggered_ability_min tests
+Visible en UI: no como clasificación explícita
+Limitación: no ejecución completa de triggers
+Próximo paso: exponer como razón interna solo si aporta claridad
+
+Área: Linked abilities
+Estado: mínimo
+Evidencia: linked_ability_min
+Visible en UI: no
+Limitación: no CR 607 completa
+Próximo paso: no ampliar salvo gap de mazos reales
+
+Área: Replacement / prevention
+Estado: mínimo
+Evidencia: replacement_prevention_min
+Visible en UI: no
+Limitación: no replacement/prevention engine
+Próximo paso: mantener como clasificación, no simulador
+
+Área: Continuous / layers
+Estado: mínimo
+Evidencia: continuous_layers_min
+Visible en UI: no
+Limitación: no CR 613 full resolver
+Próximo paso: no abrir full resolver; priorizar warning/honesty si aparece en cartas
+
+Área: Loyalty
+Estado: mínimo declarativo
+Evidencia: loyalty_ability_min, loyalty_symbol_cost_min_v1, once_each_turn
+Visible en UI: no
+Limitación: no enforcement runtime
+Próximo paso: coverage reason / unsupported semantics
+
+Área: Mana abilities
+Estado: mínimo clasificador
+Evidencia: mana_ability_min, triggered_mana_ability_min
+Visible en UI: no
+Limitación: no mana engine
+Próximo paso: mantener como infraestructura interna
+
+Área: Overlay bridges locales
+Estado: fuerte en familias cerradas
+Evidencia: sem_edges.ts + contratos de bridge
+Visible en UI: sí, mediante overlay semántico
+Limitación: local-only / intra-profile en muchas familias
+Próximo paso: no abrir cross-card general; abrir solo candidatos focales
+
+Área: Structural engine
+Estado: consolidado
+Evidencia: roles, edges, SPS, MC-SSL
+Visible en UI: sí
+Limitación: heurístico, no semántica normativa completa
+Próximo paso: UI friendly y explicación
+
+Área: UI de resultados
+Estado: funcional pero densa
+Evidencia: output de análisis con SPS, SOS, edges, counts
+Visible en UI: sí
+Limitación: demasiada carga técnica para usuario general
+Próximo paso: friendly readability + modo detalles
+
+=====================================================================
+9. RING ESTABLE RECOMENDADO
+=====================================================================
+
+Candidatos existentes confirmados:
+
+- src/engine/semantic/tests/sem_lower_to_ability_ir_min_v1.test.ts
+- src/engine/semantic/tests/sem_cost_target_legality_min_v1.test.ts
+- src/engine/semantic/tests/sem_legality_zone_permission_min_v1.test.ts
+- src/engine/semantic/tests/sem_mana_ability_classification_min_v1.test.ts
+- src/engine/semantic/tests/sem_triggered_ability_classification_min_v1.test.ts
+- src/engine/semantic/tests/sem_linked_ability_min_v1.test.ts
+- src/engine/semantic/tests/sem_replacement_prevention_min_v1.test.ts
+- src/engine/semantic/tests/sem_continuous_layers_dependency_timestamp_min_v1.test.ts
+- src/engine/semantic/tests/sem_overlay_cast_spell_damage_bridge_min_v1.test.ts
+- src/engine/semantic/tests/sem_overlay_draw_cards_add_mana_local_bridge_min_v1.test.ts
+- src/engine/semantic/tests/sem_overlay_draw_cards_create_token_bridge_min_v1.test.ts
+- src/engine/semantic/tests/sem_overlay_life_gain_draw_cards_bridge_min_v1.test.ts
+- src/engine/semantic/tests/sem_zone_identity_lki_min_v1.test.ts
+
+Ring estable inicial recomendado:
+
+1. sem_lower_to_ability_ir_min_v1.test.ts
+2. sem_cost_target_legality_min_v1.test.ts
+3. sem_legality_zone_permission_min_v1.test.ts
+4. sem_mana_ability_classification_min_v1.test.ts
+5. sem_triggered_ability_classification_min_v1.test.ts
+6. sem_linked_ability_min_v1.test.ts
+7. sem_replacement_prevention_min_v1.test.ts
+8. sem_continuous_layers_dependency_timestamp_min_v1.test.ts
+9. sem_zone_identity_lki_min_v1.test.ts
+10. sem_overlay_cast_spell_damage_bridge_min_v1.test.ts
+11. sem_overlay_draw_cards_add_mana_local_bridge_min_v1.test.ts
+12. sem_overlay_draw_cards_create_token_bridge_min_v1.test.ts
+13. sem_overlay_life_gain_draw_cards_bridge_min_v1.test.ts
+
+Lectura:
+- Este ring es intencionadamente pequeño.
+- Protege infra semántica y bridges representativos.
+- No debe crecer por inercia.
+- Cada nueva microfase puede añadir su test focal a Anillo A, no necesariamente al ring estable.
+
+=====================================================================
+10. PRÓXIMAS MICROFASES RECOMENDADAS
+=====================================================================
+
+1. HONEST_COVERAGE_REASONS_UI_V1
+
+Objetivo:
+- distinguir en UI:
+  - carta reconocida en índice,
+  - carta analizada,
+  - carta reconocida pero sin plantilla soportada,
+  - texto opaco,
+  - carta no encontrada.
+
+Razón:
+- el índice ya está actualizado.
+- el motor no debe fingir que entiende todo.
+- esto mejora confianza del usuario sin tocar semántica.
+
+Tipo:
+- UI / surface contractual.
+- Sin tocar motor.
+- Sin tocar scoring.
+- Sin crear bridges.
+
+2. FRIENDLY_ANALYZER_RESULTS_READABILITY_V1
+
+Objetivo:
+- reorganizar los resultados en:
+  - diagnóstico rápido,
+  - sinergias principales,
+  - detalles técnicos.
+- ocultar SOS, counts, raw score y producers/excess bajo detalles.
+
+Razón:
+- el analizador ya genera valor real.
+- el output actual es demasiado técnico para usuario general.
+
+Tipo:
+- UI-only.
+- No cambia resultados.
+- No cambia engine.
+
+3. NEXT_ENGINE_MICROPHASE_FROM_GAP_MAP_V1
+
+Objetivo:
+- elegir una sola microfase de motor basada en evidencia del gap map, no por intuición.
+
+Candidatos razonables:
+- cross-card closure focal y limitada para una familia con impacto visible,
+- unsupported reason extraction para cartas reconocidas,
+- mejora de parser sobre una plantilla Oracle frecuente,
+- bridge local nuevo si el inventario encuentra gap con mazos reales.
+
+Regla:
+- no abrir stack/priority completo,
+- no abrir CR 613 completa,
+- no abrir CR 607 completa,
+- no abrir runtime mana engine,
+- no abrir cross-card general.
+
+=====================================================================
+11. DICTAMEN FINAL
+=====================================================================
+
+El motor de MTGSynergy ya tiene masa crítica suficiente para ser considerado un analizador estructural + semántico experimental funcional.
+
+No es todavía un simulador de Magic.
+No es un motor completo de reglas.
+No pretende ejecutar partidas.
+Su valor actual está en:
+- reconocer cartas por Oracle text actualizado,
+- extraer roles estructurales,
+- construir relaciones estructurales,
+- calcular SPS,
+- generar overlay semántico,
+- detectar bridges causales locales,
+- preservar honestidad mediante límites explícitos.
+
+El siguiente salto de calidad no debe ser “más motor” por inercia.
+El siguiente salto correcto es hacer visible la honestidad de cobertura:
+- qué carta se reconoce,
+- qué se entiende,
+- qué queda opaco,
+- qué habilidad requiere microfase futura.
+
+Después de eso, la interfaz friendly será más segura y más útil.
+
+=====================================================================
+END DOCUMENT
+=====================================================================

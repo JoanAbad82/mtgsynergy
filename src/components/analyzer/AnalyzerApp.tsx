@@ -16,7 +16,7 @@ import { lookupCard } from "../../engine/cards/lookup";
 import { buildShareUrl, getShareTokenFromUrl } from "./state/shareUrl";
 import { exportJson, importJson } from "./state/jsonFallback";
 import StructuralPanel from "./panels/StructuralPanel";
-import RoleGraphPanel from "./panels/RoleGraphPanel";
+import RoleGraphPanel, { formatRoleLabelForUi } from "./panels/RoleGraphPanel";
 import SharePanel from "./panels/SharePanel";
 import AnalysisStatusPanel from "./panels/AnalysisStatusPanel";
 import SemanticOverlayPanel from "./SemanticOverlayPanel";
@@ -120,7 +120,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
       setShareImported(true);
       setJsonImported(false);
     } catch (err) {
-      setError("No se pudo cargar el share link.");
+      setError("No se pudo cargar el enlace compartido.");
     }
   }, []);
 
@@ -276,7 +276,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
           setShareToken(null);
           setShareUrl(null);
         } else {
-          setError("Error inesperado al generar share link.");
+          setError("Error inesperado al generar enlace.");
         }
       }
     } catch (e) {
@@ -446,7 +446,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
               <span title="Roles con mayor presencia en el mazo">
                 Roles dominantes
               </span>
-              : {getDominantRoles(summary.role_counts).join(", ") || "—"}
+              : {formatDominantRolesForUi(summary.role_counts)}
             </p>
             {(() => {
               const densityGuide = interpretDensity(summary.density);
@@ -467,7 +467,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
               return (
                 <MetricCoach
                   label="Roles dominantes"
-                  value={rolesGuide.title}
+                  value={formatRoleListForUi(roles)}
                   meaning={rolesGuide.meaning}
                   advice={rolesGuide.advice}
                 />
@@ -839,6 +839,17 @@ export function parseMcParams(
   const iterations = Number(params.get("mcN") ?? "1000");
   const seed = Number(params.get("mcSeed") ?? "1");
   return { enabled, iterations, seed };
+}
+
+export function formatRoleListForUi(roles: string[]): string {
+  if (roles.length === 0) return "—";
+  return roles.map((role) => formatRoleLabelForUi(role)).join(", ");
+}
+
+export function formatDominantRolesForUi(
+  roleCounts: Record<string, number>,
+): string {
+  return formatRoleListForUi(getDominantRoles(roleCounts));
 }
 
 export function explainEdgeKind(kind?: string): string {

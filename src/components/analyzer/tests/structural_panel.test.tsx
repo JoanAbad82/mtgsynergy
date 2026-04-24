@@ -39,7 +39,9 @@ describe("StructuralPanel summary formatter", () => {
     const lines = buildStructuralSummaryLines(summary);
     expect(lines.activity).toBe("Nodos activos: 5 / 8 · Relaciones: 12 · Densidad: 0.375");
     expect(lines.topology).toBe("Ciclos detectados: sí · Componentes conectados: 3");
-    expect(lines.roleFlow).toBe("Roles origen: RAMP, DRAW · Roles destino: PAYOFF, UTILITY");
+    expect(lines.roleFlow).toBe(
+      "Roles origen: Aceleración, Robo de cartas · Roles destino: Recompensas, Utilidad",
+    );
   });
 
   it("usa fallback '—' cuando no hay roles origen/destino y es determinista", () => {

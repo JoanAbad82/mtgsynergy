@@ -2,10 +2,12 @@ import { describe, expect, test } from "vitest";
 import {
   buildNameMapFromDeckState,
   explainEdgeKind,
+  formatDominantRolesForUi,
   formatBuildShaShort,
   formatEdgeCopiesLine,
   formatEdgeLine,
   formatNumberCompact,
+  formatRoleListForUi,
   getSpsNumber,
   groupEdgesForPanel,
   parseMcParams,
@@ -189,5 +191,33 @@ describe("getSpsNumber", () => {
 
   test("returns 0 for unknown shapes", () => {
     expect(getSpsNumber({})).toBe(0);
+  });
+});
+
+describe("dominant roles friendly copy", () => {
+  test("maps raw roles to friendly labels in deterministic order", () => {
+    const input = ["DRAW", "REMOVAL", "PAYOFF"];
+    expect(formatRoleListForUi(input)).toBe("Robo de cartas, Interacción / removal, Recompensas");
+    expect(input).toEqual(["DRAW", "REMOVAL", "PAYOFF"]);
+  });
+
+  test("keeps fallback for unknown roles", () => {
+    expect(formatRoleListForUi(["UNKNOWN_ROLE"])).toBe("UNKNOWN_ROLE");
+  });
+
+  test("builds dominant roles from role_counts without mutating", () => {
+    const roleCounts = {
+      LAND: 24,
+      DRAW: 8,
+      REMOVAL: 6,
+      PAYOFF: 5,
+      ENGINE: 4,
+    };
+    const snapshot = JSON.parse(JSON.stringify(roleCounts));
+    const first = formatDominantRolesForUi(roleCounts);
+    const second = formatDominantRolesForUi(roleCounts);
+    expect(first).toBe(second);
+    expect(first).toBe("Robo de cartas, Interacción / removal, Recompensas");
+    expect(roleCounts).toEqual(snapshot);
   });
 });

@@ -11,6 +11,18 @@ type Props = {
   onExportJson: (json: string) => void;
 };
 
+export const SHARE_PANEL_COPY = {
+  title: "URL para compartir",
+  copyLinkButton: "Copiar enlace",
+  longUrlWarning:
+    "Aviso: URL larga. Puede ser incómoda de compartir en algunas apps.",
+  copied: "Copiado",
+  tooLongHint: "Token demasiado largo. Usa el fallback JSON.",
+  copyJsonButton: "Copiar JSON",
+  importJsonButton: "Importar JSON",
+  emptyState: "Genera un análisis para crear un enlace.",
+} as const;
+
 export default function SharePanel({
   token,
   shareUrl,
@@ -41,7 +53,7 @@ export default function SharePanel({
 
   return (
     <div className="panel">
-      <h2>Share URL</h2>
+      <h2>{SHARE_PANEL_COPY.title}</h2>
       {shareUrl && !tooLong && (
         <>
           <textarea
@@ -51,22 +63,22 @@ export default function SharePanel({
             style={{ width: "100%", overflowX: "auto", whiteSpace: "nowrap" }}
             value={shareUrl}
           />
-          <button onClick={() => handleCopy(shareUrl, "link")}>
-            Copiar link
+          <button onClick={() => handleCopy(shareUrl, "enlace")}>
+            {SHARE_PANEL_COPY.copyLinkButton}
           </button>
           {warn && (
             <p className="muted">
-              Aviso: URL larga. Puede ser incómoda de compartir en algunas apps.
+              {SHARE_PANEL_COPY.longUrlWarning}
             </p>
           )}
-          {copied && <p className="muted">Copiado</p>}
+          {copied && <p className="muted">{SHARE_PANEL_COPY.copied}</p>}
           {copyError && <p className="muted">{copyError}</p>}
         </>
       )}
       {tooLong && (
         <>
           <p className="muted">
-            Token demasiado largo. Usa el fallback JSON.
+            {SHARE_PANEL_COPY.tooLongHint}
           </p>
           <textarea
             className="share-url"
@@ -75,15 +87,15 @@ export default function SharePanel({
             onChange={(e) => onExportJson(e.currentTarget.value)}
           />
           <button onClick={() => handleCopy(jsonFallback, "JSON")}>
-            Copiar JSON
+            {SHARE_PANEL_COPY.copyJsonButton}
           </button>{" "}
-          <button onClick={() => onImportJson(jsonFallback)}>Importar JSON</button>
-          {copied && <p className="muted">Copiado</p>}
+          <button onClick={() => onImportJson(jsonFallback)}>{SHARE_PANEL_COPY.importJsonButton}</button>
+          {copied && <p className="muted">{SHARE_PANEL_COPY.copied}</p>}
           {copyError && <p className="muted">{copyError}</p>}
         </>
       )}
       {!token && !tooLong && (
-        <p className="muted">Genera un análisis para crear un link.</p>
+        <p className="muted">{SHARE_PANEL_COPY.emptyState}</p>
       )}
     </div>
   );

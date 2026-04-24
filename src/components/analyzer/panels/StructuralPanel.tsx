@@ -1,4 +1,5 @@
 import type { StructuralSummary } from "../../../engine";
+import { formatRoleLabelForUi } from "./RoleGraphPanel";
 
 type Props = {
   summary: StructuralSummary;
@@ -21,11 +22,18 @@ export function buildStructuralSummaryLines(summary: StructuralSummary): {
   topology: string;
   roleFlow: string;
 } {
+  const sources = formatStructuralRoleListForUi(summary.sources);
+  const sinks = formatStructuralRoleListForUi(summary.sinks);
   return {
     activity: `${STRUCTURAL_PANEL_COPY.nodesActiveLabel}: ${summary.nodes_active} / ${summary.nodes_total} · ${STRUCTURAL_PANEL_COPY.relationsLabel}: ${summary.edges_total} · ${STRUCTURAL_PANEL_COPY.densityLabel}: ${summary.density.toFixed(3)}`,
     topology: `${STRUCTURAL_PANEL_COPY.cyclesDetectedLabel}: ${summary.cycles_present ? "sí" : "no"} · ${STRUCTURAL_PANEL_COPY.connectedComponentsLabel}: ${summary.components_weak.count}`,
-    roleFlow: `${STRUCTURAL_PANEL_COPY.sourceRolesLabel}: ${summary.sources.join(", ") || "—"} · ${STRUCTURAL_PANEL_COPY.destinationRolesLabel}: ${summary.sinks.join(", ") || "—"}`,
+    roleFlow: `${STRUCTURAL_PANEL_COPY.sourceRolesLabel}: ${sources} · ${STRUCTURAL_PANEL_COPY.destinationRolesLabel}: ${sinks}`,
   };
+}
+
+export function formatStructuralRoleListForUi(roles: string[]): string {
+  if (roles.length === 0) return "—";
+  return roles.map((role) => formatRoleLabelForUi(role)).join(", ");
 }
 
 export default function StructuralPanel({ summary }: Props) {

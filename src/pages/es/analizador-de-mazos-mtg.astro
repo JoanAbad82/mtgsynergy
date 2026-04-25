@@ -153,6 +153,7 @@ import { gitShaFull } from "../../lib/buildMeta";
       0 10px 26px rgba(0, 0, 0, 0.34),
       inset 0 1px 0 rgba(255, 255, 255, 0.08);
     transition: transform 120ms ease, border-color 140ms ease, box-shadow 180ms ease, filter 180ms ease;
+    touch-action: manipulation;
   }
   .analyzer button:not(.link-button):hover {
     transform: translateY(-1px) scale(1.01);
@@ -361,6 +362,7 @@ import { gitShaFull } from "../../lib/buildMeta";
   .analyzer .link-button {
     color: #c3d4ff;
     border-color: rgba(152, 175, 235, 0.45);
+    touch-action: manipulation;
   }
   .analyzer .link-button:hover {
     color: #edf3ff;
@@ -533,6 +535,7 @@ import { gitShaFull } from "../../lib/buildMeta";
     .analyzer table {
       display: block;
       overflow-x: auto;
+      touch-action: pan-x;
       -webkit-overflow-scrolling: touch;
       max-width: 100%;
       border-radius: 10px;

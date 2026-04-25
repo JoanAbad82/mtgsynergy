@@ -140,6 +140,12 @@ function applyCreatureAttacksDrawCardsBridge(profile: ReturnType<typeof buildSem
   return profile.consumed.has(creatureAttacksKey) && profile.produced.has(drawCardsKey);
 }
 
+function applyCreatureAttacksDealDamageBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const creatureAttacksKey = keyOf(KeyKind.EVENT, EventId.CREATURE_ATTACKS);
+  const dealDamageKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  return profile.consumed.has(creatureAttacksKey) && profile.produced.has(dealDamageKey);
+}
+
 function applyCastSpellPtChangeBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const castSpellKey = keyOf(KeyKind.EVENT, EventId.CAST_SPELL);
   const ptChangeKey = keyOf(KeyKind.ACTION, ActionId.PT_CHANGE);
@@ -334,6 +340,13 @@ function explicitCreatureAttacksCreateTokenTextEvidence(text: string): boolean {
 function explicitCreatureAttacksDrawCardsTextEvidence(text: string): boolean {
   const normalized = text.toLowerCase();
   return /\bwhenever\s+this\s+creature\s+attacks\s*,[^.]*\bdraws?\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(
+    normalized,
+  );
+}
+
+function explicitCreatureAttacksDealDamageTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return /\bwhenever\s+this\s+creature\s+attacks\s*,[^.]*\b(?:it|this creature|this card|[a-z][a-z0-9,' -]{0,60})\s+deals?\s+\d+\s+damage\b/i.test(
     normalized,
   );
 }
@@ -800,6 +813,26 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: creatureAttacksKey, weight: 1 },
       { key: drawCardsCreatureAttacksKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const dealDamageCreatureAttacksKey = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
+  for (const card of cards) {
+    const apply = applyCreatureAttacksDealDamageBridge(card.profile);
+    const textEvidence = explicitCreatureAttacksDealDamageTextEvidence(card.oracle_text ?? "");
+    if (!apply) continue;
+    if (!textEvidence) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: creatureAttacksKey, weight: 1 },
+      { key: dealDamageCreatureAttacksKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

@@ -132,6 +132,13 @@ import { gitShaFull } from "../../lib/buildMeta";
       0 14px 30px rgba(20, 29, 57, 0.38),
       inset 0 1px 0 rgba(255, 255, 255, 0.08);
   }
+  .analyzer textarea:focus-visible,
+  .analyzer .share-url:focus-visible,
+  .analyzer button:not(.link-button):focus-visible,
+  .analyzer .link-button:focus-visible {
+    outline: 2px solid rgba(219, 230, 255, 0.95);
+    outline-offset: 2px;
+  }
   .analyzer button:not(.link-button) {
     margin-top: 10px;
     padding: 11px 16px;
@@ -259,10 +266,12 @@ import { gitShaFull } from "../../lib/buildMeta";
   .analyzer .panel > p {
     line-height: 1.7;
     color: rgba(226, 233, 255, 0.92);
+    overflow-wrap: anywhere;
   }
   .analyzer .muted {
     color: rgba(211, 222, 248, 0.88);
     line-height: 1.72;
+    overflow-wrap: anywhere;
   }
   .analyzer .badge {
     display: inline-block;
@@ -323,6 +332,7 @@ import { gitShaFull } from "../../lib/buildMeta";
     border-radius: 10px;
     border: 1px solid rgba(136, 159, 220, 0.28);
     background: rgba(14, 20, 33, 0.74);
+    overflow-wrap: anywhere;
   }
   .analyzer .issues li::before {
     content: "";
@@ -365,6 +375,7 @@ import { gitShaFull } from "../../lib/buildMeta";
     border: 1px solid rgba(138, 160, 220, 0.28);
     background: linear-gradient(180deg, rgba(24, 31, 49, 0.9), rgba(16, 21, 34, 0.92));
     padding: 10px 12px;
+    overflow-wrap: anywhere;
   }
   .analyzer .metric-coach-line {
     display: flex;
@@ -380,6 +391,7 @@ import { gitShaFull } from "../../lib/buildMeta";
   }
   .analyzer .metric-coach-line > span {
     color: rgba(223, 232, 255, 0.9);
+    overflow-wrap: anywhere;
   }
   .analyzer .metric-coach .muted {
     margin: 3px 0 0;
@@ -444,14 +456,42 @@ import { gitShaFull } from "../../lib/buildMeta";
     background: rgba(15, 21, 34, 0.78);
     font-size: 13px;
     line-height: 1.6;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
   .analyzer .status-toggle {
     margin-top: 4px;
   }
+  .analyzer .link-button:focus-visible {
+    border-color: rgba(197, 213, 255, 0.82);
+    box-shadow: 0 0 0 3px rgba(108, 138, 229, 0.28);
+    border-radius: 8px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .analyzer *,
+    .analyzer-theme,
+    .analyzer-theme::before,
+    .analyzer-theme::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .analyzer .panel:hover,
+    .analyzer button:not(.link-button):hover,
+    .analyzer .panel:first-of-type button:not(.link-button):first-of-type:hover {
+      transform: none !important;
+    }
+  }
+
   @media (max-width: 560px) {
     .analyzer-theme {
       border-radius: 18px;
       padding: 20px 13px 15px;
+    }
+    .analyzer {
+      gap: 16px;
     }
     .analyzer-hero {
       margin-bottom: 16px;
@@ -466,9 +506,14 @@ import { gitShaFull } from "../../lib/buildMeta";
     .analyzer textarea {
       min-height: 180px;
       padding: 12px;
+      font-size: 16px;
     }
     .analyzer .panel:first-of-type textarea {
       min-height: 220px;
+    }
+    .analyzer .share-url {
+      font-size: 16px;
+      padding: 10px 12px;
     }
     .analyzer .panel {
       margin: 16px 0;
@@ -477,19 +522,51 @@ import { gitShaFull } from "../../lib/buildMeta";
     .analyzer .panel h2 {
       padding-left: 12px;
     }
+    .analyzer button:not(.link-button) {
+      width: 100%;
+      justify-content: center;
+    }
+    .analyzer .panel:first-of-type button:not(.link-button):first-of-type {
+      width: 100%;
+      min-width: 0;
+    }
+    .analyzer table {
+      display: block;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100%;
+      border-radius: 10px;
+    }
     .analyzer th,
     .analyzer td {
       font-size: 13px;
       padding: 7px 8px;
+      white-space: nowrap;
     }
     .analyzer .metric-coach {
       padding: 9px 10px;
+    }
+    .analyzer .metric-coach-line {
+      gap: 6px 8px;
     }
     .analyzer .status-section {
       padding: 10px 11px;
     }
     .analyzer .status-actions {
+      flex-direction: column;
+      align-items: flex-start;
       gap: 7px 8px;
+    }
+    .analyzer .status-details {
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .analyzer .issues {
+      gap: 7px;
+    }
+    .analyzer .issues li {
+      padding: 8px 9px 8px 22px;
+      font-size: 13px;
     }
   }
 </style>

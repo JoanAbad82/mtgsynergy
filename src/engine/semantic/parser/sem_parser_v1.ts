@@ -827,6 +827,9 @@ export function parseSemanticIrV0(input: {
     if (/\b(when|whenever)[^.]*\bdraw\b[^.]*\bsecond card\b[^.]*each turn\b/i.test(text)) {
       addWatch(EventId.DRAW_EXTRA_CARD_TURN);
     }
+    if (/\bwhenever\s+this\s+creature\s+attacks\s*,/i.test(text)) {
+      addWatch(EventId.CREATURE_ATTACKS);
+    }
   }
 
   const cost: Array<{ cost: CostId; res?: ResourceId; n?: number; x?: boolean }> = [];

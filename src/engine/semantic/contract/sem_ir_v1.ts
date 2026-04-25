@@ -29,6 +29,7 @@ export enum EventId {
   SHUFFLE = 18,
   CONTROL_CHANGE = 19,
   DRAW_EXTRA_CARD_TURN = 20,
+  CREATURE_ATTACKS = 21,
 }
 
 export enum ActionId {

@@ -152,6 +152,12 @@ function applyCreatureAttacksAddCountersBridge(profile: ReturnType<typeof buildS
   return profile.consumed.has(creatureAttacksKey) && profile.produced.has(addCountersKey);
 }
 
+function applyCreatureAttacksLoseLifeBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const creatureAttacksKey = keyOf(KeyKind.EVENT, EventId.CREATURE_ATTACKS);
+  const loseLifeKey = keyOf(KeyKind.ACTION, ActionId.LOSE_LIFE);
+  return profile.consumed.has(creatureAttacksKey) && profile.produced.has(loseLifeKey);
+}
+
 function applyCastSpellPtChangeBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const castSpellKey = keyOf(KeyKind.EVENT, EventId.CAST_SPELL);
   const ptChangeKey = keyOf(KeyKind.ACTION, ActionId.PT_CHANGE);
@@ -370,6 +376,13 @@ function explicitCreatureAttacksAddCountersTextEvidence(text: string, cardName?:
 
   const cardNamePattern = new RegExp(`${narrowPattern}${escapeRegex(normalizedCardName)}\\b`, "i");
   return cardNamePattern.test(normalized);
+}
+
+function explicitCreatureAttacksLoseLifeTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return /\bwhenever\s+this\s+creature\s+attacks\s*,[^.]*\b(?:each\s+opponents?|target\s+opponents?|defending\s+player)\s+loses?\s+(?:a|an|one|two|three|four|\d+)\s+life\b/i.test(
+    normalized,
+  );
 }
 
 function explicitCastSpellPtChangePayoffTextEvidence(text: string): boolean {
@@ -875,6 +888,26 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: creatureAttacksKey, weight: 1 },
       { key: addCountersCreatureAttacksKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const loseLifeCreatureAttacksKey = keyOf(KeyKind.ACTION, ActionId.LOSE_LIFE);
+  for (const card of cards) {
+    const apply = applyCreatureAttacksLoseLifeBridge(card.profile);
+    const textEvidence = explicitCreatureAttacksLoseLifeTextEvidence(card.oracle_text ?? "");
+    if (!apply) continue;
+    if (!textEvidence) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: creatureAttacksKey, weight: 1 },
+      { key: loseLifeCreatureAttacksKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

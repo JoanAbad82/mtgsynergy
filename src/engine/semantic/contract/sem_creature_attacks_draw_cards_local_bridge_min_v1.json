@@ -1,0 +1,70 @@
+{
+  "metadata": {
+    "document_id": "sem_creature_attacks_draw_cards_local_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "open-engine-creature-attacks-draw-cards-local-bridge-min-v1",
+    "source_note": "Minimal contract for a local-only CREATURE_ATTACKS -> DRAW_CARDS bridge with strict explicit wording and no combat-engine expansion."
+  },
+  "family": "CREATURE_ATTACKS -> DRAW_CARDS",
+  "bridge_name": "creature_attacks_to_draw_cards_local_bridge_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "bridge_kind": {
+    "id": "creature_attacks_enables_local_draw_cards",
+    "label": "creature_attacks -> draw_cards",
+    "source": "EVENT:CREATURE_ATTACKS",
+    "target": "ACTION:DRAW_CARDS",
+    "causal_mode": "local_explicit_narrow",
+    "purpose": "Enable strict local closure where an explicit this-creature-attacks trigger co-exists with local draw-card payoff wording."
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile consumes EVENT:CREATURE_ATTACKS",
+      "Profile produces ACTION:DRAW_CARDS"
+    ],
+    "text_evidence_policy": "Require explicit wording equivalent to 'Whenever this creature attacks, draw a card.'",
+    "honesty_constraints": [
+      "Reject 'whenever you attack' wording.",
+      "Reject 'one or more creatures attack' wording.",
+      "Reject combat-damage trigger wording.",
+      "Reject draw text without explicit this-creature-attacks trigger."
+    ]
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "EVENT:CREATURE_ATTACKS",
+        "ACTION:DRAW_CARDS"
+      ]
+    }
+  },
+  "policy": {
+    "local_only": true,
+    "intra_profile": true
+  },
+  "no_goals": [
+    "No combat engine",
+    "No combat damage modeling",
+    "No 'whenever you attack'",
+    "No 'one or more creatures attack'",
+    "No 'attacks alone'",
+    "No cross-card closure",
+    "No UI/scoring/SPS/MC-SSL changes"
+  ]
+}
+

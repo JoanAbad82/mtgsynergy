@@ -579,6 +579,20 @@ import { gitShaFull } from "../../lib/buildMeta";
     }
 
     :global(html),
+    :global(body),
+    .analyzer-theme,
+    .analyzer,
+    .analyzer *,
+    .analyzer-theme * {
+      color-scheme: light !important;
+      background-image: none !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+      filter: none !important;
+      opacity: 1 !important;
+    }
+
+    :global(html),
     :global(body) {
       background: #fff !important;
       color: #111 !important;
@@ -586,16 +600,22 @@ import { gitShaFull } from "../../lib/buildMeta";
       print-color-adjust: exact;
     }
 
+    .analyzer-theme,
+    .analyzer,
+    .analyzer *,
+    .analyzer-theme * {
+      background: transparent !important;
+    }
+
     .analyzer *,
     .analyzer-theme,
     .analyzer-theme::before,
-    .analyzer-theme::after {
+    .analyzer-theme::after,
+    .analyzer .panel::before {
       transition: none !important;
       animation: none !important;
       transform: none !important;
       box-shadow: none !important;
-      text-shadow: none !important;
-      filter: none !important;
     }
 
     .analyzer-theme::before,
@@ -612,9 +632,11 @@ import { gitShaFull } from "../../lib/buildMeta";
       border-radius: 0 !important;
       background: #fff !important;
       overflow: visible !important;
+      max-width: none !important;
     }
 
     .analyzer {
+      display: block !important;
       margin-top: 0 !important;
       gap: 5mm !important;
       background: #fff !important;
@@ -652,7 +674,19 @@ import { gitShaFull } from "../../lib/buildMeta";
       page-break-inside: avoid;
     }
 
-    .analyzer .badge,
+    .analyzer .panel h2,
+    .analyzer .panel h3 {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .analyzer .badge {
+      background: #f3f4f6 !important;
+      color: #111 !important;
+      border: 1px solid #cfcfcf !important;
+      box-shadow: none !important;
+    }
+
     .analyzer .level-chip,
     .analyzer .status-badge {
       background: #f6f6f6 !important;
@@ -668,11 +702,22 @@ import { gitShaFull } from "../../lib/buildMeta";
       border: 1px solid #d3d3d3 !important;
       background: #fff !important;
       overflow: visible !important;
+      table-layout: auto !important;
       break-inside: avoid;
       page-break-inside: avoid;
     }
 
-    .analyzer th,
+    .analyzer th {
+      color: #111 !important;
+      border: 1px solid #d9d9d9 !important;
+      background: #f3f4f6 !important;
+      padding: 2.2mm !important;
+      font-weight: 700 !important;
+      white-space: normal !important;
+      overflow-wrap: anywhere !important;
+      word-break: break-word !important;
+    }
+
     .analyzer td {
       color: #111 !important;
       border: 1px solid #d9d9d9 !important;
@@ -683,21 +728,31 @@ import { gitShaFull } from "../../lib/buildMeta";
       word-break: break-word !important;
     }
 
-    .analyzer th {
-      background: #f2f2f2 !important;
-    }
-
     .analyzer .issues {
       gap: 2mm !important;
       break-inside: avoid;
       page-break-inside: avoid;
     }
 
-    .analyzer .issues li,
+    .analyzer .issues li {
+      background: #f8f8f8 !important;
+      color: #111 !important;
+      border: 1px solid #d9d9d9 !important;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .analyzer .metric-coach-block {
+      background: transparent !important;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
     .analyzer .metric-coach,
     .analyzer .status-section,
-    .analyzer .status-details {
-      background: #fff !important;
+    .analyzer .status-details,
+    .analyzer .status-actions {
+      background: #f8f8f8 !important;
       color: #111 !important;
       border: 1px solid #d9d9d9 !important;
       break-inside: avoid;
@@ -712,7 +767,7 @@ import { gitShaFull } from "../../lib/buildMeta";
     .analyzer textarea,
     .analyzer .panel:first-of-type textarea,
     .analyzer .share-url {
-      min-height: 36mm !important;
+      min-height: 24mm !important;
       border: 1px solid #cfcfcf !important;
       border-radius: 1.5mm !important;
       background: #fff !important;
@@ -723,6 +778,7 @@ import { gitShaFull } from "../../lib/buildMeta";
 
     .analyzer button:not(.link-button),
     .analyzer .link-button {
+      display: inline-block !important;
       background: #fff !important;
       color: #111 !important;
       border: 1px solid #cfcfcf !important;

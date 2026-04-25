@@ -128,6 +128,12 @@ function applyCastSpellCreateTokenBridge(profile: ReturnType<typeof buildSemanti
   return profile.consumed.has(castSpellKey) && profile.produced.has(createTokenKey);
 }
 
+function applyCreatureAttacksCreateTokenBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const creatureAttacksKey = keyOf(KeyKind.EVENT, EventId.CREATURE_ATTACKS);
+  const createTokenKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+  return profile.consumed.has(creatureAttacksKey) && profile.produced.has(createTokenKey);
+}
+
 function applyCastSpellPtChangeBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const castSpellKey = keyOf(KeyKind.EVENT, EventId.CAST_SPELL);
   const ptChangeKey = keyOf(KeyKind.ACTION, ActionId.PT_CHANGE);
@@ -310,6 +316,13 @@ function explicitCastSpellCreateTokenPayoffTextEvidence(text: string): boolean {
   const isCastInstantOrSorcery = normalized.includes("whenever you cast an instant or sorcery spell");
   const isCastNoncreatureSpell = normalized.includes("whenever you cast a noncreature spell");
   return hasCreateToken && (isCastInstantOrSorcery || isCastNoncreatureSpell);
+}
+
+function explicitCreatureAttacksCreateTokenTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasNarrowAttackTrigger = /\bwhenever\s+this\s+creature\s+attacks\s*,/i.test(normalized);
+  const hasCreateTokenClause = /\bcreate\b[^.]*\btoken\b/i.test(normalized);
+  return hasNarrowAttackTrigger && hasCreateTokenClause;
 }
 
 function explicitCastSpellPtChangePayoffTextEvidence(text: string): boolean {
@@ -733,6 +746,27 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: castSpellKey, weight: 1 },
       { key: createTokenCastSpellKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const creatureAttacksKey = keyOf(KeyKind.EVENT, EventId.CREATURE_ATTACKS);
+  const createTokenCreatureAttacksKey = keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN);
+  for (const card of cards) {
+    const apply = applyCreatureAttacksCreateTokenBridge(card.profile);
+    const textEvidence = explicitCreatureAttacksCreateTokenTextEvidence(card.oracle_text ?? "");
+    if (!apply) continue;
+    if (!textEvidence) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: creatureAttacksKey, weight: 1 },
+      { key: createTokenCreatureAttacksKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

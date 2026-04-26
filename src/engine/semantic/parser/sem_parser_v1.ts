@@ -863,6 +863,15 @@ export function parseSemanticIrV0(input: {
     addUnique(touch, { id: ResourceId.CARD }, (a, b) => a.id === b.id);
   }
 
+  const attacksAddManaSymbolMatch =
+    /\bwhenever\s+this\s+creature\s+attacks\s*,[^.]*\badd\s+\{[wubrgcxyz0-9/]+\}(?:\{[wubrgcxyz0-9/]+\})*/i.test(
+      text,
+    );
+  if (attacksAddManaSymbolMatch) {
+    // Template v1 minimal: "Whenever this creature attacks, add {R}."
+    doList.push({ action: ActionId.PRODUCE_MANA });
+  }
+
   const howlingMineMatch =
     /^at the beginning of each player's draw step, if (?:howling mine|this artifact) is untapped, that player draws an additional card\.?$/i.test(
       text,

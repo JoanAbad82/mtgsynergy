@@ -178,6 +178,14 @@ function applyCreatureAttacksDiscardCardsBridge(
   return profile.consumed.has(creatureAttacksKey) && profile.produced.has(discardCardsKey);
 }
 
+function applyCreatureAttacksProduceManaBridge(
+  profile: ReturnType<typeof buildSemanticCardProfile>,
+): boolean {
+  const creatureAttacksKey = keyOf(KeyKind.EVENT, EventId.CREATURE_ATTACKS);
+  const produceManaKey = keyOf(KeyKind.ACTION, ActionId.PRODUCE_MANA);
+  return profile.consumed.has(creatureAttacksKey) && profile.produced.has(produceManaKey);
+}
+
 function applyCastSpellPtChangeBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const castSpellKey = keyOf(KeyKind.EVENT, EventId.CAST_SPELL);
   const ptChangeKey = keyOf(KeyKind.ACTION, ActionId.PT_CHANGE);
@@ -422,6 +430,13 @@ function explicitCreatureAttacksMillTextEvidence(text: string): boolean {
 function explicitCreatureAttacksDiscardCardsTextEvidence(text: string): boolean {
   const normalized = text.toLowerCase();
   return /\bwhenever\s+this\s+creature\s+attacks\s*,[^.]*\b(?:target\s+(?:player|opponent)|defending\s+player)\s+discards?\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(
+    normalized,
+  );
+}
+
+function explicitCreatureAttacksProduceManaTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return /\bwhenever\s+this\s+creature\s+attacks\s*,[^.]*\badd\s+\{[wubrgcxyz0-9/]+\}(?:\{[wubrgcxyz0-9/]+\})*/i.test(
     normalized,
   );
 }
@@ -1009,6 +1024,26 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: creatureAttacksKey, weight: 1 },
       { key: discardCardsCreatureAttacksKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const produceManaCreatureAttacksKey = keyOf(KeyKind.ACTION, ActionId.PRODUCE_MANA);
+  for (const card of cards) {
+    const apply = applyCreatureAttacksProduceManaBridge(card.profile);
+    const textEvidence = explicitCreatureAttacksProduceManaTextEvidence(card.oracle_text ?? "");
+    if (!apply) continue;
+    if (!textEvidence) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: creatureAttacksKey, weight: 1 },
+      { key: produceManaCreatureAttacksKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

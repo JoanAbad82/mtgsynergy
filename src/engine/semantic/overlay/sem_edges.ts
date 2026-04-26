@@ -51,6 +51,12 @@ function applyDealDamageLoseLifeBridge(profile: ReturnType<typeof buildSemanticC
   return profile.produced.has(dealDamageKey);
 }
 
+function applySacrificeAsCostDrawCardsBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const sacrificeKey = keyOf(KeyKind.EVENT, EventId.SACRIFICE);
+  const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  return profile.produced.has(sacrificeKey) && profile.produced.has(drawCardsKey);
+}
+
 function applyLeavesBattlefieldCreateTokenBridge(
   profile: ReturnType<typeof buildSemanticCardProfile>,
 ): boolean {
@@ -91,6 +97,22 @@ function explicitPreventDamageNoDamageEventGuardTextEvidence(text: string): bool
     /\bprevent\b[^.]*\bwould\s+deal\b[^.]*\bdamage\b/.test(normalized) ||
     /\bprevent\b[^.]*\bdeal\w*\s+\d+\s+damage\b/.test(normalized)
   );
+}
+
+function explicitSacrificeAsCostDrawCardsTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const hasAdditionalCostToCastSacrificeAndDraw =
+    /\bas\s+an\s+additional\s+cost\s+to\s+cast\b[^.]*\bsacrifice\b[^.]*\bdraws?\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(
+      normalized,
+    ) ||
+    /\bas\s+an\s+additional\s+cost\s+to\s+cast\b[^.]*\bsacrifice\b[^.]*\.\s*[^.]*\bdraws?\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(
+      normalized,
+    );
+  const hasActivatedSacrificeCostDraw =
+    /(?:^|[.]\s*)(?:\{t\}\s*,\s*)?sacrifice\s+(?:another\s+creature|this\s+artifact)\s*:\s*[^.]*\bdraws?\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(
+      normalized,
+    );
+  return hasAdditionalCostToCastSacrificeAndDraw || hasActivatedSacrificeCostDraw;
 }
 
 function applyLifeGainAddCountersBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
@@ -795,6 +817,25 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: createTokenEtbKey, weight: 1 },
       { key: entersBattlefieldEtbKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const sacrificeAsCostKey = keyOf(KeyKind.EVENT, EventId.SACRIFICE);
+  const drawCardsSacrificeAsCostKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  for (const card of cards) {
+    if (!applySacrificeAsCostDrawCardsBridge(card.profile)) continue;
+    if (!explicitSacrificeAsCostDrawCardsTextEvidence(card.oracle_text ?? "")) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: sacrificeAsCostKey, weight: 1 },
+      { key: drawCardsSacrificeAsCostKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

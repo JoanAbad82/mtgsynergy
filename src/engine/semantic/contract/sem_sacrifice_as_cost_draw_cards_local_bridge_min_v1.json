@@ -1,0 +1,65 @@
+{
+  "metadata": {
+    "document_id": "sem_sacrifice_as_cost_draw_cards_local_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "open-engine-sacrifice-as-cost-draw-cards-local-bridge-min-v1",
+    "source_note": "Minimal contract for local-only/intra-profile EVENT:SACRIFICE -> ACTION:DRAW_CARDS when sacrifice appears as local cost and draw resolves in the same text."
+  },
+  "family": "SACRIFICE_AS_COST -> DRAW_CARDS / EVENT:SACRIFICE -> ACTION:DRAW_CARDS",
+  "bridge_name": "sacrifice_as_cost_to_draw_cards_local_bridge_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "bridge_kind": {
+    "id": "sacrifice_as_cost_enables_local_draw_cards",
+    "label": "sacrifice_as_cost -> draw_cards",
+    "source": "EVENT:SACRIFICE (from CostId.SACRIFICE_AS_COST)",
+    "target": "ACTION:DRAW_CARDS",
+    "causal_mode": "local_explicit_narrow",
+    "purpose": "Enable strict local closure for sacrifice-as-cost clauses that resolve local card draw in the same text."
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile produces EVENT:SACRIFICE with origin=cost",
+      "Profile produces ACTION:DRAW_CARDS"
+    ],
+    "text_evidence_policy": "Require narrow explicit sacrifice-as-cost + draw wording in the same text.",
+    "honesty_constraints": [
+      "Reject triggered sacrifice listeners like 'Whenever you sacrifice...'.",
+      "Reject dies-family wording.",
+      "Reject discard-as-cost wording.",
+      "Reject text without local sacrifice-as-cost evidence.",
+      "Reject attack-family and create-token-etb-family wording."
+    ]
+  },
+  "implementation_files": [
+    "src/engine/semantic/overlay/sem_edges.ts",
+    "src/engine/semantic/tests/sem_overlay_sacrifice_as_cost_draw_cards_local_bridge_min_v1.test.ts"
+  ],
+  "policy": {
+    "local_only": true,
+    "intra_profile": true
+  },
+  "no_goals": [
+    "No parser changes",
+    "No IR changes",
+    "No profile changes",
+    "No discard-as-cost modeling",
+    "No CREATURE_DIES residual/promotion/bucketing",
+    "No CREATE_TOKEN -> ETB",
+    "No attacks",
+    "No cross-card closure",
+    "No global scoring",
+    "No UI"
+  ]
+}

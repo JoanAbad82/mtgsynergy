@@ -966,6 +966,14 @@ export function parseSemanticIrV0(input: {
     doList.push({ action: ActionId.PT_CHANGE });
   }
 
+  const creatureAttacksPtChangeMatch =
+    /\bwhenever\s+this\s+creature\s+attacks\s*,[^.]*\b(?:it|this\s+creature)\s+gets\s+\+(\d+)\/\+\1\s+until\s+end\s+of\s+turn\b/i.test(
+      text,
+    );
+  if (creatureAttacksPtChangeMatch) {
+    doList.push({ action: ActionId.PT_CHANGE });
+  }
+
   const damageMatch = /deal\w*\s+(\d+)\s+damage/i.exec(text);
   if (damageMatch) {
     const n = Number.parseInt(damageMatch[1], 10);

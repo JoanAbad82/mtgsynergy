@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "document_id": "sem_creature_attacks_pt_change_local_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "creature-attacks-pt-change-local-bridge-min-v1",
+    "source_note": "Minimal contract for local-only/intra-profile CREATURE_ATTACKS -> PT_CHANGE with parser-min support for narrow this-creature-attacks pump wording."
+  },
+  "family": "CREATURE_ATTACKS -> PT_CHANGE",
+  "bridge_name": "creature_attacks_to_pt_change_local_bridge_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "parser_min_required": true,
+  "bridge_kind": {
+    "id": "creature_attacks_enables_local_pt_change",
+    "label": "creature_attacks -> pt_change",
+    "source": "EVENT:CREATURE_ATTACKS",
+    "target": "ACTION:PT_CHANGE",
+    "causal_mode": "local_explicit_narrow",
+    "purpose": "Enable strict local closure for explicit this-creature-attacks temporary self-pump wording until end of turn."
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile consumes EVENT:CREATURE_ATTACKS",
+      "Profile produces ACTION:PT_CHANGE"
+    ],
+    "text_evidence_policy": "Require explicit wording equivalent to 'Whenever this creature attacks, it/this creature gets +N/+N until end of turn.'",
+    "honesty_constraints": [
+      "Reject 'whenever you attack' wording.",
+      "Reject 'one or more creatures attack' wording.",
+      "Reject 'attacks alone' wording.",
+      "Reject static anthem wording.",
+      "Reject equipped creature/aura generalization.",
+      "Reject PT_CHANGE text without explicit this-creature-attacks trigger."
+    ]
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "EVENT:CREATURE_ATTACKS",
+        "ACTION:PT_CHANGE"
+      ]
+    }
+  },
+  "policy": {
+    "local_only": true,
+    "intra_profile": true
+  },
+  "no_goals": [
+    "No layer engine",
+    "No combat math",
+    "No static anthem",
+    "No equipped creature / aura generalization",
+    "No cross-card closure",
+    "No scoring global",
+    "No sem_ir_v1 changes",
+    "No sem_profile changes"
+  ]
+}

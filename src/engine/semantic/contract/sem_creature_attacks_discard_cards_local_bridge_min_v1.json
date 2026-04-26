@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "document_id": "sem_creature_attacks_discard_cards_local_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "open-engine-creature-attacks-discard-cards-local-bridge-min-v1",
+    "source_note": "Minimal contract for a local-only CREATURE_ATTACKS -> DISCARD_CARDS bridge with strict explicit wording and no parser/IR/profile changes."
+  },
+  "family": "CREATURE_ATTACKS -> DISCARD_CARDS",
+  "bridge_name": "creature_attacks_to_discard_cards_local_bridge_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "bridge_kind": {
+    "id": "creature_attacks_enables_local_discard_cards",
+    "label": "creature_attacks -> discard_cards",
+    "source": "EVENT:CREATURE_ATTACKS",
+    "target": "ACTION:DISCARD_CARDS",
+    "causal_mode": "local_explicit_narrow",
+    "purpose": "Enable strict local closure where an explicit this-creature-attacks trigger co-exists with local target player/opponent or defending player discard payoff wording."
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile consumes EVENT:CREATURE_ATTACKS",
+      "Profile produces ACTION:DISCARD_CARDS"
+    ],
+    "text_evidence_policy": "Require explicit wording equivalent to 'Whenever this creature attacks, target player/opponent discards a card.' or '... defending player discards a card.'",
+    "honesty_constraints": [
+      "Reject 'whenever you attack' wording.",
+      "Reject 'one or more creatures attack' wording.",
+      "Reject 'attacks alone' wording.",
+      "Reject combat-damage trigger wording.",
+      "Reject discard-as-cost patterns.",
+      "Reject discard text without explicit this-creature-attacks trigger.",
+      "Do not infer DRAW_CARDS -> DISCARD_CARDS from this bridge."
+    ]
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "EVENT:CREATURE_ATTACKS",
+        "ACTION:DISCARD_CARDS"
+      ]
+    }
+  },
+  "policy": {
+    "local_only": true,
+    "intra_profile": true
+  },
+  "no_goals": [
+    "No parser changes",
+    "No IR changes",
+    "No profile changes",
+    "No discard-as-cost modeling",
+    "No DRAW_CARDS -> DISCARD_CARDS",
+    "No cross-card closure",
+    "No scoring/global weighting changes"
+  ]
+}

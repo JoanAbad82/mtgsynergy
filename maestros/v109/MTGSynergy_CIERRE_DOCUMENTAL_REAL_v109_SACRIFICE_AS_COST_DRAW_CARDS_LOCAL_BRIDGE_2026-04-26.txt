@@ -1,0 +1,149 @@
+MTGSynergy — CIERRE DOCUMENTAL REAL v109
+Fecha: 2026-04-26
+Proyecto: MTGSynergy / PÁGINA WEB MAGIC
+
+=====================================================================
+MICROFASE REAL CERRADA
+=====================================================================
+
+Nombre operativo:
+- OPEN_ENGINE — SACRIFICE_AS_COST_DRAW_CARDS_LOCAL_BRIDGE_MIN_V1
+
+Estado canónico de salida:
+- commit remoto canónico confirmado: ee7a651
+- hash remoto completo confirmado:
+  - ee7a651bd8e197b2a0a41d18c234d4d4a0980f63
+- HEAD == origin/main confirmado en ee7a651
+- push correcto
+- verificación remota correcta
+- tracked final limpio:
+  - git status --porcelain --untracked-files=no vacío
+
+=====================================================================
+OBJETIVO CERRADO
+=====================================================================
+
+Se materializó un bridge local mínimo y estrecho:
+
+- EVENT:SACRIFICE -> ACTION:DRAW_CARDS
+
+Solo cuando:
+- el sacrificio aparece como coste local/intra-profile,
+- el mismo texto produce robo de cartas,
+- existe evidencia textual estrecha de sacrificio-como-coste + draw.
+
+=====================================================================
+ARCHIVOS MATERIALMENTE TOCADOS
+=====================================================================
+
+1. src/engine/semantic/overlay/sem_edges.ts
+2. src/engine/semantic/contract/sem_sacrifice_as_cost_draw_cards_local_bridge_min_v1.json
+3. src/engine/semantic/tests/sem_overlay_sacrifice_as_cost_draw_cards_local_bridge_min_v1.test.ts
+
+No se tocaron:
+- parser
+- IR
+- profile
+- lowering
+- UI
+- CSS
+- public
+- package.json / package-lock.json
+- attacks / CREATURE_ATTACKS
+- CREATE_TOKEN -> ETB
+- CREATURE_DIES residual / prominence / bucketing
+
+=====================================================================
+DETALLE TÉCNICO
+=====================================================================
+
+En sem_edges.ts:
+- Se añadió applySacrificeAsCostDrawCardsBridge(profile).
+- Se añadió explicitSacrificeAsCostDrawCardsTextEvidence(text).
+- Se añadió self-edge local/intra-profile:
+  - from = card.card_id
+  - to = card.card_id
+  - score = 0
+  - local_only = true
+  - reasons:
+    - EVENT:SACRIFICE
+    - ACTION:DRAW_CARDS
+
+En contrato JSON:
+- Se creó sem_sacrifice_as_cost_draw_cards_local_bridge_min_v1.json.
+- Declara familia, bridge_name, política local_only/intra_profile, source, target, text_evidence_policy, implementation_files y no_goals.
+
+En test focal:
+- Se creó sem_overlay_sacrifice_as_cost_draw_cards_local_bridge_min_v1.test.ts.
+- Cubre positivos:
+  - As an additional cost to cast this spell, sacrifice a creature. Draw two cards.
+  - Sacrifice another creature: Draw a card.
+  - {T}, Sacrifice this artifact: Draw a card.
+- Cubre negativos:
+  - creature dies + sacrifice
+  - whenever you sacrifice
+  - creature dies draw
+  - sacrifice sin draw
+  - draw sin sacrifice
+  - discard-as-cost/draw
+  - attacks/draw
+  - CREATE_TOKEN -> ETB/draw
+
+=====================================================================
+VALIDACIÓN EJECUTADA
+=====================================================================
+
+Test focal:
+- npx vitest run src/engine/semantic/tests/sem_overlay_sacrifice_as_cost_draw_cards_local_bridge_min_v1.test.ts
+- Resultado:
+  - Test Files 1 passed (1)
+  - Tests 2 passed (2)
+
+Ring estable del freeze:
+- npx vitest run --exclude "tools/family_qualification/**" src/engine/semantic/tests/sem_profile_sacrifice_cost.test.ts src/engine/semantic/tests/sem_cost_min_v1.test.ts src/engine/semantic/tests/sem_profile_unknown_resource_cost.test.ts src/engine/semantic/tests/sem_resource_normalization.test.ts src/engine/semantic/tests/sem_overlay_bridge_min_v1.test.ts
+- Resultado:
+  - Test Files 5 passed (5)
+  - Tests 11 passed (11)
+
+Git:
+- Commit local creado:
+  - ee7a651 feat(semantic): add sacrifice-as-cost draw-cards local bridge
+- Push correcto:
+  - dc3efd0..ee7a651 main -> main
+- Verificación remota:
+  - HEAD full == origin/main full == ee7a651bd8e197b2a0a41d18c234d4d4a0980f63
+- ls-remote origin refs/heads/main apunta al mismo hash completo.
+
+=====================================================================
+DECISIONES EXPLÍCITAS
+=====================================================================
+
+- DISCARD_AS_COST no se abrió por ambigüedad semántica:
+  - DISCARD_CARDS puede ser coste o efecto.
+  - profile no preserva coste de descarte de forma equivalente a SACRIFICE_AS_COST.
+- CREATE_TOKEN -> ETB no se abrió:
+  - motor ya tenía IR/parser/profile/overlay/test.
+  - faltaba solo deuda contractual/documental.
+- CREATURE_DIES residual no se abrió:
+  - parser/profile/overlay/contrato/tests ya estaban presentes.
+  - el residuo detectado pertenece a bucket/prominence/orphan classification, no a bridge base.
+- ATTACKS_CLUSTER no se reabrió.
+
+=====================================================================
+ESTADO DE SALIDA
+=====================================================================
+
+La microfase queda cerrada materialmente en remoto.
+
+Estado canónico para la siguiente conversación o microfase:
+- commit remoto canónico confirmado: ee7a651
+- hash completo:
+  - ee7a651bd8e197b2a0a41d18c234d4d4a0980f63
+- HEAD == origin/main confirmado en ee7a651
+- bridge SACRIFICE_AS_COST -> DRAW_CARDS materializado
+- no hay patch pendiente tracked
+- no abrir por inercia:
+  - CREATURE_ATTACKS
+  - CREATE_TOKEN -> ETB
+  - CREATURE_DIES residual
+  - DISCARD_AS_COST sin nuevo preflight específico

@@ -1,5 +1,5 @@
 import type { SemanticCardIR } from "../contract";
-import { ActionId, EventId } from "../contract";
+import { ActionId, EventId, ResourceId } from "../contract";
 import { buildSemanticCardProfile, KeyKind, keyOf } from "./sem_profile";
 
 export type SemanticEdgeReason = {
@@ -55,6 +55,17 @@ function applySacrificeAsCostDrawCardsBridge(profile: ReturnType<typeof buildSem
   const sacrificeKey = keyOf(KeyKind.EVENT, EventId.SACRIFICE);
   const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
   return profile.produced.has(sacrificeKey) && profile.produced.has(drawCardsKey);
+}
+
+function applyBloodResourceDiscardDrawBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const bloodResourceKey = keyOf(KeyKind.RESOURCE, ResourceId.BLOOD);
+  const discardCardsKey = keyOf(KeyKind.ACTION, ActionId.DISCARD_CARDS);
+  const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  return (
+    profile.consumed.has(bloodResourceKey) &&
+    profile.produced.has(discardCardsKey) &&
+    profile.produced.has(drawCardsKey)
+  );
 }
 
 function applyLeavesBattlefieldCreateTokenBridge(
@@ -113,6 +124,28 @@ function explicitSacrificeAsCostDrawCardsTextEvidence(text: string): boolean {
       normalized,
     );
   return hasAdditionalCostToCastSacrificeAndDraw || hasActivatedSacrificeCostDraw;
+}
+
+function explicitBloodResourceDiscardDrawTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  const countPattern = "(?:a|an|one|two|three|four|\\d+)";
+  const hasBloodDiscardDrawColonPattern = new RegExp(
+    `\\bsacrifice\\s+a\\s+blood(?:\\s+token)?\\s*:\\s*[^.]*\\bdiscard\\w*\\s+${countPattern}\\s+cards?\\b[^.]*\\bdraw\\w*\\s+${countPattern}\\s+cards?\\b`,
+    "i",
+  ).test(normalized);
+  const hasBloodDiscardBeforeColonPattern = new RegExp(
+    `\\bsacrifice\\s+a\\s+blood(?:\\s+token)?\\s*,\\s*discard\\w*\\s+${countPattern}\\s+cards?\\s*:\\s*[^.]*\\bdraw\\w*\\s+${countPattern}\\s+cards?\\b`,
+    "i",
+  ).test(normalized);
+  const hasCanonicalBloodTokenAbilityPattern = new RegExp(
+    `\\{(?:\\d+|[wubrgcxy]|[wubrgc]\/[wubrgc])\\}\\s*,\\s*\\{t\\}\\s*,\\s*discard\\w*\\s+${countPattern}\\s+cards?\\s*,\\s*sacrifice\\s+this\\s+artifact\\s*:\\s*[^.]*\\bdraw\\w*\\s+${countPattern}\\s+cards?\\b`,
+    "i",
+  ).test(normalized);
+  return (
+    hasBloodDiscardDrawColonPattern ||
+    hasBloodDiscardBeforeColonPattern ||
+    hasCanonicalBloodTokenAbilityPattern
+  );
 }
 
 function applyLifeGainAddCountersBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
@@ -836,6 +869,37 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: sacrificeAsCostKey, weight: 1 },
       { key: drawCardsSacrificeAsCostKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const bloodResourceKey = keyOf(KeyKind.RESOURCE, ResourceId.BLOOD);
+  const discardCardsBloodKey = keyOf(KeyKind.ACTION, ActionId.DISCARD_CARDS);
+  const drawCardsBloodKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+  const sacrificeEventKey = keyOf(KeyKind.EVENT, EventId.SACRIFICE);
+  for (const card of cards) {
+    const strictApply = applyBloodResourceDiscardDrawBridge(card.profile);
+    const textEvidence = explicitBloodResourceDiscardDrawTextEvidence(card.oracle_text ?? "");
+    if (!textEvidence) continue;
+    // Canonical Blood token activation text uses "Sacrifice this artifact" and may not
+    // materialize RESOURCE:BLOOD in profile, so accept only when the same frame still
+    // produces SACRIFICE + DISCARD_CARDS + DRAW_CARDS local signals.
+    const canonicalFallbackSignals =
+      card.profile.produced.has(sacrificeEventKey) &&
+      card.profile.produced.has(discardCardsBloodKey) &&
+      card.profile.produced.has(drawCardsBloodKey);
+    if (!strictApply && !canonicalFallbackSignals) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: bloodResourceKey, weight: 1 },
+      { key: discardCardsBloodKey, weight: 1 },
+      { key: drawCardsBloodKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

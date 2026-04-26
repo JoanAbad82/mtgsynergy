@@ -1,0 +1,75 @@
+{
+  "metadata": {
+    "document_id": "sem_creature_attacks_mill_local_bridge_min_v1",
+    "version": "v1",
+    "status": "draft",
+    "phase": "open-engine-creature-attacks-mill-local-bridge-min-v1",
+    "source_note": "Minimal contract for a local-only CREATURE_ATTACKS -> MILL bridge with strict explicit wording and no parser expansion."
+  },
+  "family": "CREATURE_ATTACKS -> MILL",
+  "bridge_name": "creature_attacks_to_mill_local_bridge_min_v1",
+  "current_scope": {
+    "explicit": true,
+    "narrow": true,
+    "local_only": true,
+    "intra_profile": true,
+    "v1_minimal": true,
+    "cross_card": false
+  },
+  "bridge_kind": {
+    "id": "creature_attacks_enables_local_mill_cards",
+    "label": "creature_attacks -> mill_cards",
+    "source": "EVENT:CREATURE_ATTACKS",
+    "target": "ACTION:MILL_CARDS",
+    "causal_mode": "local_explicit_narrow",
+    "purpose": "Enable strict local closure where an explicit this-creature-attacks trigger co-exists with local target-opponent/player mill payoff wording."
+  },
+  "activation_scope": {
+    "mode": "intra_profile_only",
+    "description": "Bridge applies only within the same local card/profile."
+  },
+  "activation_predicate": {
+    "required_local_signals": [
+      "Profile consumes EVENT:CREATURE_ATTACKS",
+      "Profile produces ACTION:MILL_CARDS"
+    ],
+    "text_evidence_policy": "Require explicit wording equivalent to 'Whenever this creature attacks, target opponent mills two cards.' or '... target player mills two cards.'",
+    "honesty_constraints": [
+      "No parser expansion.",
+      "Reject 'each opponent mills' wording.",
+      "Reject combat-damage trigger wording.",
+      "Reject 'whenever you attack' wording.",
+      "Reject 'one or more creatures attack' wording.",
+      "Reject 'attacks alone' wording.",
+      "Reject mill text without explicit this-creature-attacks trigger.",
+      "Do not infer DRAW_CARDS -> MILL from this bridge."
+    ]
+  },
+  "implementation_shape_expected": {
+    "helper_location": "src/engine/semantic/overlay/sem_edges.ts",
+    "edge_shape": {
+      "type": "self_edge",
+      "local_only": true,
+      "score": 0,
+      "reasons_required": [
+        "EVENT:CREATURE_ATTACKS",
+        "ACTION:MILL_CARDS"
+      ]
+    }
+  },
+  "policy": {
+    "local_only": true,
+    "intra_profile": true
+  },
+  "no_goals": [
+    "No parser expansion",
+    "No 'each opponent mills'",
+    "No cross-card closure",
+    "No DRAW_CARDS -> MILL",
+    "No combat damage trigger",
+    "No 'you attack'",
+    "No 'one or more creatures attack'",
+    "No 'attacks alone'",
+    "No UI/config changes"
+  ]
+}

@@ -164,6 +164,12 @@ function applyCreatureAttacksGainLifeBridge(profile: ReturnType<typeof buildSema
   return profile.consumed.has(creatureAttacksKey) && profile.produced.has(gainLifeKey);
 }
 
+function applyCreatureAttacksMillBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
+  const creatureAttacksKey = keyOf(KeyKind.EVENT, EventId.CREATURE_ATTACKS);
+  const millCardsKey = keyOf(KeyKind.ACTION, ActionId.MILL_CARDS);
+  return profile.consumed.has(creatureAttacksKey) && profile.produced.has(millCardsKey);
+}
+
 function applyCastSpellPtChangeBridge(profile: ReturnType<typeof buildSemanticCardProfile>): boolean {
   const castSpellKey = keyOf(KeyKind.EVENT, EventId.CAST_SPELL);
   const ptChangeKey = keyOf(KeyKind.ACTION, ActionId.PT_CHANGE);
@@ -394,6 +400,13 @@ function explicitCreatureAttacksLoseLifeTextEvidence(text: string): boolean {
 function explicitCreatureAttacksGainLifeTextEvidence(text: string): boolean {
   const normalized = text.toLowerCase();
   return /\bwhenever\s+this\s+creature\s+attacks\s*,[^.]*\byou\s+gain\s+(?:a|an|one|two|three|four|\d+)\s+life\b/i.test(
+    normalized,
+  );
+}
+
+function explicitCreatureAttacksMillTextEvidence(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return /\bwhenever\s+this\s+creature\s+attacks\s*,[^.]*\btarget\s+(?:opponent|player)\s+mills?\s+(?:a|an|one|two|three|four|\d+)\s+cards?\b/i.test(
     normalized,
   );
 }
@@ -941,6 +954,26 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
     const reasons: SemanticEdgeReason[] = [
       { key: creatureAttacksKey, weight: 1 },
       { key: gainLifeCreatureAttacksKey, weight: 1 },
+    ];
+    reasons.sort((a, b) => a.key - b.key);
+    edges.push({
+      from: card.card_id,
+      to: card.card_id,
+      score: 0,
+      reasons,
+      local_only: true,
+    });
+  }
+
+  const millCardsCreatureAttacksKey = keyOf(KeyKind.ACTION, ActionId.MILL_CARDS);
+  for (const card of cards) {
+    const apply = applyCreatureAttacksMillBridge(card.profile);
+    const textEvidence = explicitCreatureAttacksMillTextEvidence(card.oracle_text ?? "");
+    if (!apply) continue;
+    if (!textEvidence) continue;
+    const reasons: SemanticEdgeReason[] = [
+      { key: creatureAttacksKey, weight: 1 },
+      { key: millCardsCreatureAttacksKey, weight: 1 },
     ];
     reasons.sort((a, b) => a.key - b.key);
     edges.push({

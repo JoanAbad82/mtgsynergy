@@ -13,6 +13,7 @@ export const SEMANTIC_OVERLAY_COPY = {
   sosLabel: "Fuerza semántica",
   totalEdgeScoreLabel: "conexiones explicadas",
   signalFoundLabel: "✅ Señal encontrada (experimental)",
+  localSignalFoundLabel: "ℹ️ Señal local encontrada (sin fuerza semántica positiva)",
   signalMissingLabel: "⚠️ Sin señal (experimental)",
   signalMissingHint: "Normal en mazos simples o reglas aún no cubiertas.",
   reasonsTitle: "Qué falta por cubrir",
@@ -260,10 +261,14 @@ export function buildCoverageReasonsFromReport(
 
 export function getSignalStatus(
   metrics: SemanticOverlayMetrics,
-  visibleEdgesCount = 0,
+  mainEdgesCount = 0,
+  weakEdgesCount = 0,
 ): { label: string; hint?: string } {
-  if (metrics.SOS > 0 || visibleEdgesCount > 0) {
+  if (metrics.SOS > 0 || mainEdgesCount > 0) {
     return { label: SEMANTIC_OVERLAY_COPY.signalFoundLabel };
+  }
+  if (weakEdgesCount > 0) {
+    return { label: SEMANTIC_OVERLAY_COPY.localSignalFoundLabel };
   }
   return {
     label: SEMANTIC_OVERLAY_COPY.signalMissingLabel,
@@ -311,7 +316,7 @@ export default function SemanticOverlayPanel({
       : buildCoverageReasons(metrics, resolvedUnique, missingUnique);
   const edgesTop = edges.slice(0, 10);
   const { mainEdges, weakEdges } = partitionSemanticEdgesByStrength(edgesTop);
-  const status = getSignalStatus(metrics, edgesTop.length);
+  const status = getSignalStatus(metrics, mainEdges.length, weakEdges.length);
   const orphanTop = metrics.orphan_listeners.slice(0, 10);
   const excessTop = metrics.excess_producers.slice(0, 10);
   const groups = filterRedundancyGroups(metrics.redundancy_groups);

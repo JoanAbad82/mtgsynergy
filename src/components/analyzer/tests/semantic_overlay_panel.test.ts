@@ -29,6 +29,7 @@ const panelCopyText = [
   SEMANTIC_OVERLAY_COPY.sosLabel,
   SEMANTIC_OVERLAY_COPY.totalEdgeScoreLabel,
   SEMANTIC_OVERLAY_COPY.signalFoundLabel,
+  SEMANTIC_OVERLAY_COPY.localSignalFoundLabel,
   SEMANTIC_OVERLAY_COPY.signalMissingLabel,
   SEMANTIC_OVERLAY_COPY.signalMissingHint,
   SEMANTIC_OVERLAY_COPY.edgesTitle,
@@ -59,6 +60,9 @@ describe("SemanticOverlayPanel copy", () => {
     expect(SEMANTIC_OVERLAY_COPY.totalEdgeScoreLabel).toBe("conexiones explicadas");
     expect(SEMANTIC_OVERLAY_COPY.edgesTitle).toBe("Conexiones principales detectadas");
     expect(SEMANTIC_OVERLAY_COPY.weakEdgesTitle).toBe("Señales locales de una sola carta");
+    expect(SEMANTIC_OVERLAY_COPY.localSignalFoundLabel).toBe(
+      "ℹ️ Señal local encontrada (sin fuerza semántica positiva)",
+    );
     expect(SEMANTIC_OVERLAY_COPY.weakEdgesHint).toContain("misma carta");
     expect(SEMANTIC_OVERLAY_COPY.weakEdgesHint).toContain("puntuación 0");
     expect(SEMANTIC_OVERLAY_COPY.weakEdgesHint).toContain("no cuentan como conexión principal");
@@ -170,15 +174,20 @@ describe("SemanticOverlayPanel semantic summary helpers", () => {
   });
 
   it("formats signal status lines", () => {
-    const withVisibleEdges = getSignalStatus({ SOS: 0 } as any, 2);
-    expect(withVisibleEdges.label).toContain("Señal encontrada");
+    const localOnly = getSignalStatus({ SOS: 0 } as any, 0, 2);
+    expect(localOnly.label).toBe(SEMANTIC_OVERLAY_COPY.localSignalFoundLabel);
+    expect(localOnly.label).not.toBe(SEMANTIC_OVERLAY_COPY.signalFoundLabel);
+    expect(localOnly.hint).toBeUndefined();
 
-    const missing = getSignalStatus({ SOS: 0 } as any, 0);
+    const missing = getSignalStatus({ SOS: 0 } as any, 0, 0);
     expect(missing.label).toContain("Sin señal");
     expect(missing.hint).toBeTruthy();
 
-    const withPositiveSos = getSignalStatus({ SOS: 0.5 } as any, 0);
+    const withPositiveSos = getSignalStatus({ SOS: 0.5 } as any, 0, 0);
     expect(withPositiveSos.label).toContain("Señal encontrada");
+
+    const withMainEdges = getSignalStatus({ SOS: 0 } as any, 1, 3);
+    expect(withMainEdges.label).toContain("Señal encontrada");
   });
 
   it("computes coverage summary and reasons deterministically", () => {

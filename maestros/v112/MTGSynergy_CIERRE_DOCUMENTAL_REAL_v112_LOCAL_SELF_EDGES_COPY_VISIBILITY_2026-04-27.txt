@@ -1,0 +1,234 @@
+MTGSynergy — CIERRE DOCUMENTAL REAL v112
+Fecha: 2026-04-27
+Proyecto: MTGSynergy / PÁGINA WEB MAGIC
+
+=====================================================================
+MICROFASE REAL CERRADA
+=====================================================================
+
+Nombre operativo:
+
+- OPEN_UI_OVERLAY — LOCAL_SELF_EDGES_COPY_VISIBILITY_MIN_V1
+
+Tipo de microfase:
+
+- UI/copy-only.
+- Sin patch funcional de motor.
+- Sin cambios de scoring.
+- Sin cambios de SPS.
+- Sin cambios estructurales.
+- Sin cambios de parser.
+- Sin cambios de IR.
+- Sin cambios de profile.
+- Sin cambios de inventory.
+- Sin cambios de lowering.
+- Sin cambios de CSS.
+- Sin cambios en public.
+- Sin cambios en package.json ni package-lock.json.
+
+=====================================================================
+ESTADO CANÓNICO DE SALIDA
+=====================================================================
+
+Commit remoto canónico confirmado:
+
+- 37eac84
+
+Hash remoto completo confirmado:
+
+- 37eac845a2ee7018ef419daae606933dc6a3caf6
+
+Verificación remota:
+
+- HEAD == origin/main == remoto
+- Push correcto
+- Verificación remota correcta
+- Tracked final limpio:
+  - git status --porcelain --untracked-files=no vacío
+
+Commit inmediatamente anterior:
+
+- 9125636
+- docs(master): add v111 local self-edges diagnostic lock closure
+
+=====================================================================
+ARCHIVOS MATERIALES MODIFICADOS
+=====================================================================
+
+Archivos modificados:
+
+- src/components/analyzer/SemanticOverlayPanel.tsx
+- src/components/analyzer/tests/semantic_overlay_panel.test.ts
+
+Commit:
+
+- ui(semantic): clarify local self-edge signals copy
+
+Alcance material:
+
+- 2 archivos modificados
+- 6 inserciones
+- 4 eliminaciones
+
+No se modificaron:
+
+- src/engine/**
+- src/engine/semantic/overlay/sem_edges.ts
+- src/engine/semantic/overlay/sem_metrics.ts
+- src/engine/semantic/overlay/sem_overlay_compute.ts
+- parser
+- IR
+- profile
+- inventory
+- lowering
+- structural
+- SPS
+- scoring global
+- public/**
+- CSS
+- package.json
+- package-lock.json
+
+=====================================================================
+RESULTADO TÉCNICO FIJADO
+=====================================================================
+
+La microfase mejora el copy visible del panel semántico para explicar mejor las señales locales de una sola carta.
+
+Antes:
+
+- El panel indicaba que estas señales eran relaciones internas de una carta y no sinergias entre cartas distintas.
+
+Después:
+
+- El panel aclara que estas señales:
+  - se detectan dentro de una misma carta,
+  - pueden verse como carta → misma carta,
+  - tienen puntuación 0,
+  - no cuentan como conexión principal,
+  - no aumentan SOS,
+  - no aumentan SPS,
+  - sirven como evidencia local.
+
+Texto nuevo fijado en SemanticOverlayPanel:
+
+- “Estas señales se detectan dentro de una misma carta. Pueden verse como carta → misma carta, tienen puntuación 0, no cuentan como conexión principal, no aumentan SOS y no aumentan SPS; sirven como evidencia local.”
+
+=====================================================================
+RELACIÓN CON v111
+=====================================================================
+
+La microfase v111 cerró por test permanente que los self-edges locales SACRIFICE + DRAW_CARDS:
+
+- son local_only,
+- son from === to,
+- tienen score === 0,
+- aparecen en edgesTop,
+- no elevan total_edge_score,
+- no elevan SOS.
+
+La microfase v112 no cambia ese comportamiento.
+
+La microfase v112 solo mejora la explicación visible para evitar que el usuario interprete esas señales como:
+
+- conexiones principales,
+- relaciones estructurales,
+- incremento de SOS,
+- incremento de SPS,
+- bug de generación.
+
+=====================================================================
+VALIDACIÓN EJECUTADA
+=====================================================================
+
+Test focal de panel semántico:
+
+Comando:
+
+- npx vitest run src/components/analyzer/tests/semantic_overlay_panel.test.ts --reporter=verbose
+
+Resultado:
+
+- Test Files 1 passed (1)
+- Tests 12 passed (12)
+
+Ring estable mínimo relacionado:
+
+Comando:
+
+- npx vitest run src/engine/semantic/tests/sem_overlay_local_self_edges_diagnostic_lock_min_v1.test.ts src/engine/semantic/tests/sem_overlay_sacrifice_as_cost_draw_cards_local_bridge_min_v1.test.ts src/engine/semantic/tests/sem_overlay_blood_resource_discard_draw_local_bridge_min_v1.test.ts src/components/analyzer/tests/semantic_overlay_panel.test.ts --reporter=verbose
+
+Resultado:
+
+- Test Files 4 passed (4)
+- Tests 17 passed (17)
+
+=====================================================================
+LECTURA CANÓNICA
+=====================================================================
+
+La capa de superposición semántica puede mostrar señales locales aunque no aumenten SOS ni SPS.
+
+Lectura correcta:
+
+- “Conexiones principales detectadas” corresponde a edges con score positivo.
+- “Señales locales de una sola carta” corresponde a señales internas, normalmente self-edges.
+- Los self-edges score 0 son evidencia semántica local.
+- No deben confundirse con relaciones estructurales.
+- No deben usarse como justificación automática para modificar SPS.
+- La UI ahora explica explícitamente esa frontera.
+
+=====================================================================
+NO REABRIR POR INERCIA
+=====================================================================
+
+No reabrir automáticamente:
+
+- CREATURE_ATTACKS / attacks
+- CREATE_TOKEN -> ETB
+- CREATURE_DIES residual / prominence / bucketing
+- DISCARD_AS_COST genérico
+- SACRIFICE_AS_COST_DRAW_CARDS genérico
+- BLOOD_RESOURCE_DISCARD_DRAW ya cerrado
+- LOCAL_SELF_EDGES_DIAGNOSTIC_LOCK_MIN_V1 ya cerrado
+- LOCAL_SELF_EDGES_COPY_VISIBILITY_MIN_V1 ya cerrado
+
+Cualquier mejora posterior debe abrir microfase propia.
+
+=====================================================================
+SIGUIENTE PASO RECOMENDADO
+=====================================================================
+
+Siguiente microfase candidata:
+
+- OPEN_UI_OVERLAY — SEMANTIC_ZERO_SCORE_STATE_EXPLANATION_PREFLIGHT_V1
+
+Objetivo posible:
+
+- inspeccionar si el estado “Señal encontrada” puede resultar ambiguo cuando las únicas señales visibles son score 0.
+- no tocar todavía scoring, SOS ni SPS.
+- decidir si hace falta microcopy adicional para distinguir:
+  - señal local,
+  - conexión principal,
+  - fuerza semántica positiva,
+  - resultado estructural.
+
+Restricciones recomendadas:
+
+- No tocar motor.
+- No tocar SPS.
+- No tocar scoring.
+- No tocar structural.
+- No tocar parser, IR, profile, inventory ni lowering.
+- Empezar con preflight de inspección antes de patch.
+
+=====================================================================
+CIERRE
+=====================================================================
+
+La microfase OPEN_UI_OVERLAY — LOCAL_SELF_EDGES_COPY_VISIBILITY_MIN_V1 queda cerrada materialmente en remoto con commit:
+
+- 37eac84
+- 37eac845a2ee7018ef419daae606933dc6a3caf6
+
+El cierre documental real v112 fija este estado como referencia canónica posterior al cierre remoto.

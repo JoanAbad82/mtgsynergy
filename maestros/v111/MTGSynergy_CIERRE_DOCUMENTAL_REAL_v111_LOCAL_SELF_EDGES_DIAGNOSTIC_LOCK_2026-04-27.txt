@@ -1,0 +1,244 @@
+MTGSynergy — CIERRE DOCUMENTAL REAL v111
+Fecha: 2026-04-27
+Proyecto: MTGSynergy / PÁGINA WEB MAGIC
+
+=====================================================================
+MICROFASE REAL CERRADA
+=====================================================================
+
+Nombre operativo:
+
+- OPEN_ENGINE — LOCAL_SELF_EDGES_DIAGNOSTIC_LOCK_MIN_V1
+
+Tipo de microfase:
+
+- Test-only diagnostic lock.
+- Sin patch funcional de motor.
+- Sin cambios de scoring.
+- Sin cambios de SPS.
+- Sin cambios estructurales.
+- Sin cambios de UI visual.
+- Sin cambios de CSS.
+- Sin cambios en public.
+- Sin cambios en package.json ni package-lock.json.
+
+=====================================================================
+ESTADO CANÓNICO DE SALIDA
+=====================================================================
+
+Commit remoto canónico confirmado:
+
+- ffe3d24
+
+Hash remoto completo confirmado:
+
+- ffe3d2431fdf7c2f66b712814d41827694222608
+
+Verificación remota:
+
+- HEAD == origin/main == remoto
+- Push correcto
+- Verificación remota correcta
+- Tracked final limpio:
+  - git status --porcelain --untracked-files=no vacío
+
+Commit inmediatamente anterior:
+
+- 11da039
+- feat(semantic): add blood resource discard-draw local bridge
+
+=====================================================================
+ARCHIVO MATERIAL CREADO
+=====================================================================
+
+Archivo añadido:
+
+- src/engine/semantic/tests/sem_overlay_local_self_edges_diagnostic_lock_min_v1.test.ts
+
+Commit:
+
+- test(semantic): lock local self-edge diagnostic behavior
+
+Alcance material:
+
+- 1 archivo nuevo
+- 142 inserciones
+- create mode 100644
+
+No se modificaron:
+
+- src/engine/semantic/overlay/sem_edges.ts
+- src/engine/semantic/overlay/sem_metrics.ts
+- src/engine/semantic/overlay/sem_overlay_compute.ts
+- src/components/**
+- src/engine/structural/**
+- src/engine/edges/**
+- public/**
+- CSS
+- package.json
+- package-lock.json
+
+=====================================================================
+RESULTADO TÉCNICO FIJADO
+=====================================================================
+
+El test permanente bloquea el comportamiento diagnosticado en los preflights previos:
+
+1. Las cartas:
+
+   - Village Rites
+   - Deadly Dispute
+   - Costly Plunder
+
+   con wording de coste adicional de sacrificio y robo de cartas generan self-edges semánticos locales.
+
+2. Los self-edges bloqueados corresponden a:
+
+   - EVENT:SACRIFICE
+   - ACTION:DRAW_CARDS
+
+3. Los self-edges deben conservar estas propiedades:
+
+   - local_only === true
+   - from === to
+   - score === 0
+   - reasons contiene EVENT:SACRIFICE
+   - reasons contiene ACTION:DRAW_CARDS
+
+4. El comportamiento queda comprobado en dos superficies:
+
+   A) buildSemanticEdges sobre cartas parseadas a IR.
+
+   B) computeSemanticOverlayFromDeckEntries sobre runtime overlay, verificando visibilidad en edgesTop.
+
+5. El test fija explícitamente que estos self-edges locales no elevan:
+
+   - total_edge_score
+   - SOS
+
+Lectura técnica:
+
+- Los self-edges locales se generan.
+- Los self-edges locales son visibles en edgesTop.
+- Los self-edges locales son señales semánticas locales de una sola carta.
+- No son relaciones estructurales puntuadas.
+- No deben interpretarse como fallo de generación.
+- No deben usarse como justificación automática para modificar SPS.
+
+=====================================================================
+VALIDACIÓN EJECUTADA
+=====================================================================
+
+Test focal nuevo:
+
+Comando:
+
+- npx vitest run src/engine/semantic/tests/sem_overlay_local_self_edges_diagnostic_lock_min_v1.test.ts --reporter=verbose
+
+Resultado:
+
+- Test Files 1 passed (1)
+- Tests 1 passed (1)
+
+Ring estable mínimo relacionado:
+
+Comando:
+
+- npx vitest run src/engine/semantic/tests/sem_overlay_sacrifice_as_cost_draw_cards_local_bridge_min_v1.test.ts src/engine/semantic/tests/sem_overlay_blood_resource_discard_draw_local_bridge_min_v1.test.ts src/components/analyzer/tests/semantic_overlay_panel.test.ts --reporter=verbose
+
+Resultado:
+
+- Test Files 3 passed (3)
+- Tests 16 passed (16)
+
+=====================================================================
+RELACIÓN CON PREFLIGHTS PREVIOS
+=====================================================================
+
+El preflight V4b demostró:
+
+- RAW_EDGES_WITH_LOCAL_SUMMARY:
+  - count: 5
+  - localOnly: 4
+  - zeroScore: 4
+  - selfEdges: 4
+  - positiveScore: 1
+
+- RUNTIME_EDGES_TOP_SUMMARY:
+  - count: 5
+  - localOnly: 4
+  - zeroScore: 4
+  - selfEdges: 4
+  - positiveScore: 1
+
+- total_edge_score: 1 en el mazo sintético con una relación positiva adicional.
+- SOS: 0.6931471805599453 en ese mismo mazo por la relación positiva adicional.
+- Los self-edges locales de sacrificio y robo no aportan score positivo.
+
+La microfase v111 convierte esa evidencia en un test permanente más estrecho y limpio, usando solo los hechizos de sacrificio + robo. En ese caso:
+
+- card_count === 3
+- covered_count === 3
+- total_edge_score === 0
+- SOS === 0
+
+=====================================================================
+LECTURA CANÓNICA
+=====================================================================
+
+La divergencia observada entre señales semánticas positivas y SPS/relaciones estructurales no debe leerse como bug automático.
+
+Lectura correcta:
+
+- La capa semántica puede detectar señales locales.
+- Algunas señales locales se exponen como self-edges.
+- Si esos self-edges tienen score 0, no aumentan total_edge_score ni SOS.
+- Si no alimentan el structural clásico, no aumentan SPS, densidad ni relaciones estructurales.
+- Este comportamiento queda documentado y protegido por test.
+
+=====================================================================
+NO REABRIR POR INERCIA
+=====================================================================
+
+No reabrir automáticamente:
+
+- CREATURE_ATTACKS / attacks
+- CREATE_TOKEN -> ETB
+- CREATURE_DIES residual / prominence / bucketing
+- DISCARD_AS_COST genérico
+- SACRIFICE_AS_COST_DRAW_CARDS genérico
+- BLOOD_RESOURCE_DISCARD_DRAW ya cerrado
+- LOCAL_SELF_EDGES_DIAGNOSTIC_LOCK_MIN_V1 ya cerrado
+
+Cualquier mejora posterior debe abrir microfase propia.
+
+=====================================================================
+SIGUIENTE PASO RECOMENDADO
+=====================================================================
+
+Siguiente microfase candidata, si se decide mejorar la percepción en web:
+
+- OPEN_UI_OVERLAY — LOCAL_SELF_EDGES_COPY_VISIBILITY_MIN_V1
+
+Restricciones recomendadas para esa futura microfase:
+
+- No tocar SPS.
+- No tocar structural.
+- No tocar scoring global.
+- No tocar parser, IR, profile ni inventory.
+- Limitarse a copy/visibilidad del panel semántico y tests UI asociados.
+- Mantener la separación entre:
+  - conexiones principales detectadas
+  - señales locales de una sola carta
+  - relaciones estructurales/SPS
+
+=====================================================================
+CIERRE
+=====================================================================
+
+La microfase OPEN_ENGINE — LOCAL_SELF_EDGES_DIAGNOSTIC_LOCK_MIN_V1 queda cerrada materialmente en remoto con commit:
+
+- ffe3d24
+- ffe3d2431fdf7c2f66b712814d41827694222608
+
+El cierre documental real v111 fija este estado como referencia canónica posterior al cierre remoto.

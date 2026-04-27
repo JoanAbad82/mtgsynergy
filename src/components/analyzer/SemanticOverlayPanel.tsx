@@ -24,7 +24,7 @@ export const SEMANTIC_OVERLAY_COPY = {
     "Estas conexiones muestran relaciones que el motor puede explicar con el texto de reglas.",
   weakEdgesTitle: "Señales locales de una sola carta",
   weakEdgesHint:
-    "Estas señales describen relaciones internas de una carta; no son sinergias entre cartas distintas.",
+    "Estas señales se detectan dentro de una misma carta. Pueden verse como carta → misma carta, tienen puntuación 0, no cuentan como conexión principal, no aumentan SOS y no aumentan SPS; sirven como evidencia local.",
   noEdges: "No hay conexiones semánticas.",
   edgeScoreLabel: "puntuación",
   orphanTitle: "Efectos sin pareja",

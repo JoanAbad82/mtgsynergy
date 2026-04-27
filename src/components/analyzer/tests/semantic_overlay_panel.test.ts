@@ -59,9 +59,11 @@ describe("SemanticOverlayPanel copy", () => {
     expect(SEMANTIC_OVERLAY_COPY.totalEdgeScoreLabel).toBe("conexiones explicadas");
     expect(SEMANTIC_OVERLAY_COPY.edgesTitle).toBe("Conexiones principales detectadas");
     expect(SEMANTIC_OVERLAY_COPY.weakEdgesTitle).toBe("Señales locales de una sola carta");
-    expect(SEMANTIC_OVERLAY_COPY.weakEdgesHint).toBe(
-      "Estas señales describen relaciones internas de una carta; no son sinergias entre cartas distintas.",
-    );
+    expect(SEMANTIC_OVERLAY_COPY.weakEdgesHint).toContain("misma carta");
+    expect(SEMANTIC_OVERLAY_COPY.weakEdgesHint).toContain("puntuación 0");
+    expect(SEMANTIC_OVERLAY_COPY.weakEdgesHint).toContain("no cuentan como conexión principal");
+    expect(SEMANTIC_OVERLAY_COPY.weakEdgesHint).toContain("no aumentan SOS");
+    expect(SEMANTIC_OVERLAY_COPY.weakEdgesHint).toContain("no aumentan SPS");
     expect(SEMANTIC_OVERLAY_COPY.excessTitle).toBe("Señales detectadas aún sin conexión clara");
     expect(SEMANTIC_OVERLAY_COPY.redundancyTitle).toBe("Patrones repetidos detectados");
     expect(SEMANTIC_OVERLAY_COPY.noEdges).toContain("No hay conexiones");

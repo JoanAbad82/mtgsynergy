@@ -1,0 +1,286 @@
+MTGSynergy — CIERRE DOCUMENTAL REAL v113
+Fecha: 2026-04-27
+Proyecto: MTGSynergy / PÁGINA WEB MAGIC
+
+=====================================================================
+MICROFASE REAL CERRADA
+=====================================================================
+
+Nombre operativo:
+
+- OPEN_UI_OVERLAY — SEMANTIC_ZERO_SCORE_STATE_EXPLANATION_MIN_V1
+
+Tipo de microfase:
+
+- UI/test-only.
+- Patch mínimo.
+- Sin cambios funcionales de motor.
+- Sin cambios de scoring.
+- Sin cambios de SOS.
+- Sin cambios de SPS.
+- Sin cambios estructurales.
+- Sin cambios de parser.
+- Sin cambios de IR.
+- Sin cambios de profile.
+- Sin cambios de inventory.
+- Sin cambios de lowering.
+- Sin cambios de CSS.
+- Sin cambios en public.
+- Sin cambios en package.json ni package-lock.json.
+
+=====================================================================
+ESTADO CANÓNICO DE SALIDA
+=====================================================================
+
+Commit remoto canónico confirmado:
+
+- 1438dfd
+
+Hash remoto completo confirmado:
+
+- 1438dfda489d2568b8ec017fbe181927f8749cf5
+
+Verificación remota:
+
+- HEAD == origin/main == remoto
+- Push correcto
+- Verificación remota correcta
+- Tracked final limpio:
+  - git status --porcelain --untracked-files=no vacío
+
+Commit inmediatamente anterior:
+
+- bf45a6b
+- docs(master): add v112 local self-edges copy visibility closure
+
+=====================================================================
+ARCHIVOS MATERIALES MODIFICADOS
+=====================================================================
+
+Archivos modificados:
+
+- src/components/analyzer/SemanticOverlayPanel.tsx
+- src/components/analyzer/tests/semantic_overlay_panel.test.ts
+
+Commit:
+
+- ui(semantic): distinguish local zero-score signal status
+
+Alcance material:
+
+- 2 archivos modificados
+- 21 inserciones
+- 7 eliminaciones
+
+No se modificaron:
+
+- src/engine/**
+- src/engine/semantic/overlay/sem_edges.ts
+- src/engine/semantic/overlay/sem_metrics.ts
+- src/engine/semantic/overlay/sem_overlay_compute.ts
+- parser
+- IR
+- profile
+- inventory
+- lowering
+- structural
+- SPS
+- scoring global
+- public/**
+- CSS
+- package.json
+- package-lock.json
+
+=====================================================================
+CONTEXTO DE ENTRADA
+=====================================================================
+
+La microfase v111 dejó bloqueado por test permanente que los self-edges locales SACRIFICE + DRAW_CARDS:
+
+- son local_only,
+- son from === to,
+- tienen score === 0,
+- aparecen en edgesTop,
+- no elevan total_edge_score,
+- no elevan SOS.
+
+La microfase v112 mejoró el copy del panel semántico para explicar que las señales locales:
+
+- se detectan dentro de una misma carta,
+- pueden verse como carta -> misma carta,
+- tienen puntuación 0,
+- no cuentan como conexión principal,
+- no aumentan SOS,
+- no aumentan SPS,
+- sirven como evidencia local.
+
+El preflight de v113 detectó una ambigüedad restante:
+
+- getSignalStatus(metrics, edgesTop.length) podía mostrar:
+  - “✅ Señal encontrada (experimental)”
+- incluso cuando:
+  - metrics.SOS === 0,
+  - no había conexiones principales,
+  - lo visible eran solo señales locales score 0.
+
+=====================================================================
+RESULTADO TÉCNICO FIJADO
+=====================================================================
+
+La UI distingue ahora tres estados visibles:
+
+1. Señal/conexión con fuerza positiva:
+
+   Condición:
+
+   - metrics.SOS > 0
+   - o mainEdges.length > 0
+
+   Label:
+
+   - “✅ Señal encontrada (experimental)”
+
+2. Señal local sin fuerza semántica positiva:
+
+   Condición:
+
+   - metrics.SOS === 0
+   - mainEdges.length === 0
+   - weakEdges.length > 0
+
+   Label nuevo:
+
+   - “ℹ️ Señal local encontrada (sin fuerza semántica positiva)”
+
+3. Sin señal:
+
+   Condición:
+
+   - metrics.SOS === 0
+   - mainEdges.length === 0
+   - weakEdges.length === 0
+
+   Label:
+
+   - “⚠️ Sin señal (experimental)”
+
+Cambio técnico principal:
+
+- getSignalStatus pasa de depender de visibleEdgesCount a distinguir:
+  - mainEdgesCount
+  - weakEdgesCount
+
+Lectura correcta:
+
+- Una señal local score 0 ya no se presenta como señal positiva genérica.
+- Una conexión principal score > 0 sigue apareciendo como señal encontrada.
+- SOS positivo sigue apareciendo como señal encontrada.
+- La ausencia total de fuerza/señales sigue apareciendo como sin señal.
+
+=====================================================================
+VALIDACIÓN EJECUTADA
+=====================================================================
+
+Test focal UI:
+
+Comando:
+
+- npx vitest run src/components/analyzer/tests/semantic_overlay_panel.test.ts --reporter=verbose
+
+Resultado:
+
+- Test Files 1 passed (1)
+- Tests 12 passed (12)
+
+Ring estable mínimo relacionado:
+
+Comando:
+
+- npx vitest run src/components/analyzer/tests/semantic_overlay_panel.test.ts src/engine/semantic/tests/sem_overlay_local_self_edges_diagnostic_lock_min_v1.test.ts src/engine/semantic/tests/sem_overlay_sacrifice_as_cost_draw_cards_local_bridge_min_v1.test.ts src/engine/semantic/tests/sem_overlay_blood_resource_discard_draw_local_bridge_min_v1.test.ts --reporter=verbose
+
+Resultado:
+
+- Test Files 4 passed (4)
+- Tests 17 passed (17)
+
+Validaciones Git:
+
+- git diff --check:
+  - sin errores
+- staging selectivo:
+  - solo los 2 archivos autorizados
+- estado tracked post-commit:
+  - limpio
+- push remoto:
+  - correcto
+- verificación remota:
+  - HEAD == origin/main == 1438dfd
+
+=====================================================================
+LECTURA CANÓNICA
+=====================================================================
+
+La superposición semántica distingue ahora entre:
+
+- señal positiva,
+- señal local sin fuerza positiva,
+- ausencia de señal.
+
+Esto evita que una señal local score 0 visible en edgesTop sea interpretada como:
+
+- conexión principal,
+- fuerza semántica positiva,
+- incremento de SOS,
+- incremento de SPS,
+- resultado estructural fuerte.
+
+La microfase no cambia el comportamiento del motor.
+
+La microfase no cambia el cálculo de total_edge_score.
+
+La microfase no cambia el cálculo de SOS.
+
+La microfase no cambia SPS.
+
+La microfase solo mejora la honestidad del estado visible en UI.
+
+=====================================================================
+NO REABRIR POR INERCIA
+=====================================================================
+
+No reabrir automáticamente:
+
+- LOCAL_SELF_EDGES_DIAGNOSTIC_LOCK_MIN_V1
+- LOCAL_SELF_EDGES_COPY_VISIBILITY_MIN_V1
+- SEMANTIC_ZERO_SCORE_STATE_EXPLANATION_MIN_V1
+- CREATURE_ATTACKS / attacks
+- CREATE_TOKEN -> ETB
+- CREATURE_DIES residual / prominence / bucketing
+- DISCARD_AS_COST genérico
+- SACRIFICE_AS_COST_DRAW_CARDS genérico
+- BLOOD_RESOURCE_DISCARD_DRAW ya cerrado
+- otro bridge nuevo sin preflight material
+
+=====================================================================
+SIGUIENTE DISCIPLINA RECOMENDADA
+=====================================================================
+
+El siguiente frente no debe abrir otro patch UI por inercia.
+
+Antes de tocar nada más, conviene ejecutar un preflight material para decidir si el siguiente salto debe ser:
+
+1. una microfase de motor/bridge real,
+2. una microfase de cobertura semántica,
+3. una validación visible de estado UI,
+4. o cierre documental y reposo operativo.
+
+Regla:
+
+- no abrir bridge nuevo sin preflight,
+- no tocar scoring/SPS para compensar señales locales,
+- no reabrir self-edges salvo evidencia material nueva,
+- preservar separación entre señal local, conexión principal, SOS y SPS.
+
+=====================================================================
+FIN CIERRE DOCUMENTAL REAL v113
+=====================================================================

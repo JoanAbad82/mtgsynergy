@@ -1,0 +1,316 @@
+MTGSynergy — CIERRE DOCUMENTAL REAL v114
+Fecha: 2026-04-29
+Proyecto: MTGSynergy / PÁGINA WEB MAGIC
+
+=====================================================================
+MICROFASE REAL CERRADA
+=====================================================================
+
+Nombre operativo:
+
+- OPEN_CONTRACT_PATCH — DEAL_DAMAGE_LOSE_LIFE_CONTRACT_STATUS_SYNC_MIN_V1
+
+Tipo de microfase:
+
+- Patch contractual mínimo.
+- Sin cambios funcionales de motor.
+- Sin cambios de parser.
+- Sin cambios de IR.
+- Sin cambios de profile.
+- Sin cambios de lowering.
+- Sin cambios de scoring.
+- Sin cambios de SOS.
+- Sin cambios de SPS.
+- Sin cambios de UI.
+- Sin cambios de CSS.
+- Sin cambios en public.
+- Sin cambios en package.json ni package-lock.json.
+- Sin cambios en tests.
+- Sin cambios en maestros/fuentes/review durante el patch material.
+
+=====================================================================
+ESTADO CANÓNICO DE SALIDA
+=====================================================================
+
+Commit remoto canónico confirmado:
+
+- 2f1414f
+
+Hash remoto completo confirmado:
+
+- 2f1414f164054658cef20f135fa18562f69b838f
+
+Verificación remota:
+
+- HEAD == origin/main == remoto
+- Push correcto
+- Verificación remota correcta
+- Tracked final limpio:
+  - git status --porcelain --untracked-files=no vacío
+
+Commit inmediatamente anterior:
+
+- 180da25
+- docs(master): add v113 semantic zero-score state explanation closure
+
+=====================================================================
+ARCHIVO MATERIAL MODIFICADO
+=====================================================================
+
+Archivo modificado:
+
+- src/engine/semantic/contract/sem_deal_damage_lose_life_bridge_min_v1.json
+
+Commit:
+
+- docs(semantic): sync deal-damage lose-life contract state
+
+Alcance material:
+
+- 1 archivo modificado
+- 29 inserciones
+- 4 eliminaciones
+
+No se modificaron:
+
+- src/engine/semantic/overlay/sem_edges.ts
+- src/engine/semantic/tests/**
+- parser
+- IR
+- profile
+- lowering
+- structural
+- scoring
+- SOS
+- SPS
+- UI
+- CSS
+- public/**
+- package.json
+- package-lock.json
+- maestros/**
+- fuentes/**
+- review/**
+
+=====================================================================
+CONTEXTO DE ENTRADA
+=====================================================================
+
+La revisión posterior a v113 detectó una inconsistencia contractual en:
+
+- src/engine/semantic/contract/sem_deal_damage_lose_life_bridge_min_v1.json
+
+El contrato seguía afirmando:
+
+- "No explicit local closure exists today between ACTION:DEAL_DAMAGE and ACTION:LOSE_LIFE."
+
+Sin embargo, el estado real del repositorio ya demostraba lo contrario:
+
+- sem_edges.ts contiene applyDealDamageLoseLifeBridge.
+- El bridge local se emite como self-edge.
+- El edge es local_only.
+- El edge tiene score 0.
+- Las reasons incluyen:
+  - ACTION:DEAL_DAMAGE
+  - ACTION:LOSE_LIFE
+
+Además, el test focal confirmaba que el bridge local existe y se mantiene estrecho:
+
+- src/engine/semantic/tests/sem_overlay_deal_damage_lose_life_bridge_min_v1.test.ts
+
+Ese test valida positivos:
+
+- Scorching Missile
+- Zaffai, Thunder Conductor
+- Creeping Bloodsucker
+- Flame Rift
+
+Y valida negativo:
+
+- Chain of Plasma / any target
+
+=====================================================================
+RESULTADO TÉCNICO FIJADO
+=====================================================================
+
+El contrato queda sincronizado con el estado real del motor.
+
+Cambios conceptuales realizados:
+
+1. metadata.phase/source_note
+
+Se actualizó el contrato para indicar sincronización contractual post-implementación:
+
+- phase: contract-status-sync-local-closure-v1
+
+2. semantic_basis.current_gap
+
+La frase obsoleta fue sustituida por una lectura correcta:
+
+- La closure local entre ACTION:DEAL_DAMAGE y ACTION:LOSE_LIFE ya existe.
+- El gap restante es pairing genérico/cross-card.
+
+3. semantic_basis.evidence_status
+
+Se distingue explícitamente entre:
+
+- closure local existente y validada,
+- pairing genérico/cross-card aún inexistente.
+
+4. semantic_basis.current_material_state
+
+Se añadió un bloque mínimo que fija el estado material:
+
+- local_closure_exists: true
+- local_edge_shape:
+  - self_edge
+  - local_only=true
+  - score=0
+  - reasons=[ACTION:DEAL_DAMAGE, ACTION:LOSE_LIFE]
+- generic_cross_card_pairing_exists: false
+
+5. activation_predicate.required_local_signals
+
+Tras una corrección de fixup, quedó alineado con el runtime real:
+
+- Profile produces ACTION:DEAL_DAMAGE
+
+No se exige que el profile produzca ACTION:LOSE_LIFE antes del bridge.
+
+Lectura correcta:
+
+- ACTION:LOSE_LIFE forma parte de las reasons del self-edge emitido.
+- ACTION:LOSE_LIFE no es una señal previa obligatoria del predicado runtime.
+- El bridge se activa por DAMAGE explícito a player/opponent/every player/every opponent, con guard contra prevención.
+
+6. acceptance_evidence
+
+Se añadió evidencia contractual mínima:
+
+- local_closure_observation
+- local_guard_observation
+
+=====================================================================
+VALIDACIÓN EJECUTADA
+=====================================================================
+
+Validación JSON:
+
+- JSON válido.
+- document_id: sem_deal_damage_lose_life_bridge_min_v1
+- status: draft
+- phase: contract-status-sync-local-closure-v1
+- required_local_signals:
+  - Profile produces ACTION:DEAL_DAMAGE
+
+Tests focales contract sync:
+
+Comando:
+
+- npx vitest run src/engine/semantic/tests/sem_overlay_deal_damage_lose_life_bridge_min_v1.test.ts src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_pairing_inspect.test.ts src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_diagnose.test.ts src/engine/semantic/tests/sem_overlay_prevent_damage_no_damage_event_guard_min_v1.test.ts --reporter=verbose
+
+Resultado:
+
+- Test Files 4 passed (4)
+- Tests 4 passed (4)
+
+Ring estable mínimo post-v113:
+
+Comando:
+
+- npx vitest run src/components/analyzer/tests/semantic_overlay_panel.test.ts src/engine/semantic/tests/sem_overlay_local_self_edges_diagnostic_lock_min_v1.test.ts src/engine/semantic/tests/sem_overlay_sacrifice_as_cost_draw_cards_local_bridge_min_v1.test.ts src/engine/semantic/tests/sem_overlay_blood_resource_discard_draw_local_bridge_min_v1.test.ts --reporter=verbose
+
+Resultado:
+
+- Test Files 4 passed (4)
+- Tests 17 passed (17)
+
+Validaciones Git:
+
+- staging selectivo:
+  - solo src/engine/semantic/contract/sem_deal_damage_lose_life_bridge_min_v1.json
+- git diff --cached --check:
+  - sin errores
+- commit local:
+  - correcto
+- push remoto:
+  - correcto
+- verificación remota:
+  - HEAD == origin/main == 2f1414f
+- tracked final:
+  - limpio
+
+=====================================================================
+LECTURA CANÓNICA
+=====================================================================
+
+La familia DEAL_DAMAGE -> LOSE_LIFE no se reabrió como motor.
+
+La microfase solo sincronizó el contrato con una realidad ya existente:
+
+- closure local ya implementada,
+- self-edge local_only,
+- score 0,
+- guard contra any target,
+- guard contra prevención,
+- sin inferencia cross-card,
+- sin remapeo global damage-implies-life-loss,
+- sin scoring/SOS/SPS.
+
+La microfase no cambia comportamiento runtime.
+
+La microfase no cambia resultados de análisis.
+
+La microfase no cambia UI.
+
+La microfase evita una contradicción documental: el contrato ya no dice que falta una closure local que en realidad ya existe.
+
+=====================================================================
+NO REABRIR POR INERCIA
+=====================================================================
+
+No reabrir automáticamente:
+
+- DEAL_DAMAGE -> LOSE_LIFE como motor patch
+- DAMAGE_WITH_LIFELINK -> LIFE_GAIN
+- CREATURE_DIES residual / orphan / prominence / bucketing
+- LOCAL_SELF_EDGES_DIAGNOSTIC_LOCK_MIN_V1
+- LOCAL_SELF_EDGES_COPY_VISIBILITY_MIN_V1
+- SEMANTIC_ZERO_SCORE_STATE_EXPLANATION_MIN_V1
+- SACRIFICE_AS_COST_DRAW_CARDS genérico
+- DISCARD_AS_COST genérico
+- BLOOD_RESOURCE_DISCARD_DRAW ya cerrado
+- any target como always-player
+- cross-card DEAL_DAMAGE -> LOSE_LIFE
+- scoring/SOS/SPS para compensar señales locales
+
+=====================================================================
+SIGUIENTE DISCIPLINA RECOMENDADA
+=====================================================================
+
+Antes de abrir otro patch, ejecutar un preflight material.
+
+El siguiente frente debe elegirse por evidencia, no por inercia:
+
+1. motor/bridge real si aparece candidata estrecha,
+2. cobertura semántica si aparece deuda corpus/parser,
+3. contrato/documentación si aparece desincronización,
+4. validación visible si el cambio afecta surface,
+5. reposo operativo si no hay candidata limpia.
+
+Regla:
+
+- no abrir bridge nuevo sin preflight,
+- no tocar scoring/SOS/SPS para compensar señales locales,
+- no reabrir DEAL_DAMAGE -> LOSE_LIFE salvo evidencia material nueva,
+- preservar separación entre:
+  - señal local,
+  - conexión principal,
+  - SOS,
+  - SPS,
+  - contrato,
+  - runtime.
+
+=====================================================================
+FIN CIERRE DOCUMENTAL REAL v114
+=====================================================================

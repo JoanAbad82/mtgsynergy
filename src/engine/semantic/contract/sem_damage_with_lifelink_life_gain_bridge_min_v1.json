@@ -3,8 +3,8 @@
     "document_id": "sem_damage_with_lifelink_life_gain_bridge_min_v1",
     "version": "v1",
     "status": "draft",
-    "phase": "post-diagnose-damage-with-lifelink-life-gain-gap-v1",
-    "source_note": "Minimal contract to open a local-only DAMAGE_WITH_LIFELINK -> LIFE_GAIN bridge without parser, lowering, scoring, or cross-card changes."
+    "phase": "contract-status-sync-local-closure-v1",
+    "source_note": "Minimal contract synced to implemented local-only DAMAGE_WITH_LIFELINK -> LIFE_GAIN closure without parser, lowering, scoring, or cross-card changes."
   },
   "family": "DAMAGE_WITH_LIFELINK -> LIFE_GAIN",
   "bridge_name": "damage_with_lifelink_to_life_gain_min_v1",
@@ -45,7 +45,17 @@
       "ACTION:GAIN_LIFE",
       "EVENT:LIFE_GAIN"
     ],
-    "current_gap": "No explicit local closure exists today for the combined condition where the same local source deals damage and has explicit lifelink evidence.",
+    "current_gap": "Local closure for DAMAGE_WITH_LIFELINK -> LIFE_GAIN is already implemented; the remaining gap is generic/raw-key/cross-card pairing.",
+    "evidence_status": "Local self-edge closure (local_only, score 0) is implemented and validated; pairing inspect still reports zero generic/raw-key/cross-card pairing by key.",
+    "current_material_state": {
+      "local_closure_exists": true,
+      "local_edge_shape": "self_edge, local_only=true, score=0, reasons=[ACTION:DEAL_DAMAGE, EVENT:LIFE_GAIN]",
+      "validated_by": [
+        "src/engine/semantic/tests/sem_overlay_damage_with_lifelink_life_gain_bridge_min_v1.test.ts"
+      ],
+      "generic_cross_card_pairing_exists": false,
+      "generic_cross_card_pairing_evidence": "src/engine/semantic/tests/sem_overlay_damage_with_lifelink_life_gain_pairing_inspect.test.ts"
+    },
     "rules_basis": [
       "Lifelink is a static ability where damage from that source causes life gain by its controller (Comprehensive Rules, lifelink section)."
     ],
@@ -129,6 +139,15 @@
     "Multi-hop chain modeling"
   ],
   "acceptance_evidence": {
+    "local_closure_observation": {
+      "test": "src/engine/semantic/tests/sem_overlay_damage_with_lifelink_life_gain_bridge_min_v1.test.ts",
+      "observed": [
+        "Explicit lifelink wording with local damage emission produces a local DAMAGE_WITH_LIFELINK -> LIFE_GAIN self-edge.",
+        "Edge is local_only=true.",
+        "Edge score=0.",
+        "Edge reasons include ACTION:DEAL_DAMAGE and EVENT:LIFE_GAIN."
+      ]
+    },
     "pairing_inspect_observation": {
       "test": "src/engine/semantic/tests/sem_overlay_damage_with_lifelink_life_gain_pairing_inspect.test.ts",
       "observed": [

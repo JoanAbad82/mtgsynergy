@@ -3,8 +3,8 @@
     "document_id": "sem_deal_damage_lose_life_bridge_min_v1",
     "version": "v1",
     "status": "draft",
-    "phase": "post-diagnose-damage-to-player-life-lost-gap-v1",
-    "source_note": "Minimal contract to open a local-only DEAL_DAMAGE -> LOSE_LIFE bridge without parser, lowering, scoring, or cross-card changes."
+    "phase": "contract-status-sync-local-closure-v1",
+    "source_note": "Minimal contract synced to implemented local-only DEAL_DAMAGE -> LOSE_LIFE closure without parser, lowering, scoring, or cross-card changes."
   },
   "family": "DEAL_DAMAGE -> LOSE_LIFE",
   "bridge_name": "deal_damage_to_lose_life_min_v1",
@@ -42,8 +42,18 @@
       "ACTION:DEAL_DAMAGE",
       "ACTION:LOSE_LIFE"
     ],
-    "current_gap": "No explicit local closure exists today between ACTION:DEAL_DAMAGE and ACTION:LOSE_LIFE.",
-    "evidence_status": "Pairing inspect freezes the real gap with producers on both sides and zero local pairing by key."
+    "current_gap": "Local closure between ACTION:DEAL_DAMAGE and ACTION:LOSE_LIFE is already implemented; the remaining gap is generic/cross-card pairing.",
+    "evidence_status": "Local self-edge closure (local_only, score 0) is implemented and validated; pairing inspect still reports zero generic/cross-card pairing by key.",
+    "current_material_state": {
+      "local_closure_exists": true,
+      "local_edge_shape": "self_edge, local_only=true, score=0, reasons=[ACTION:DEAL_DAMAGE, ACTION:LOSE_LIFE]",
+      "validated_by": [
+        "src/engine/semantic/tests/sem_overlay_deal_damage_lose_life_bridge_min_v1.test.ts",
+        "src/engine/semantic/tests/sem_overlay_prevent_damage_no_damage_event_guard_min_v1.test.ts"
+      ],
+      "generic_cross_card_pairing_exists": false,
+      "generic_cross_card_pairing_evidence": "src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_pairing_inspect.test.ts"
+    }
   },
   "bridge_kind": {
     "id": "deal_damage_can_enable_lose_life_local_pairing",
@@ -117,6 +127,21 @@
     "Replacement/prevention/lifelink integration"
   ],
   "acceptance_evidence": {
+    "local_closure_observation": {
+      "test": "src/engine/semantic/tests/sem_overlay_deal_damage_lose_life_bridge_min_v1.test.ts",
+      "observed": [
+        "Explicit player/opponent damage wording emits a local DEAL_DAMAGE -> LOSE_LIFE self-edge.",
+        "Edge is local_only=true.",
+        "Edge score=0.",
+        "Edge reasons include ACTION:DEAL_DAMAGE and ACTION:LOSE_LIFE."
+      ]
+    },
+    "local_guard_observation": {
+      "test": "src/engine/semantic/tests/sem_overlay_prevent_damage_no_damage_event_guard_min_v1.test.ts",
+      "observed": [
+        "Prevent-damage-only wording without a damage event does not emit DEAL_DAMAGE -> LOSE_LIFE local bridge."
+      ]
+    },
     "diagnose_observation": {
       "test": "src/engine/semantic/tests/sem_overlay_damage_to_player_life_lost_diagnose.test.ts",
       "observed": [

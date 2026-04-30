@@ -1,0 +1,344 @@
+MTGSynergy — CIERRE DOCUMENTAL REAL v116
+Fecha: 2026-04-30
+Proyecto: MTGSynergy / PÁGINA WEB MAGIC
+
+=====================================================================
+MICROFASE REAL CERRADA
+=====================================================================
+
+Nombre operativo:
+
+- OPEN_CONTRACT_PATCH — LIFE_GAIN_ADD_COUNTERS_CONTRACT_STATUS_SYNC_MIN_V1
+
+Tipo de microfase:
+
+- Patch contractual mínimo.
+- Sin cambios funcionales de motor.
+- Sin cambios de parser.
+- Sin cambios de IR.
+- Sin cambios de profile.
+- Sin cambios de lowering.
+- Sin cambios de scoring.
+- Sin cambios de SOS.
+- Sin cambios de SPS.
+- Sin cambios de UI.
+- Sin cambios de CSS.
+- Sin cambios en public.
+- Sin cambios en package.json ni package-lock.json.
+- Sin cambios en tests.
+- Sin cambios en maestros/fuentes/review durante el patch material.
+
+=====================================================================
+ESTADO CANÓNICO DE SALIDA
+=====================================================================
+
+Commit remoto canónico confirmado:
+
+- 1e8a5c8
+
+Hash remoto completo confirmado:
+
+- 1e8a5c8816ad4045ed2c7a2613d749e8bd3ed89d
+
+Verificación remota:
+
+- HEAD == origin/main == remoto
+- Push correcto
+- Verificación remota correcta
+- Tracked final limpio:
+  - git status --porcelain --untracked-files=no vacío
+
+Commit inmediatamente anterior:
+
+- 71c5e11
+- docs(master): add v115 damage-lifelink life-gain contract sync closure
+
+=====================================================================
+ARCHIVO MATERIAL MODIFICADO
+=====================================================================
+
+Archivo modificado:
+
+- src/engine/semantic/contract/sem_life_gain_add_counters_bridge_min_v1.json
+
+Commit:
+
+- docs(semantic): sync life-gain add-counters contract state
+
+Alcance material:
+
+- 1 archivo modificado
+- 22 inserciones
+- 3 eliminaciones
+
+No se modificaron:
+
+- src/engine/semantic/overlay/sem_edges.ts
+- src/engine/semantic/tests/**
+- parser
+- IR
+- profile
+- lowering
+- structural
+- scoring
+- SOS
+- SPS
+- UI
+- CSS
+- public/**
+- package.json
+- package-lock.json
+- maestros/**
+- fuentes/**
+- review/**
+
+=====================================================================
+CONTEXTO DE ENTRADA
+=====================================================================
+
+El preflight contractual posterior a v115 detectó una desincronización real en:
+
+- src/engine/semantic/contract/sem_life_gain_add_counters_bridge_min_v1.json
+
+El contrato seguía afirmando:
+
+- "No explicit local closure exists today between LIFE_GAIN and ADD_COUNTERS keys."
+
+También indicaba ausencia de estado material actual:
+
+- CURRENT_MATERIAL_STATE=NO
+
+Sin embargo, el estado real del repositorio ya demostraba lo contrario:
+
+- sem_edges.ts contiene applyLifeGainAddCountersBridge.
+- applyLifeGainAddCountersBridge activa cuando una misma profile:
+  - consume EVENT:LIFE_GAIN
+  - produce ACTION:ADD_COUNTERS
+- El bridge local se emite como self-edge.
+- El edge es local_only.
+- El edge tiene score 0.
+- Las reasons incluyen:
+  - EVENT:LIFE_GAIN
+  - ACTION:ADD_COUNTERS
+
+Además, el test focal confirmaba que el bridge local existe y se mantiene estrecho:
+
+- src/engine/semantic/tests/sem_overlay_life_gain_add_counters_bridge_min_v1.test.ts
+
+Ese test valida self-edge local con LIFE_GAIN y ADD_COUNTERS reasons para texto tipo Ajani's Pridemate.
+
+El pairing inspect confirmaba también que no hay pairing genérico/raw-key/cross-card:
+
+- src/engine/semantic/tests/sem_overlay_life_gain_add_counters_pairing_inspect.test.ts
+- pairing_candidates_count: 9
+- paired_by_key_count: 0
+- has_life_gain_edge: true
+- has_add_counters_edge: true
+
+Lectura correcta:
+
+- closure local existente y validada: sí
+- pairing genérico/raw-key/cross-card: no
+
+=====================================================================
+RESULTADO TÉCNICO FIJADO
+=====================================================================
+
+El contrato queda sincronizado con el estado real del motor.
+
+Cambios conceptuales realizados:
+
+1. metadata.phase/source_note
+
+Se actualizó el contrato para indicar sincronización contractual post-implementación:
+
+- phase: contract-status-sync-local-closure-v1
+
+2. semantic_basis.current_gap
+
+La frase obsoleta fue sustituida por una lectura correcta:
+
+- La closure local LIFE_GAIN -> ADD_COUNTERS ya existe.
+- El gap restante es pairing genérico/raw-key/cross-card.
+
+3. semantic_basis.evidence_status
+
+Se distingue explícitamente entre:
+
+- closure local existente y validada,
+- pairing genérico/raw-key/cross-card aún inexistente.
+
+4. semantic_basis.current_material_state
+
+Se añadió un bloque mínimo que fija el estado material:
+
+- local_closure_exists: true
+- local_edge_shape:
+  - self_edge
+  - local_only=true
+  - score=0
+  - reasons=[EVENT:LIFE_GAIN, ACTION:ADD_COUNTERS]
+- validated_by:
+  - src/engine/semantic/tests/sem_overlay_life_gain_add_counters_bridge_min_v1.test.ts
+- generic_cross_card_pairing_exists: false
+- generic_cross_card_pairing_evidence:
+  - src/engine/semantic/tests/sem_overlay_life_gain_add_counters_pairing_inspect.test.ts
+
+5. activation_predicate.required_local_signals
+
+Se mantuvo alineado con el runtime real:
+
+- Profile consumes EVENT:LIFE_GAIN
+- Profile produces ACTION:ADD_COUNTERS
+
+No se exige como señal previa obligatoria:
+
+- Profile produces EVENT:LIFE_GAIN
+- Profile produces ACTION:GAIN_LIFE
+- Profile produces LIFE_GAIN
+
+Lectura correcta:
+
+- EVENT:LIFE_GAIN es señal consumida y reason del self-edge emitido.
+- ACTION:ADD_COUNTERS es señal producida y reason del self-edge emitido.
+- El bridge es local/intra-profile.
+- No se introduce pairing cross-card.
+- No se introduce semántica global de counters.
+- No se introduce multi-hop causal.
+
+6. acceptance_evidence
+
+Se añadió evidencia contractual mínima:
+
+- local_closure_observation
+- diagnose_observation conservado
+- pairing_inspect_observation conservado
+
+=====================================================================
+VALIDACIÓN EJECUTADA
+=====================================================================
+
+Validación JSON:
+
+- JSON válido.
+- document_id: sem_life_gain_add_counters_bridge_min_v1
+- status: draft
+- phase: contract-status-sync-local-closure-v1
+- required_local_signals:
+  - Profile consumes EVENT:LIFE_GAIN
+  - Profile produces ACTION:ADD_COUNTERS
+
+Tests focales contract sync:
+
+Comando:
+
+- npx vitest run src/engine/semantic/tests/sem_overlay_life_gain_add_counters_bridge_min_v1.test.ts src/engine/semantic/tests/sem_overlay_life_gain_add_counters_pairing_inspect.test.ts src/engine/semantic/tests/sem_overlay_life_gain_add_counters_diagnose.test.ts --reporter=verbose
+
+Resultado:
+
+- Test Files 3 passed (3)
+- Tests 3 passed (3)
+
+Ring estable mínimo post-v115:
+
+Comando:
+
+- npx vitest run src/components/analyzer/tests/semantic_overlay_panel.test.ts src/engine/semantic/tests/sem_overlay_local_self_edges_diagnostic_lock_min_v1.test.ts src/engine/semantic/tests/sem_overlay_sacrifice_as_cost_draw_cards_local_bridge_min_v1.test.ts src/engine/semantic/tests/sem_overlay_blood_resource_discard_draw_local_bridge_min_v1.test.ts src/engine/semantic/tests/sem_overlay_deal_damage_lose_life_bridge_min_v1.test.ts src/engine/semantic/tests/sem_overlay_damage_with_lifelink_life_gain_bridge_min_v1.test.ts src/engine/semantic/tests/sem_overlay_life_gain_add_counters_bridge_min_v1.test.ts --reporter=verbose
+
+Resultado:
+
+- Test Files 7 passed (7)
+- Tests 20 passed (20)
+
+Validaciones Git:
+
+- staging selectivo:
+  - solo src/engine/semantic/contract/sem_life_gain_add_counters_bridge_min_v1.json
+- git diff --cached --check:
+  - sin errores
+- commit local:
+  - correcto
+- push remoto:
+  - correcto
+- verificación remota:
+  - HEAD == origin/main == 1e8a5c8
+- tracked final:
+  - limpio
+
+=====================================================================
+LECTURA CANÓNICA
+=====================================================================
+
+La familia LIFE_GAIN -> ADD_COUNTERS no se reabrió como motor.
+
+La microfase solo sincronizó el contrato con una realidad ya existente:
+
+- closure local ya implementada,
+- self-edge local_only,
+- score 0,
+- reasons=[EVENT:LIFE_GAIN, ACTION:ADD_COUNTERS],
+- pairing genérico/raw-key/cross-card aún inexistente,
+- sin remapeo global life-gain-implies-add-counters,
+- sin semántica general de counters,
+- sin multi-hop causal,
+- sin cambios de parser/lowering,
+- sin scoring/SOS/SPS.
+
+La microfase no cambia comportamiento runtime.
+
+La microfase no cambia resultados de análisis.
+
+La microfase no cambia UI.
+
+La microfase evita una contradicción documental: el contrato ya no dice que falta una closure local que en realidad ya existe.
+
+=====================================================================
+NO REABRIR POR INERCIA
+=====================================================================
+
+No reabrir automáticamente:
+
+- LIFE_GAIN -> ADD_COUNTERS como motor patch
+- DAMAGE_WITH_LIFELINK -> LIFE_GAIN como motor patch
+- DEAL_DAMAGE -> LOSE_LIFE como motor patch
+- CREATURE_DIES residual / orphan / prominence / bucketing
+- LOCAL_SELF_EDGES_DIAGNOSTIC_LOCK_MIN_V1
+- LOCAL_SELF_EDGES_COPY_VISIBILITY_MIN_V1
+- SEMANTIC_ZERO_SCORE_STATE_EXPLANATION_MIN_V1
+- SACRIFICE_AS_COST_DRAW_CARDS genérico
+- DISCARD_AS_COST genérico
+- BLOOD_RESOURCE_DISCARD_DRAW ya cerrado
+- counters como taxonomía global
+- cross-card LIFE_GAIN -> ADD_COUNTERS
+- scoring/SOS/SPS para compensar señales locales
+
+=====================================================================
+SIGUIENTE DISCIPLINA RECOMENDADA
+=====================================================================
+
+Antes de abrir otro patch, ejecutar un preflight material.
+
+El siguiente frente debe elegirse por evidencia, no por inercia:
+
+1. motor/bridge real si aparece candidata estrecha,
+2. cobertura semántica si aparece deuda corpus/parser,
+3. contrato/documentación si aparece desincronización,
+4. validación visible si el cambio afecta surface,
+5. reposo operativo si no hay candidata limpia.
+
+Regla:
+
+- no abrir bridge nuevo sin preflight,
+- no tocar scoring/SOS/SPS para compensar señales locales,
+- no reabrir LIFE_GAIN -> ADD_COUNTERS salvo evidencia material nueva,
+- preservar separación entre:
+  - señal local,
+  - conexión principal,
+  - SOS,
+  - SPS,
+  - contrato,
+  - runtime.
+
+=====================================================================
+FIN CIERRE DOCUMENTAL REAL v116
+=====================================================================

@@ -3,8 +3,8 @@
     "document_id": "sem_life_gain_add_counters_bridge_min_v1",
     "version": "v1",
     "status": "draft",
-    "phase": "post-diagnose-life-gain-add-counters-gap-v1",
-    "source_note": "Minimal contract to open a local-only LIFE_GAIN -> ADD_COUNTERS bridge without parser, lowering, scoring, or cross-card changes."
+    "phase": "contract-status-sync-local-closure-v1",
+    "source_note": "Minimal contract synced to implemented local-only LIFE_GAIN -> ADD_COUNTERS closure without parser, lowering, scoring, or cross-card changes."
   },
   "family": "LIFE_GAIN -> ADD_COUNTERS",
   "bridge_name": "life_gain_to_add_counters_min_v1",
@@ -46,7 +46,17 @@
       "EVENT:LIFE_GAIN",
       "ACTION:ADD_COUNTERS"
     ],
-    "current_gap": "No explicit local closure exists today between LIFE_GAIN and ADD_COUNTERS keys.",
+    "current_gap": "Local closure for LIFE_GAIN -> ADD_COUNTERS is already implemented; the remaining gap is generic/raw-key/cross-card pairing.",
+    "evidence_status": "Local self-edge closure (local_only, score 0) is implemented and validated; pairing inspect still reports zero generic/raw-key/cross-card pairing by key.",
+    "current_material_state": {
+      "local_closure_exists": true,
+      "local_edge_shape": "self_edge, local_only=true, score=0, reasons=[EVENT:LIFE_GAIN, ACTION:ADD_COUNTERS]",
+      "validated_by": [
+        "src/engine/semantic/tests/sem_overlay_life_gain_add_counters_bridge_min_v1.test.ts"
+      ],
+      "generic_cross_card_pairing_exists": false,
+      "generic_cross_card_pairing_evidence": "src/engine/semantic/tests/sem_overlay_life_gain_add_counters_pairing_inspect.test.ts"
+    },
     "notes": [
       "Parser emits gain life actions when explicit 'you gain N life' wording is present.",
       "sem_profile emits EVENT:LIFE_GAIN from ACTION:GAIN_LIFE.",
@@ -125,6 +135,15 @@
     "Multi-hop causal chains across bridge families"
   ],
   "acceptance_evidence": {
+    "local_closure_observation": {
+      "test": "src/engine/semantic/tests/sem_overlay_life_gain_add_counters_bridge_min_v1.test.ts",
+      "observed": [
+        "Explicit local LIFE_GAIN listener + ADD_COUNTERS producer wording emits a local LIFE_GAIN -> ADD_COUNTERS self-edge.",
+        "Edge is local_only=true.",
+        "Edge score=0.",
+        "Edge reasons include EVENT:LIFE_GAIN and ACTION:ADD_COUNTERS."
+      ]
+    },
     "diagnose_observation": {
       "test": "src/engine/semantic/tests/sem_overlay_life_gain_add_counters_diagnose.test.ts",
       "observed": [

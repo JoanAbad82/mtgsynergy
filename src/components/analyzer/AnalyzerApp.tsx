@@ -107,6 +107,21 @@ export default function AnalyzerApp({ buildSha }: Props) {
     [shareToken],
   );
 
+  const resizeDeckTextarea = () => {
+    const el = inputRef.current;
+    if (!el) return;
+    const minHeight = 220;
+    el.style.height = "0px";
+    const nextHeight = Math.max(el.scrollHeight, minHeight);
+    el.style.height = `${nextHeight}px`;
+    el.style.overflowY = "hidden";
+  };
+
+  useEffect(() => {
+    const rid = requestAnimationFrame(() => resizeDeckTextarea());
+    return () => cancelAnimationFrame(rid);
+  }, [inputText]);
+
   useEffect(() => {
     const token = getShareTokenFromUrl(new URL(window.location.href));
     if (!token) return;
@@ -339,7 +354,13 @@ export default function AnalyzerApp({ buildSha }: Props) {
         <textarea
           placeholder="Pega aquí tu export de MTG Arena..."
           value={inputText}
-          onChange={(e) => setInputText(e.currentTarget.value)}
+          onInput={(e) => {
+            setInputText(e.currentTarget.value);
+            resizeDeckTextarea();
+          }}
+          onPaste={() => {
+            requestAnimationFrame(() => resizeDeckTextarea());
+          }}
           ref={inputRef}
         />
         <button onClick={handleAnalyze} disabled={isAnalyzing}>

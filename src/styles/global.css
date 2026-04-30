@@ -56,6 +56,122 @@ a:focus-visible {
   padding: clamp(24px, 3.5vw, 44px) 0;
 }
 
+.skip-link {
+  position: absolute;
+  left: 14px;
+  top: -40px;
+  z-index: 20;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid #cdd9ea;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  text-decoration: none;
+  box-shadow: var(--shadow-card);
+}
+
+.skip-link:focus-visible {
+  top: 10px;
+}
+
+.site-header {
+  border-bottom: 1px solid #dbe2ec;
+  background: rgba(247, 249, 252, 0.9);
+}
+
+.site-header .wrap {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 62px;
+}
+
+.site-brand {
+  color: #0f172a;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  text-decoration: none;
+}
+
+.site-brand:hover {
+  text-decoration: none;
+  color: #111827;
+}
+
+.site-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.site-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 11px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: #334155;
+  font-size: 13px;
+  text-decoration: none;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.site-nav-link:hover {
+  color: #0f172a;
+  text-decoration: none;
+  border-color: #d8e0eb;
+  background: #f8fafc;
+}
+
+.site-nav-link.is-active {
+  color: #0f172a;
+  border-color: #d2dbe8;
+  background: #f5f8fc;
+  font-weight: 600;
+}
+
+.site-main {
+  min-height: calc(100vh - 150px);
+}
+
+.site-main .wrap {
+  padding-top: clamp(20px, 3vw, 36px);
+}
+
+.site-footer {
+  border-top: 1px solid #dbe2ec;
+  background: #f7f9fc;
+}
+
+.site-footer .wrap {
+  padding-top: 16px;
+  padding-bottom: 18px;
+}
+
+.site-footer-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+}
+
+.site-affiliate-note {
+  margin-top: 28px;
+  margin-bottom: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  opacity: 0.85;
+}
+
 h1 {
   margin: 0 0 10px;
   font-size: clamp(30px, 4vw, 40px);
@@ -546,6 +662,25 @@ img {
 
   .post-content .callout {
     padding: 12px 14px;
+  }
+
+  .site-header-inner {
+    min-height: 58px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: 7px;
+    padding: 10px 0;
+  }
+
+  .site-nav-link {
+    min-height: 32px;
+    padding: 0 10px;
+  }
+
+  .site-footer .wrap {
+    padding-top: 14px;
+    padding-bottom: 15px;
   }
 }
 

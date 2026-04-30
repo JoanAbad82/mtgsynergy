@@ -13,6 +13,8 @@ if (!path) {
 }
 if (!path.endsWith("/")) path += "/";
 const canonical = new URL(path, site).toString();
+const isHome = path === "/es/" || path === "/";
+const isAnalyzer = path.startsWith("/es/analizador-de-mazos-mtg/");
 ---
 <!doctype html>
 <html lang={lang}>
@@ -25,13 +27,43 @@ const canonical = new URL(path, site).toString();
     <slot name="head" />
   </head>
   <body>
-    <div class="wrap">
-      <slot />
-      {AMAZON_ASSOC_TAG && AMAZON_ASSOC_TAG.trim().length > 0 && (
-        <p class="muted" style="font-size:12px;opacity:0.8;margin-top:28px;">
-          Aviso: algunos enlaces pueden ser de afiliado de Amazon. Si compras a través de ellos, podemos recibir una comisión sin coste adicional para ti.
+    <a class="skip-link" href="#site-main">Saltar al contenido</a>
+    <header class="site-header">
+      <div class="wrap">
+        <div class="site-header-inner">
+          <a class="site-brand" href="/es/" aria-label="MTGSynergy inicio">
+            MTGSynergy
+          </a>
+          <nav class="site-nav" aria-label="Navegación principal">
+            <a class:list={["site-nav-link", isHome && "is-active"]} href="/es/">Inicio</a>
+            <a
+              class:list={["site-nav-link", isAnalyzer && "is-active"]}
+              href="/es/analizador-de-mazos-mtg/"
+            >
+              Analizador
+            </a>
+          </nav>
+        </div>
+      </div>
+    </header>
+    <main id="site-main" class="site-main">
+      <div class="wrap">
+        <slot />
+        {AMAZON_ASSOC_TAG && AMAZON_ASSOC_TAG.trim().length > 0 && (
+          <p class="muted site-affiliate-note">
+            Aviso: algunos enlaces pueden ser de afiliado de Amazon. Si compras a
+            través de ellos, podemos recibir una comisión sin coste adicional para
+            ti.
+          </p>
+        )}
+      </div>
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <p class="muted site-footer-note">
+          MTGSynergy · Herramienta client-side para análisis estructural de mazos.
         </p>
-      )}
-    </div>
+      </div>
+    </footer>
   </body>
 </html>

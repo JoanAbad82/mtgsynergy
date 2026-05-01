@@ -106,7 +106,7 @@ describe("AnalysisStatusPanel helpers", () => {
       mcResult: { base: { sps: 10 }, dist: { effective_n: 10 } },
     });
     const doneMc = done.sections.find((s) => s.id === "mc");
-    expect(doneMc?.summary.toLowerCase()).toContain("list");
+    expect(doneMc?.summary.toLowerCase()).toContain("simulación completada");
 
     const error = buildAnalysisStatusModel({
       ...baseInput,
@@ -115,7 +115,7 @@ describe("AnalysisStatusPanel helpers", () => {
       mcError: "boom",
     });
     const errorMc = error.sections.find((s) => s.id === "mc");
-    expect(errorMc?.summary.toLowerCase()).toContain("falló");
+    expect(errorMc?.summary.toLowerCase()).toContain("no se pudo completar la simulación");
   });
 
   test("MC enabled + idle -> pendiente", () => {
@@ -125,7 +125,7 @@ describe("AnalysisStatusPanel helpers", () => {
       mcStatus: "idle",
     });
     const mc = model.sections.find((s) => s.id === "mc");
-    expect(mc?.summary).toContain("pulsa Analizar");
+    expect(mc?.summary).toContain("Pendiente de ejecutar");
     expect(mc?.action).toContain("Analizar");
   });
 

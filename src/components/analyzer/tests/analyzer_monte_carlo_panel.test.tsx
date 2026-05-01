@@ -12,10 +12,10 @@ describe("Analyzer Monte Carlo panel copy", () => {
   it("expone copy friendly para título y ayuda", () => {
     expect(MONTE_CARLO_PANEL_COPY.title).toBe("Simulación de estabilidad");
     expect(MONTE_CARLO_PANEL_COPY.entryBadgeTitle).toBe(
-      "Simulación de estabilidad experimental",
+      "Análisis estructural",
     );
     expect(MONTE_CARLO_PANEL_COPY.toggleLabel).toBe(
-      "Activar simulación de estabilidad",
+      "Activar simulación experimental",
     );
     expect(MONTE_CARLO_PANEL_COPY.toggleHint).toContain(
       "Simula pequeñas variaciones del mazo",
@@ -56,10 +56,10 @@ describe("Analyzer Monte Carlo panel formatters", () => {
 
   it("muestra nota de colapso si robustez es 0 y base positiva", () => {
     expect(formatMonteCarloZeroRobustnessNote(0, 107.6)).toBe(
-      "En esta simulación, las conexiones principales no se mantienen cuando el mazo se perturba.",
+      "En esta simulación, las conexiones principales no se mantienen cuando el mazo se perturba. El plan parece depender de pocas piezas clave.",
     );
     expect(formatMonteCarloZeroRobustnessNote(-1, 20)).toBe(
-      "En esta simulación, las conexiones principales no se mantienen cuando el mazo se perturba.",
+      "En esta simulación, las conexiones principales no se mantienen cuando el mazo se perturba. El plan parece depender de pocas piezas clave.",
     );
   });
 

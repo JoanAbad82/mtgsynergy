@@ -1,16 +1,19 @@
 import type { DeckState, StructuralSummary } from "../domain/types";
 import type { ParseIssue } from "../parser/types";
 import type { Issue } from "./enrich";
+import type { ActionableInsight } from "../recommendations/types";
 import { parseMtgaExport } from "../parser";
 import { computeStructuralSummary } from "../structural";
 import { enrichEntriesWithCardIndex } from "./enrich";
 import { generateEdges } from "../edges";
 import { computeStructuralPowerScore } from "../structural/sps";
+import { buildActionableInsightsFromAnalyzerPipeline } from "../recommendations/analyzer_pipeline_wiring";
 
 export type AnalyzeResult = {
   deckState: DeckState;
   summary: StructuralSummary;
   issues: Array<ParseIssue | Issue>;
+  actionableInsights?: ActionableInsight[];
 };
 
 export async function analyzeMtgaExportAsync(
@@ -36,6 +39,16 @@ export async function analyzeMtgaExportAsync(
   summary.structuralPowerScore = spsResult.sps;
   summary.structuralPowerBreakdown = spsResult.breakdown;
   const issues = [...baseIssues, ...enriched.issues_added];
+  let actionableInsights: ActionableInsight[] = [];
+  try {
+    actionableInsights = buildActionableInsightsFromAnalyzerPipeline({
+      deckState,
+      summary,
+      issues,
+    });
+  } catch {
+    actionableInsights = [];
+  }
 
-  return { deckState, summary, issues };
+  return { deckState, summary, issues, actionableInsights };
 }

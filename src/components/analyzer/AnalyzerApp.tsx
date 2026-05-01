@@ -25,7 +25,6 @@ import SemanticOverlayPanel from "./SemanticOverlayPanel";
 import HowItWorksSection from "./sections/HowItWorksSection";
 import ExamplesSection from "./sections/ExamplesSection";
 import FaqSection from "./sections/FaqSection";
-import LabCTASection from "./sections/LabCTASection";
 import MetricCoach from "./components/MetricCoach";
 import {
   interpretDensity,
@@ -958,7 +957,6 @@ export default function AnalyzerApp({ buildSha }: Props) {
       )}
 
       <FaqSection />
-      <LabCTASection />
     </div>
   );
 }

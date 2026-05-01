@@ -1,6 +1,6 @@
 export default function LabCTASection() {
   return (
-    <div className="panel">
+    <div className="panel lab-cta-panel">
       <h2>Laboratorio de sinergias</h2>
       <p className="muted">
         Explora guías avanzadas y experimentos en nuestro laboratorio.

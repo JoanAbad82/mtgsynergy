@@ -35,6 +35,13 @@ export const SEMANTIC_OVERLAY_COPY = {
   noneDetected: "No se detectaron.",
   redundancyTitle: "Patrones repetidos detectados",
   redundancyNotApplicable: "No se detectaron efectos repetidos relevantes.",
+  compactMainEdgesHint:
+    "Mostrando conexiones principales resumidas. Cambia a vista detallada para verlas todas.",
+  viewAllMainEdgesLabel: "Ver todas las conexiones principales",
+  viewWeakEdgesLabel: "Ver señales locales",
+  viewOrphanSignalsLabel: "Ver efectos sin pareja",
+  viewExcessSignalsLabel: "Ver señales sin conexión clara",
+  viewRedundancyLabel: "Ver patrones repetidos",
   glossaryTitle: "Glosario rápido",
   glossaryItems: [
     "Porcentaje de cartas con alguna señal semántica.",
@@ -295,6 +302,7 @@ type Props = {
   resolvedUnique: number;
   missingUnique: number;
   coverageReport?: SemanticCoverageReport;
+  viewMode?: "compact" | "detailed";
 };
 
 export default function SemanticOverlayPanel({
@@ -307,7 +315,9 @@ export default function SemanticOverlayPanel({
   resolvedUnique,
   missingUnique,
   coverageReport,
+  viewMode = "detailed",
 }: Props) {
+  const isCompact = viewMode === "compact";
   const coverage = buildCoverageSummary(metrics, resolvedUnique, missingUnique);
   const reportReasons = buildCoverageReasonsFromReport(coverageReport);
   const reasons: CoverageReasonView[] =
@@ -316,6 +326,8 @@ export default function SemanticOverlayPanel({
       : buildCoverageReasons(metrics, resolvedUnique, missingUnique);
   const edgesTop = edges.slice(0, 10);
   const { mainEdges, weakEdges } = partitionSemanticEdgesByStrength(edgesTop);
+  const visibleMainEdges = isCompact ? mainEdges.slice(0, 3) : mainEdges;
+  const hiddenMainEdges = mainEdges.slice(visibleMainEdges.length);
   const status = getSignalStatus(metrics, mainEdges.length, weakEdges.length);
   const orphanTop = metrics.orphan_listeners.slice(0, 10);
   const excessTop = metrics.excess_producers.slice(0, 10);
@@ -323,25 +335,84 @@ export default function SemanticOverlayPanel({
   const audit = buildUncoveredNonLandAudit(coverageReport);
   const auditGroups = buildUncoveredNonLandAuditGroups(audit);
 
+  const renderEdgeList = (list: SemanticEdge[]) => (
+    <ul className="semantic-list semantic-edge-list">
+      {list.map((edge) => {
+        const fromName = idToName[edge.from] ?? String(edge.from);
+        const toName = idToName[edge.to] ?? String(edge.to);
+        const reasons = edge.reasons.slice(0, 3);
+        const reasonKeys = edge.reasons.map((reason) => reason.key);
+        return (
+          <li key={`${edge.from}-${edge.to}-${edge.score}`} className="semantic-edge-item">
+            <div>
+              {fromName} → {toName} ({SEMANTIC_OVERLAY_COPY.edgeScoreLabel} {edge.score})
+            </div>
+            {reasons.length > 0 && (
+              <div className="muted semantic-edge-reasons">
+                {reasons.map((reason) => {
+                  const label = explainKeyHuman(reason.key, reasonKeys);
+                  const raw = label !== "Unknown" ? label : explainKey(reason.key);
+                  const shown = formatSemanticKeyLabelForUi(raw);
+                  return (
+                    <div key={`${edge.from}-${edge.to}-${reason.key}`}>
+                      {shown} × {reason.weight}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   return (
-    <div className="panel">
+    <div className="panel semantic-overlay-panel">
       <h2>{SEMANTIC_OVERLAY_COPY.title}</h2>
-      <p className="muted" style={{ whiteSpace: "pre-line" }}>
+      <p className="muted semantic-overlay-intro" style={{ whiteSpace: "pre-line" }}>
         {SEMANTIC_OVERLAY_COPY.intro}
       </p>
-      <p className="muted">{status.label}</p>
-      {status.hint && <p className="muted">{status.hint}</p>}
-      <p>
-        {SEMANTIC_OVERLAY_COPY.coverageLabel}: {coverage.percent}% ({coverage.covered}/{coverage.total})
-      </p>
-      {reasons.length === 0 ? (
-        <p className="muted">
-          {SEMANTIC_OVERLAY_COPY.reasonsTitle}: {SEMANTIC_OVERLAY_COPY.reasonsNone}
-        </p>
-      ) : (
-        <>
-          <p className="muted">{SEMANTIC_OVERLAY_COPY.reasonsTitle}:</p>
-          <ul>
+      <div className="semantic-status-row">
+        <span className="badge semantic-status-badge">{status.label}</span>
+        {status.hint && <p className="muted">{status.hint}</p>}
+      </div>
+
+      <div className="semantic-summary-grid">
+        <div className="semantic-summary-card">
+          <span className="muted semantic-summary-label">{SEMANTIC_OVERLAY_COPY.coverageLabel}</span>
+          <strong className="semantic-summary-value">
+            {coverage.percent}% ({coverage.covered}/{coverage.total})
+          </strong>
+        </div>
+        <div className="semantic-summary-card">
+          <span className="muted semantic-summary-label">{SEMANTIC_OVERLAY_COPY.sosLabel}</span>
+          <strong className="semantic-summary-value">{metrics.SOS.toFixed(2)}</strong>
+        </div>
+        <div className="semantic-summary-card">
+          <span className="muted semantic-summary-label">{SEMANTIC_OVERLAY_COPY.totalEdgeScoreLabel}</span>
+          <strong className="semantic-summary-value">{metrics.total_edge_score}</strong>
+        </div>
+        <div className="semantic-summary-card">
+          <span className="muted semantic-summary-label">{SEMANTIC_OVERLAY_COPY.resolvedLabel}</span>
+          <strong className="semantic-summary-value">{resolvedUnique}</strong>
+        </div>
+        <div className="semantic-summary-card">
+          <span className="muted semantic-summary-label">{SEMANTIC_OVERLAY_COPY.missingLabel}</span>
+          <strong className="semantic-summary-value">{missingUnique}</strong>
+        </div>
+        <div className="semantic-summary-card">
+          <span className="muted semantic-summary-label">{SEMANTIC_OVERLAY_COPY.entriesLabel}</span>
+          <strong className="semantic-summary-value">{deckEntriesCount}</strong>
+        </div>
+      </div>
+
+      <section className="semantic-block semantic-coverage-block">
+        <h3>{SEMANTIC_OVERLAY_COPY.reasonsTitle}</h3>
+        {reasons.length === 0 ? (
+          <p className="muted">{SEMANTIC_OVERLAY_COPY.reasonsNone}</p>
+        ) : (
+          <ul className="semantic-list">
             {reasons.map((reason) => (
               <li key={reason.key}>
                 {reason.label} · {reason.count}
@@ -351,154 +422,193 @@ export default function SemanticOverlayPanel({
               </li>
             ))}
           </ul>
-        </>
-      )}
-      {audit && (
-        <details>
-          <summary>{audit.title}</summary>
-          <p className="muted">{SEMANTIC_OVERLAY_AUDIT_HELP}</p>
-          <ul>
-            {auditGroups.map((group) => (
-              <li key={`${group.reasonId}-${group.label}`}>
-                {group.label} · {group.count}
-                <div className="muted">{formatUncoveredAuditExamples(group.cards)}</div>
-              </li>
-            ))}
-          </ul>
-        </details>
-      )}
-      <p>
-        {SEMANTIC_OVERLAY_COPY.resolvedLabel}: {resolvedUnique} · {SEMANTIC_OVERLAY_COPY.missingLabel}: {missingUnique} ·{" "}
-        {SEMANTIC_OVERLAY_COPY.entriesLabel}: {deckEntriesCount}
-      </p>
-      <p>
-        {SEMANTIC_OVERLAY_COPY.sosLabel}: {metrics.SOS.toFixed(2)} · {SEMANTIC_OVERLAY_COPY.totalEdgeScoreLabel}:{" "}
-        {metrics.total_edge_score}
-      </p>
-
-      <h3>{SEMANTIC_OVERLAY_COPY.edgesTitle}</h3>
-      <p className="muted">{SEMANTIC_OVERLAY_COPY.edgesIntro}</p>
-      {mainEdges.length === 0 ? (
-        <p className="muted">{SEMANTIC_OVERLAY_COPY.noEdges}</p>
-      ) : (
-        <ul>
-          {mainEdges.map((edge) => {
-            const fromName = idToName[edge.from] ?? String(edge.from);
-            const toName = idToName[edge.to] ?? String(edge.to);
-            const reasons = edge.reasons.slice(0, 3);
-            const reasonKeys = edge.reasons.map((reason) => reason.key);
-            return (
-              <li key={`${edge.from}-${edge.to}-${edge.score}`}>
-                {fromName} → {toName} ({SEMANTIC_OVERLAY_COPY.edgeScoreLabel} {edge.score})
-                {reasons.length > 0 && (
-                  <div className="muted">
-                    {reasons.map((reason) => {
-                      const label = explainKeyHuman(reason.key, reasonKeys);
-                      const raw = label !== "Unknown" ? label : explainKey(reason.key);
-                      const shown = formatSemanticKeyLabelForUi(raw);
-                      return (
-                        <div key={`${edge.from}-${edge.to}-${reason.key}`}>
-                          {shown} × {reason.weight}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-      )}
-      {weakEdges.length > 0 && (
-        <>
-          <h3>{SEMANTIC_OVERLAY_COPY.weakEdgesTitle}</h3>
-          <p className="muted">{SEMANTIC_OVERLAY_COPY.weakEdgesHint}</p>
-          <ul>
-            {weakEdges.map((edge) => {
-              const fromName = idToName[edge.from] ?? String(edge.from);
-              const toName = idToName[edge.to] ?? String(edge.to);
-              const reasons = edge.reasons.slice(0, 3);
-              const reasonKeys = edge.reasons.map((reason) => reason.key);
-              return (
-                <li key={`${edge.from}-${edge.to}-${edge.score}`}>
-                  {fromName} → {toName} ({SEMANTIC_OVERLAY_COPY.edgeScoreLabel} {edge.score})
-                  {reasons.length > 0 && (
-                    <div className="muted">
-                      {reasons.map((reason) => {
-                        const label = explainKeyHuman(reason.key, reasonKeys);
-                        const raw = label !== "Unknown" ? label : explainKey(reason.key);
-                        const shown = formatSemanticKeyLabelForUi(raw);
-                        return (
-                          <div key={`${edge.from}-${edge.to}-${reason.key}`}>
-                            {shown} × {reason.weight}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
+        )}
+        {audit && (
+          <details className="semantic-audit">
+            <summary>{audit.title}</summary>
+            <p className="muted">{SEMANTIC_OVERLAY_AUDIT_HELP}</p>
+            <ul className="semantic-list">
+              {auditGroups.map((group) => (
+                <li key={`${group.reasonId}-${group.label}`}>
+                  {group.label} · {group.count}
+                  <div className="muted">{formatUncoveredAuditExamples(group.cards)}</div>
                 </li>
-              );
-            })}
-          </ul>
-        </>
+              ))}
+            </ul>
+          </details>
+        )}
+      </section>
+
+      <section className="semantic-block semantic-edges-block">
+        <h3>{SEMANTIC_OVERLAY_COPY.edgesTitle}</h3>
+        <p className="muted">{SEMANTIC_OVERLAY_COPY.edgesIntro}</p>
+        {visibleMainEdges.length === 0 ? (
+          <p className="muted">{SEMANTIC_OVERLAY_COPY.noEdges}</p>
+        ) : (
+          renderEdgeList(visibleMainEdges)
+        )}
+        {isCompact && hiddenMainEdges.length > 0 && (
+          <>
+            <p className="muted semantic-compact-hint">{SEMANTIC_OVERLAY_COPY.compactMainEdgesHint}</p>
+            <details className="semantic-section-details semantic-main-details">
+              <summary>{SEMANTIC_OVERLAY_COPY.viewAllMainEdgesLabel}</summary>
+              {renderEdgeList(hiddenMainEdges)}
+            </details>
+          </>
+        )}
+      </section>
+
+      {weakEdges.length > 0 && (
+        <section className="semantic-block semantic-weak-block">
+          <h3>{SEMANTIC_OVERLAY_COPY.weakEdgesTitle}</h3>
+          {isCompact ? (
+            <details className="semantic-section-details" open={false}>
+              <summary>{SEMANTIC_OVERLAY_COPY.viewWeakEdgesLabel}</summary>
+              <p className="muted">{SEMANTIC_OVERLAY_COPY.weakEdgesHint}</p>
+              {renderEdgeList(weakEdges)}
+            </details>
+          ) : (
+            <>
+              <p className="muted">{SEMANTIC_OVERLAY_COPY.weakEdgesHint}</p>
+              {renderEdgeList(weakEdges)}
+            </>
+          )}
+        </section>
       )}
 
-      <h3>{SEMANTIC_OVERLAY_COPY.orphanTitle}</h3>
-      {orphanTop.length === 0 ? (
-        <p className="muted">{SEMANTIC_OVERLAY_COPY.noneDetected}</p>
-      ) : (
-        <ul>
-          {orphanTop.map((row) => {
-            const label = explainKeyHuman(row.key);
-            const raw = label !== "Unknown" ? label : explainKey(row.key);
-            const shown = formatSemanticKeyLabelForUi(raw);
-            return (
-              <li key={`orphan-${row.key}`}>
-                {shown} · {row.consumed}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <section className="semantic-block">
+        <h3>{SEMANTIC_OVERLAY_COPY.orphanTitle}</h3>
+        {isCompact ? (
+          <details className="semantic-section-details" open={false}>
+            <summary>{SEMANTIC_OVERLAY_COPY.viewOrphanSignalsLabel}</summary>
+            {orphanTop.length === 0 ? (
+              <p className="muted">{SEMANTIC_OVERLAY_COPY.noneDetected}</p>
+            ) : (
+              <ul className="semantic-list">
+                {orphanTop.map((row) => {
+                  const label = explainKeyHuman(row.key);
+                  const raw = label !== "Unknown" ? label : explainKey(row.key);
+                  const shown = formatSemanticKeyLabelForUi(raw);
+                  return (
+                    <li key={`orphan-${row.key}`}>
+                      {shown} · {row.consumed}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </details>
+        ) : (
+          <>
+            {orphanTop.length === 0 ? (
+              <p className="muted">{SEMANTIC_OVERLAY_COPY.noneDetected}</p>
+            ) : (
+              <ul className="semantic-list">
+                {orphanTop.map((row) => {
+                  const label = explainKeyHuman(row.key);
+                  const raw = label !== "Unknown" ? label : explainKey(row.key);
+                  const shown = formatSemanticKeyLabelForUi(raw);
+                  return (
+                    <li key={`orphan-${row.key}`}>
+                      {shown} · {row.consumed}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </>
+        )}
+      </section>
 
-      <h3>{SEMANTIC_OVERLAY_COPY.excessTitle}</h3>
-      <p className="muted">{SEMANTIC_OVERLAY_COPY.excessHint}</p>
-      {excessTop.length === 0 ? (
-        <p className="muted">{SEMANTIC_OVERLAY_COPY.noneDetected}</p>
-      ) : (
-        <ul>
-          {excessTop.map((row) => {
-            const label = explainKeyHuman(row.key);
-            const raw = label !== "Unknown" ? label : explainKey(row.key);
-            const shown = formatSemanticKeyLabelForUi(raw);
-            return (
-              <li key={`excess-${row.key}`}>
-                {shown} · {row.produced}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <section className="semantic-block">
+        <h3>{SEMANTIC_OVERLAY_COPY.excessTitle}</h3>
+        {isCompact ? (
+          <details className="semantic-section-details" open={false}>
+            <summary>{SEMANTIC_OVERLAY_COPY.viewExcessSignalsLabel}</summary>
+            <p className="muted">{SEMANTIC_OVERLAY_COPY.excessHint}</p>
+            {excessTop.length === 0 ? (
+              <p className="muted">{SEMANTIC_OVERLAY_COPY.noneDetected}</p>
+            ) : (
+              <ul className="semantic-list">
+                {excessTop.map((row) => {
+                  const label = explainKeyHuman(row.key);
+                  const raw = label !== "Unknown" ? label : explainKey(row.key);
+                  const shown = formatSemanticKeyLabelForUi(raw);
+                  return (
+                    <li key={`excess-${row.key}`}>
+                      {shown} · {row.produced}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </details>
+        ) : (
+          <>
+            <p className="muted">{SEMANTIC_OVERLAY_COPY.excessHint}</p>
+            {excessTop.length === 0 ? (
+              <p className="muted">{SEMANTIC_OVERLAY_COPY.noneDetected}</p>
+            ) : (
+              <ul className="semantic-list">
+                {excessTop.map((row) => {
+                  const label = explainKeyHuman(row.key);
+                  const raw = label !== "Unknown" ? label : explainKey(row.key);
+                  const shown = formatSemanticKeyLabelForUi(raw);
+                  return (
+                    <li key={`excess-${row.key}`}>
+                      {shown} · {row.produced}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </>
+        )}
+      </section>
 
-      <h3>{SEMANTIC_OVERLAY_COPY.redundancyTitle}</h3>
-      {groups.length === 0 ? (
-        <p className="muted">{SEMANTIC_OVERLAY_COPY.redundancyNotApplicable}</p>
-      ) : (
-        <ul>
-          {groups.map((group) => (
-            <li key={group.signature}>
-              tamaño {group.size}:{" "}
-              {group.card_ids
-                .map((id) => idToName[id] ?? String(id))
-                .join(", ")}
-            </li>
-          ))}
-        </ul>
-      )}
+      <section className="semantic-block">
+        <h3>{SEMANTIC_OVERLAY_COPY.redundancyTitle}</h3>
+        {isCompact ? (
+          <details className="semantic-section-details" open={false}>
+            <summary>{SEMANTIC_OVERLAY_COPY.viewRedundancyLabel}</summary>
+            {groups.length === 0 ? (
+              <p className="muted">{SEMANTIC_OVERLAY_COPY.redundancyNotApplicable}</p>
+            ) : (
+              <ul className="semantic-list">
+                {groups.map((group) => (
+                  <li key={group.signature}>
+                    tamaño {group.size}:{" "}
+                    {group.card_ids
+                      .map((id) => idToName[id] ?? String(id))
+                      .join(", ")}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </details>
+        ) : (
+          <>
+            {groups.length === 0 ? (
+              <p className="muted">{SEMANTIC_OVERLAY_COPY.redundancyNotApplicable}</p>
+            ) : (
+              <ul className="semantic-list">
+                {groups.map((group) => (
+                  <li key={group.signature}>
+                    tamaño {group.size}:{" "}
+                    {group.card_ids
+                      .map((id) => idToName[id] ?? String(id))
+                      .join(", ")}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </section>
 
-      <details>
+      <details className="semantic-glossary">
         <summary>{SEMANTIC_OVERLAY_COPY.glossaryTitle}</summary>
-        <ul>
+        <ul className="semantic-list">
           {SEMANTIC_OVERLAY_COPY.glossaryItems.map((item) => (
             <li key={item}>{item}</li>
           ))}

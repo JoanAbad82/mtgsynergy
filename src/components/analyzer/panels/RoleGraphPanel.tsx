@@ -57,18 +57,18 @@ export default function RoleGraphPanel({ summary }: Props) {
   const hasPositiveCentrality = hasAnyRoleCentrality(rows);
 
   return (
-    <div className="panel">
+    <div className="panel role-graph-panel">
       <h2>{ROLE_GRAPH_PANEL_COPY.title}</h2>
       <p className="muted">{ROLE_GRAPH_PANEL_COPY.intro}</p>
       <p className="muted">{ROLE_GRAPH_PANEL_COPY.helpText}</p>
-      <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0.5rem 0" }}>
+      <table className="role-graph-table">
         <thead>
           <tr>
-            <th style={{ textAlign: "left" }}>{ROLE_GRAPH_PANEL_COPY.roleHeader}</th>
-            <th style={{ textAlign: "right", whiteSpace: "nowrap", paddingRight: "1rem" }}>
+            <th>{ROLE_GRAPH_PANEL_COPY.roleHeader}</th>
+            <th className="numeric">
               {ROLE_GRAPH_PANEL_COPY.countHeader}
             </th>
-            <th style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+            <th className="numeric">
               {ROLE_GRAPH_PANEL_COPY.centralityHeader}
             </th>
           </tr>
@@ -77,14 +77,14 @@ export default function RoleGraphPanel({ summary }: Props) {
           {rows.map((row) => (
             <tr key={row.role}>
               <td>{row.roleLabel}</td>
-              <td style={{ textAlign: "right", paddingRight: "1rem" }}>{row.count}</td>
-              <td style={{ textAlign: "right" }}>{row.centrality}</td>
+              <td className="numeric">{row.count}</td>
+              <td className="numeric">{row.centrality}</td>
             </tr>
           ))}
         </tbody>
       </table>
       {!hasPositiveCentrality && rows.length > 0 && (
-        <p className="muted">{ROLE_GRAPH_PANEL_COPY.zeroCentralityNote}</p>
+        <p className="muted role-centrality-zero-note">{ROLE_GRAPH_PANEL_COPY.zeroCentralityNote}</p>
       )}
     </div>
   );

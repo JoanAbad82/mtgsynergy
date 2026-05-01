@@ -707,6 +707,22 @@ img {
   }
 }
 
+@media print {
+  .print-footer,
+  .site-footer,
+  .site-footer-note {
+    display: none !important;
+  }
+
+  .site-main {
+    min-height: 0 !important;
+  }
+
+  .site-main .wrap {
+    padding-bottom: 0 !important;
+  }
+}
+
 .scryfall-attrib {
   margin: 0 0 26px;
   font-size: 13px;

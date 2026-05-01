@@ -40,20 +40,42 @@ export default function StructuralPanel({ summary }: Props) {
   const lines = buildStructuralSummaryLines(summary);
 
   return (
-    <div className="panel">
+    <div className="panel structural-panel">
       <h2>{STRUCTURAL_PANEL_COPY.title}</h2>
-      <p className="muted">
-        {STRUCTURAL_PANEL_COPY.intro}
-      </p>
-      <p className="muted">
-        {lines.activity}
-      </p>
-      <p className="muted">
-        {lines.topology}
-      </p>
-      <p className="muted">
-        {lines.roleFlow}
-      </p>
+      <p className="muted">{STRUCTURAL_PANEL_COPY.intro}</p>
+      <div className="structural-kpi-grid">
+        <div className="structural-kpi-card">
+          <span className="muted structural-kpi-label">
+            {STRUCTURAL_PANEL_COPY.nodesActiveLabel}:
+          </span>{" "}
+          <strong className="structural-kpi-value">{summary.nodes_active} / {summary.nodes_total}</strong>
+        </div>
+        <div className="structural-kpi-card">
+          <span className="muted structural-kpi-label">
+            {STRUCTURAL_PANEL_COPY.relationsLabel}:
+          </span>{" "}
+          <strong className="structural-kpi-value">{summary.edges_total}</strong>
+        </div>
+        <div className="structural-kpi-card">
+          <span className="muted structural-kpi-label">
+            {STRUCTURAL_PANEL_COPY.densityLabel}:
+          </span>{" "}
+          <strong className="structural-kpi-value">{summary.density.toFixed(3)}</strong>
+        </div>
+        <div className="structural-kpi-card">
+          <span className="muted structural-kpi-label">
+            {STRUCTURAL_PANEL_COPY.cyclesDetectedLabel}:
+          </span>{" "}
+          <strong className="structural-kpi-value">{summary.cycles_present ? "sí" : "no"}</strong>
+        </div>
+        <div className="structural-kpi-card">
+          <span className="muted structural-kpi-label">
+            {STRUCTURAL_PANEL_COPY.connectedComponentsLabel}:
+          </span>{" "}
+          <strong className="structural-kpi-value">{summary.components_weak.count}</strong>
+        </div>
+      </div>
+      <p className="muted structural-role-flow">{lines.roleFlow}</p>
     </div>
   );
 }

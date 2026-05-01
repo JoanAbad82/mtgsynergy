@@ -58,6 +58,30 @@ describe("cards helpers", () => {
     }
   });
 
+  test("lookupCard accepts plain JSON payload when server already decompresses .gz", async () => {
+    const originalFetch = globalThis.fetch;
+    const plain = new TextEncoder().encode(JSON.stringify(payload));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () =>
+        plain.buffer.slice(plain.byteOffset, plain.byteOffset + plain.byteLength),
+    }));
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+
+    try {
+      __testing.clearCache();
+      const card = await lookupCard("Forest");
+      expect(card?.name).toBe("Forest");
+      expect(fetchMock).toHaveBeenCalledWith("/data/cards_index.json.gz");
+      const count = await getCardsIndexCount();
+      expect(count).toBe(3);
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   test("lookupCard reuses a single fetch for multiple calls", async () => {
     const originalFetch = globalThis.fetch;
     const gz = pako.gzip(JSON.stringify(payload));

@@ -90,8 +90,8 @@ function getMcOmittedReason(mcResult: any | null): { omitted: boolean; reason?: 
 
   const reasons: string[] = [];
   if (baseSps != null && baseSps <= 0) reasons.push("sin relaciones suficientes");
-  if (effectiveN === 0) reasons.push("effective_n=0");
-  if (warnings.length > 0) reasons.push(`warnings: ${warnings.join(", ")}`);
+  if (effectiveN === 0) reasons.push("no hubo muestras útiles");
+  if (warnings.length > 0) reasons.push("se detectaron advertencias en la simulación");
 
   return { omitted: true, reason: reasons.join(" · ") };
 }
@@ -254,7 +254,7 @@ export default function AnalysisStatusPanel(props: Props) {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   return (
-    <div className="panel">
+    <div className="panel analysis-status-panel">
       <h2>{es.analysisStatus.title}</h2>
       <p className="muted">{es.analysisStatus.subtitle}</p>
       {model.sections.map((section) => {

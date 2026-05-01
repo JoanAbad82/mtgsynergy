@@ -25,6 +25,17 @@ async function gunzipToString(data: Uint8Array): Promise<string> {
   return pako.ungzip(data, { to: "string" });
 }
 
+function isGzipBytes(data: Uint8Array): boolean {
+  return data.length >= 2 && data[0] === 0x1f && data[1] === 0x8b;
+}
+
+async function decodeCardsIndexPayload(data: Uint8Array): Promise<string> {
+  if (isGzipBytes(data)) {
+    return gunzipToString(data);
+  }
+  return new TextDecoder("utf-8").decode(data);
+}
+
 async function loadCardsIndex(baseUrl?: string): Promise<CardsIndexCache> {
   const base = baseUrl ? baseUrl.replace(/\/+$/, "") : "";
   const cacheKey = base || "__default__";
@@ -41,7 +52,7 @@ async function loadCardsIndex(baseUrl?: string): Promise<CardsIndexCache> {
       throw new Error(`Failed to load cards_index.json.gz: ${res.status}`);
     }
     const bytes = new Uint8Array(await res.arrayBuffer());
-    const json = await gunzipToString(bytes);
+    const json = await decodeCardsIndexPayload(bytes);
     const payload = JSON.parse(json) as CardsIndexPayload;
     const byName = payload.by_name ?? {};
     const count = Object.keys(byName).length;

@@ -46,6 +46,19 @@ type Props = {
   buildSha?: string;
 };
 
+type AnalyzerIssue = {
+  code: string;
+  severity?: string;
+  message?: string;
+};
+
+type AnalyzerViewMode = "compact" | "detailed";
+
+type MonteCarloActivationCopy = {
+  title: string;
+  subtitle: string;
+};
+
 export default function AnalyzerApp({ buildSha }: Props) {
   const [inputText, setInputText] = useState("");
   const [deckState, setDeckState] = useState<ShareDeckState | null>(null);
@@ -71,6 +84,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
     iterations: 1000,
     seed: 1,
   }));
+  const [viewMode, setViewMode] = useState<AnalyzerViewMode>("compact");
   const [mcDetailsOpen, setMcDetailsOpen] = useState(false);
   const [semanticOverlayStatus, setSemanticOverlayStatus] = useState<
     "idle" | "loading" | "ready" | "error"
@@ -90,6 +104,16 @@ export default function AnalyzerApp({ buildSha }: Props) {
   const semanticRunId = useRef(0);
   const edges = (deckState as any)?.edges ?? [];
   const edgesByKind = useMemo(() => groupEdgesForPanel(edges), [edges]);
+  const relationGroupsForView = useMemo(
+    () => buildRelationGroupsForView(edgesByKind, viewMode),
+    [edgesByKind, viewMode],
+  );
+  const compactRelationsShownCount = useMemo(
+    () =>
+      relationGroupsForView.reduce((sum, group) => sum + group.shown.length, 0),
+    [relationGroupsForView],
+  );
+  const compactRelationsHiddenCount = Math.max(0, edges.length - compactRelationsShownCount);
   const nameMap = useMemo(() => buildNameMapFromDeckState(deckState), [deckState]);
   const countsMap = useMemo(
     () =>
@@ -100,6 +124,27 @@ export default function AnalyzerApp({ buildSha }: Props) {
         ]) ?? [],
       ),
     [deckState],
+  );
+  const cardsIndexBaseUrl = useMemo(() => getCardsIndexBaseUrl(), []);
+  const taggingIssue = useMemo(
+    () => getTaggingIssueForUi(issues),
+    [issues],
+  );
+  const cardsIndexedCount = useMemo(
+    () => extractCardsIndexedCount(taggingIssue?.message),
+    [taggingIssue],
+  );
+  const taggingFriendlyStatus = useMemo(
+    () => buildFriendlyTaggingStatus(taggingIssue, cardsIndexedCount),
+    [taggingIssue, cardsIndexedCount],
+  );
+  const visibleIssues = useMemo(
+    () => issues.filter((issue) => !isTechnicalTaggingIssue(issue)),
+    [issues],
+  );
+  const mcActivationCopy = useMemo(
+    () => buildMonteCarloActivationCopy(mcParams.enabled, mcStatus, mcResult),
+    [mcParams.enabled, mcStatus, mcResult],
   );
 
   const warn = useMemo(
@@ -234,7 +279,8 @@ export default function AnalyzerApp({ buildSha }: Props) {
     setSemanticOverlayError(null);
 
     const run = async () => {
-      const result = await computeSemanticOverlayFromDeckEntries(entries, lookupCard);
+      const lookup = (nameOrNorm: string) => lookupCard(nameOrNorm, cardsIndexBaseUrl);
+      const result = await computeSemanticOverlayFromDeckEntries(entries, lookup);
       if (rid !== semanticRunId.current) return;
       if (result.metrics.card_count === 0) {
         setSemanticOverlay(null);
@@ -245,7 +291,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
       try {
         coverageReport = await buildSemanticCoverageReport({
           entries: entries.map((entry) => ({ name: entry.name })),
-          lookup: lookupCard,
+          lookup,
         });
       } catch {
         coverageReport = undefined;
@@ -271,7 +317,10 @@ export default function AnalyzerApp({ buildSha }: Props) {
     setJsonImported(false);
 
     try {
-      const res = await analyzeMtgaExportAsync(text, { enableCardIndex: true });
+      const res = await analyzeMtgaExportAsync(text, {
+        enableCardIndex: true,
+        baseUrl: cardsIndexBaseUrl,
+      });
       setIssues(res.issues);
       setDeckState(res.deckState as ShareDeckState);
       setSummary(res.summary);
@@ -345,54 +394,96 @@ export default function AnalyzerApp({ buildSha }: Props) {
 
   return (
     <div className="analyzer">
-      <div className="panel">
+      <div className="panel analyzer-input-panel">
         <span className="badge">{MONTE_CARLO_PANEL_COPY.entryBadgeTitle}</span>
         <p className="muted" style={{ marginTop: "10px" }}>
           Pega un export de MTG Arena para analizar la estructura.
         </p>
-        <p className="muted">build: {formatBuildShaShort(buildSha)}</p>
-        <textarea
-          placeholder="Pega aquí tu export de MTG Arena..."
-          value={inputText}
-          onInput={(e) => {
-            setInputText(e.currentTarget.value);
-            resizeDeckTextarea();
-          }}
-          onPaste={() => {
-            requestAnimationFrame(() => resizeDeckTextarea());
-          }}
-          ref={inputRef}
-        />
-        <button onClick={handleAnalyze} disabled={isAnalyzing}>
-          {isAnalyzing ? "Analizando..." : "Analizar"}
-        </button>
-        {issues.length > 0 && (
-          <ul className="issues">
-            {issues.map((issue) => (
+        {taggingFriendlyStatus && (
+          <p className="muted analyzer-runtime-status">{taggingFriendlyStatus}</p>
+        )}
+        <div className="deck-input-shell">
+          <textarea
+            className="deck-textarea"
+            placeholder="Pega aquí tu export de MTG Arena..."
+            value={inputText}
+            onInput={(e) => {
+              setInputText(e.currentTarget.value);
+              resizeDeckTextarea();
+            }}
+            onPaste={() => {
+              requestAnimationFrame(() => resizeDeckTextarea());
+            }}
+            ref={inputRef}
+          />
+          <div className="analyzer-actions">
+            <button
+              className="analyzer-primary-action"
+              onClick={handleAnalyze}
+              disabled={isAnalyzing}
+            >
+              {isAnalyzing ? "Analizando..." : "Analizar"}
+            </button>
+          </div>
+        </div>
+        {visibleIssues.length > 0 && (
+          <ul className="issues analyzer-user-issues">
+            {visibleIssues.map((issue) => (
               <li key={`${issue.code}-${issue.message}`}>
-                {issue.severity}: {issue.code} ({issue.message})
+                {formatAnalyzerUserIssue(issue)}
               </li>
             ))}
           </ul>
         )}
         {error && <p className="muted">{error}</p>}
+        {(buildSha || issues.length > 0) && (
+          <details className="analyzer-technical-details">
+            <summary>Detalles técnicos</summary>
+            <div className="analyzer-technical-content">
+              <p className="muted analyzer-build-meta">build: {formatBuildShaShort(buildSha)}</p>
+              {issues.length > 0 ? (
+                <ul className="issues analyzer-technical-list">
+                  {issues.map((issue) => (
+                    <li key={`tech-${issue.code}-${issue.message}`}>
+                      {formatAnalyzerTechnicalIssue(issue)}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="muted">Sin eventos técnicos en esta ejecución.</p>
+              )}
+            </div>
+          </details>
+        )}
       </div>
 
       <HowItWorksSection />
-      <ExamplesSection onLoadExample={handleLoadExample} />
+      <div className="analyzer-examples-shell">
+        <ExamplesSection onLoadExample={handleLoadExample} />
+      </div>
 
-      <div className="panel">
+      <div className="panel monte-carlo-toggle-panel">
+        <div className="mc-activation-head">
+          <h2>{mcActivationCopy.title}</h2>
+          <p className="muted">{mcActivationCopy.subtitle}</p>
+        </div>
         <label style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <input
             type="checkbox"
             checked={mcParams.enabled}
             onChange={(e) => handleToggleMonteCarlo(e.currentTarget.checked)}
           />
-          <span>{MONTE_CARLO_PANEL_COPY.toggleLabel}</span>
+          <span>
+            {mcParams.enabled
+              ? MONTE_CARLO_PANEL_COPY.toggleEnabledLabel
+              : MONTE_CARLO_PANEL_COPY.toggleLabel}
+          </span>
         </label>
-        <p className="muted" style={{ marginTop: "6px" }}>
-          {MONTE_CARLO_PANEL_COPY.toggleHint}
-        </p>
+        {mcParams.enabled && mcStatus !== "done" && (
+          <p className="muted" style={{ marginTop: "6px" }}>
+            {MONTE_CARLO_PANEL_COPY.toggleHint}
+          </p>
+        )}
       </div>
 
       <AnalysisStatusPanel
@@ -424,88 +515,112 @@ export default function AnalyzerApp({ buildSha }: Props) {
 
       {summary && (
         <>
-          <div className="panel">
+          <div className="panel analyzer-view-panel">
+            <h2>{ANALYZER_VIEW_COPY.title}</h2>
+            <p className="muted">{ANALYZER_VIEW_COPY.intro}</p>
+            <div className="view-mode-toggle" role="tablist" aria-label="Modo de lectura">
+              <button
+                type="button"
+                className={`view-mode-option ${viewMode === "compact" ? "is-active" : ""}`}
+                aria-pressed={viewMode === "compact"}
+                onClick={() => setViewMode("compact")}
+              >
+                {ANALYZER_VIEW_COPY.compactLabel}
+              </button>
+              <button
+                type="button"
+                className={`view-mode-option ${viewMode === "detailed" ? "is-active" : ""}`}
+                aria-pressed={viewMode === "detailed"}
+                onClick={() => setViewMode("detailed")}
+              >
+                {ANALYZER_VIEW_COPY.detailedLabel}
+              </button>
+            </div>
+          </div>
+          <div className="panel quick-results-panel">
             <h2>Resultado rápido</h2>
             <p className="muted">Resumen orientativo para lectura rápida.</p>
-            <p>
-              <span title="Structural Power Score (SPS)">
-                Puntuación estructural (SPS)
-              </span>
-              : {formatNumberCompact(summary.structuralPowerScore, 1)}
-            </p>
             {(() => {
               const spsValue = getSpsNumber(summary.structuralPowerScore);
               const spsGuide = interpretSps(spsValue);
-              return (
-                <MetricCoach
-                  label="SPS"
-                  value={formatNumberCompact(summary.structuralPowerScore, 1)}
-                  level={spsGuide.level}
-                  meaning={spsGuide.meaning}
-                  advice={spsGuide.advice}
-                />
-              );
-            })()}
-            <p>
-              Sinergias detectadas: {summary.edges_total} ·{" "}
-              <span title="Densidad del grafo de roles">Densidad</span>:{" "}
-              {formatNumberCompact(summary.density, 3)}
-            </p>
-            {(() => {
               const edgesGuide = interpretEdgesTotal(summary.edges_total);
-              return (
-                <MetricCoach
-                  label="Sinergias"
-                  value={String(summary.edges_total)}
-                  level={edgesGuide.level}
-                  meaning={edgesGuide.meaning}
-                  advice={edgesGuide.advice}
-                />
-              );
-            })()}
-            <p>
-              <span title="Roles con mayor presencia en el mazo">
-                Roles dominantes
-              </span>
-              : {formatDominantRolesForUi(summary.role_counts)}
-            </p>
-            {(() => {
               const densityGuide = interpretDensity(summary.density);
-              return (
-                <MetricCoach
-                  label="Densidad"
-                  value={formatNumberCompact(summary.density, 3)}
-                  level={densityGuide.level}
-                  meaning={densityGuide.meaning}
-                  advice={densityGuide.advice}
-                />
-              );
-            })()}
-            {(() => {
               const roles = getDominantRoles(summary.role_counts);
               const rolesGuide = interpretRolesDominant(roles);
-              if (!rolesGuide.meaning && !rolesGuide.advice) return null;
               return (
-                <MetricCoach
-                  label="Roles dominantes"
-                  value={formatRoleListForUi(roles)}
-                  meaning={rolesGuide.meaning}
-                  advice={rolesGuide.advice}
-                />
+                <div className="quick-kpi-grid">
+                  <div className="quick-kpi-card">
+                    <p className="muted quick-kpi-label" title="Structural Power Score (SPS)">
+                      Puntuación estructural (SPS)
+                    </p>
+                    <p className="quick-kpi-value">
+                      {formatNumberCompact(summary.structuralPowerScore, 1)}
+                    </p>
+                    <MetricCoach
+                      label="SPS"
+                      value={formatNumberCompact(summary.structuralPowerScore, 1)}
+                      level={spsGuide.level}
+                      meaning={spsGuide.meaning}
+                      advice={spsGuide.advice}
+                    />
+                  </div>
+                  <div className="quick-kpi-card">
+                    <p className="muted quick-kpi-label">Sinergias detectadas</p>
+                    <p className="quick-kpi-value">{summary.edges_total}</p>
+                    <MetricCoach
+                      label="Sinergias"
+                      value={String(summary.edges_total)}
+                      level={edgesGuide.level}
+                      meaning={edgesGuide.meaning}
+                      advice={edgesGuide.advice}
+                    />
+                  </div>
+                  <div className="quick-kpi-card">
+                    <p className="muted quick-kpi-label" title="Densidad del grafo de roles">
+                      Densidad
+                    </p>
+                    <p className="quick-kpi-value">{formatNumberCompact(summary.density, 3)}</p>
+                    <MetricCoach
+                      label="Densidad"
+                      value={formatNumberCompact(summary.density, 3)}
+                      level={densityGuide.level}
+                      meaning={densityGuide.meaning}
+                      advice={densityGuide.advice}
+                    />
+                  </div>
+                  <div className="quick-kpi-card">
+                    <p className="muted quick-kpi-label" title="Roles con mayor presencia en el mazo">
+                      Roles dominantes
+                    </p>
+                    <p className="quick-kpi-value quick-kpi-value-roles">
+                      {formatDominantRolesForUi(summary.role_counts)}
+                    </p>
+                    {rolesGuide.meaning || rolesGuide.advice ? (
+                      <MetricCoach
+                        label="Roles dominantes"
+                        value={formatRoleListForUi(roles)}
+                        meaning={rolesGuide.meaning}
+                        advice={rolesGuide.advice}
+                      />
+                    ) : null}
+                  </div>
+                </div>
               );
             })()}
-            <p>{getQuickDiagnosis(summary.edges_total, summary.density)}</p>
+            <p className="muted quick-results-diagnosis">
+              {getQuickDiagnosis(summary.edges_total, summary.density)}
+            </p>
           </div>
           <StructuralPanel summary={summary} />
           <RoleGraphPanel summary={summary} />
           {semanticOverlayStatus === "loading" && (
-            <div className="panel">
+            <div className="panel semantic-overlay-panel semantic-overlay-state-panel">
               <h2>Superposición semántica (experimental)</h2>
               <p className="muted">Cargando…</p>
             </div>
           )}
           {semanticOverlayStatus === "error" && (
-            <div className="panel">
+            <div className="panel semantic-overlay-panel semantic-overlay-state-panel">
               <h2>Superposición semántica (experimental)</h2>
               <p className="muted">
                 Error: {semanticOverlayError ?? "Error desconocido"}
@@ -525,10 +640,11 @@ export default function AnalyzerApp({ buildSha }: Props) {
                 resolvedUnique={semanticOverlay.resolvedUnique}
                 missingUnique={semanticOverlay.missingUnique}
                 coverageReport={semanticOverlay.coverageReport}
+                viewMode={viewMode}
               />
-            )}
+          )}
           {mcParams.enabled && (
-            <div className="panel">
+            <div className="panel monte-carlo-results-panel">
               <h2>{MONTE_CARLO_PANEL_COPY.title}</h2>
               <p className="muted">{MONTE_CARLO_PANEL_COPY.intro}</p>
               {(() => {
@@ -560,6 +676,10 @@ export default function AnalyzerApp({ buildSha }: Props) {
                   robustGuide.level,
                   fragilityGuide.level,
                 );
+                const stabilityBreakdown = formatMonteCarloStabilityBreakdown(
+                  mcResult?.metrics?.robust_sps ?? null,
+                  mcResult?.base?.sps ?? null,
+                );
                 const zeroRobustnessNote = formatMonteCarloZeroRobustnessNote(
                   mcResult?.metrics?.robust_sps ?? null,
                   mcResult?.base?.sps ?? null,
@@ -575,9 +695,9 @@ export default function AnalyzerApp({ buildSha }: Props) {
                             ? "Simulación con error"
                             : mcStatus === "done"
                               ? omittedReason
-                                ? "Simulación no ejecutada"
-                                : "Simulación lista"
-                              : "Lista para ejecutar"
+                                ? "Simulación con limitaciones"
+                                : "Simulación completada"
+                              : "Pendiente de ejecutar"
                       }
                       level={statusGuide.level}
                       meaning={statusGuide.meaning}
@@ -597,10 +717,9 @@ export default function AnalyzerApp({ buildSha }: Props) {
                     <MetricCoach
                       label={es.mc.labels.robustness}
                       value={
-                        formatMonteCarloStabilityLine(
-                          mcResult?.metrics?.robust_sps ?? null,
-                          mcResult?.base?.sps ?? null,
-                        )
+                        stabilityBreakdown
+                          ? `${stabilityBreakdown.simulated}\n${stabilityBreakdown.base}`
+                          : undefined
                       }
                       level={robustGuide.level}
                       meaning={robustGuide.meaning}
@@ -726,7 +845,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
               )}
             </div>
           )}
-          <div className="panel">
+          <div className="panel relations-panel">
             <h2>Relaciones (sinergias)</h2>
             <p className="muted">
               Relaciones detectadas entre roles del mazo.
@@ -734,20 +853,76 @@ export default function AnalyzerApp({ buildSha }: Props) {
             <p className="muted">Relaciones detectadas: {edges.length}</p>
             {edges.length === 0 ? (
               <p className="muted">No se detectaron relaciones.</p>
+            ) : viewMode === "compact" ? (
+              <>
+                <ul className="relation-category-summary">
+                  {edgesByKind.map(([kind, list]) => (
+                    <li key={`summary-${kind}`}>
+                      {formatEdgeKindLabel(kind)} ({list.length})
+                    </li>
+                  ))}
+                </ul>
+                <p className="muted relation-compact-hint">
+                  {ANALYZER_VIEW_COPY.compactRelationsHint}
+                </p>
+                {relationGroupsForView.map((group) => (
+                  <div key={group.kind} className="relation-group">
+                    <h3>
+                      {formatEdgeKindLabel(group.kind)} ({group.total})
+                    </h3>
+                    <p className="muted">{explainEdgeKind(group.kind)}</p>
+                    <ul className="relation-list">
+                      {group.shown.map((e) => {
+                        const copiesLine = formatEdgeCopiesLine(e, countsMap);
+                        return (
+                          <li key={`${e.kind}|${e.from}|${e.to}`} className="relation-item">
+                            <div className="relation-line">{formatEdgeLine(e, nameMap)}</div>
+                            {copiesLine && <div className="muted relation-meta">{copiesLine}</div>}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                ))}
+                {compactRelationsHiddenCount > 0 && (
+                  <details className="relation-details">
+                    <summary>{ANALYZER_VIEW_COPY.viewAllRelationsLabel}</summary>
+                    {edgesByKind.map(([kind, list]) => (
+                      <div key={`all-${kind}`} className="relation-group relation-group-expanded">
+                        <h3>
+                          {formatEdgeKindLabel(kind)} ({list.length})
+                        </h3>
+                        <p className="muted">{explainEdgeKind(kind)}</p>
+                        <ul className="relation-list">
+                          {list.map((e) => {
+                            const copiesLine = formatEdgeCopiesLine(e, countsMap);
+                            return (
+                              <li key={`${e.kind}|${e.from}|${e.to}`} className="relation-item">
+                                <div className="relation-line">{formatEdgeLine(e, nameMap)}</div>
+                                {copiesLine && <div className="muted relation-meta">{copiesLine}</div>}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    ))}
+                  </details>
+                )}
+              </>
             ) : (
               edgesByKind.map(([kind, list]) => (
-                <div key={kind}>
+                <div key={kind} className="relation-group">
                   <h3>
                     {formatEdgeKindLabel(kind)} ({list.length})
                   </h3>
                   <p className="muted">{explainEdgeKind(kind)}</p>
-                  <ul>
+                  <ul className="relation-list">
                     {list.map((e) => {
                       const copiesLine = formatEdgeCopiesLine(e, countsMap);
                       return (
-                        <li key={`${e.kind}|${e.from}|${e.to}`}>
-                          {formatEdgeLine(e, nameMap)}
-                          {copiesLine && <div className="muted">{copiesLine}</div>}
+                        <li key={`${e.kind}|${e.from}|${e.to}`} className="relation-item">
+                          <div className="relation-line">{formatEdgeLine(e, nameMap)}</div>
+                          {copiesLine && <div className="muted relation-meta">{copiesLine}</div>}
                         </li>
                       );
                     })}
@@ -782,13 +957,28 @@ export type EdgeUi = {
   score?: number;
 };
 
+export const ANALYZER_VIEW_COPY = {
+  title: "Nivel de detalle",
+  intro: "Elige cómo quieres leer los resultados del mazo.",
+  compactLabel: "Vista resumida",
+  detailedLabel: "Vista detallada",
+  compactRelationsHint:
+    "Mostrando solo las relaciones principales. Cambia a vista detallada para verlas todas.",
+  viewAllRelationsLabel: "Ver todas las relaciones",
+} as const;
+
 export const MONTE_CARLO_PANEL_COPY = {
   title: "Simulación de estabilidad",
   intro: "Estima si el plan del mazo aguanta pequeñas variaciones.",
-  entryBadgeTitle: "Simulación de estabilidad experimental",
-  toggleLabel: "Activar simulación de estabilidad",
+  entryBadgeTitle: "Análisis estructural",
+  experimentalTitle: "Simulación de estabilidad: experimental",
+  toggleLabel: "Activar simulación experimental",
+  toggleEnabledLabel: "Desactivar simulación experimental",
   toggleHint:
     "Simula pequeñas variaciones del mazo para estimar si el plan se mantiene. Puede tardar unos segundos.",
+  disabledHint: "Actualmente desactivada para este análisis.",
+  enabledHint:
+    "Funcionalidad experimental activada. Se ejecutará cuando analices el mazo.",
   statusHeading: "Estado de la simulación",
   stabilityPrefix: "Resultado simulado",
   basePrefix: "referencia base",
@@ -797,19 +987,28 @@ export const MONTE_CARLO_PANEL_COPY = {
   recommendationFallback: "Añade redundancia, piezas equivalentes o prueba otro mazo.",
   recommendationBridge: "Añade redundancia y cartas puente entre roles.",
   zeroRobustnessNote:
-    "En esta simulación, las conexiones principales no se mantienen cuando el mazo se perturba.",
+    "En esta simulación, las conexiones principales no se mantienen cuando el mazo se perturba. El plan parece depender de pocas piezas clave.",
   insufficientRelationsNote:
     "No hay relaciones suficientes para ejecutar una simulación útil.",
   fragilityPrefix: "Variación estimada",
 } as const;
 
 export function formatMonteCarloStabilityLine(robustSps: unknown, baseSps: unknown): string | undefined {
-  if (typeof robustSps !== "number" || !Number.isFinite(robustSps)) return undefined;
-  if (typeof baseSps !== "number" || !Number.isFinite(baseSps)) return undefined;
-  return `${MONTE_CARLO_PANEL_COPY.stabilityPrefix}: ${formatNumberCompact(
-    robustSps,
-    1,
-  )} · ${MONTE_CARLO_PANEL_COPY.basePrefix}: ${formatNumberCompact(baseSps, 1)}`;
+  const breakdown = formatMonteCarloStabilityBreakdown(robustSps, baseSps);
+  if (!breakdown) return undefined;
+  return `${breakdown.simulated} · ${breakdown.base.toLowerCase()}`;
+}
+
+export function formatMonteCarloStabilityBreakdown(
+  robustSps: unknown,
+  baseSps: unknown,
+): { simulated: string; base: string } | null {
+  if (typeof robustSps !== "number" || !Number.isFinite(robustSps)) return null;
+  if (typeof baseSps !== "number" || !Number.isFinite(baseSps)) return null;
+  return {
+    simulated: `${MONTE_CARLO_PANEL_COPY.stabilityPrefix}: ${formatNumberCompact(robustSps, 1)}`,
+    base: `Referencia base: ${formatNumberCompact(baseSps, 1)}`,
+  };
 }
 
 export function formatMonteCarloZeroRobustnessNote(robustSps: unknown, baseSps: unknown): string | null {
@@ -828,6 +1027,44 @@ export function formatMonteCarloInsufficientRelationsNote(baseSps: unknown): str
 
 export function formatMonteCarloNoUsefulSamplesMessage(): string {
   return "Simulación no ejecutada: no hubo muestras útiles. Revisa el mazo (exceso de tierras o roles insuficientes).";
+}
+
+export function buildMonteCarloActivationCopy(
+  enabled: boolean,
+  mcStatus: "idle" | "running" | "done" | "error",
+  mcResult: any | null,
+): MonteCarloActivationCopy {
+  if (!enabled) {
+    return {
+      title: "Simulación de estabilidad: desactivada",
+      subtitle:
+        "Actívala para estimar si el plan del mazo se mantiene ante pequeñas variaciones.",
+    };
+  }
+
+  if (mcStatus === "done" && mcResult) {
+    const requestedN = mcResult?.dist?.requested_n;
+    const samplesText =
+      typeof requestedN === "number" && Number.isFinite(requestedN)
+        ? requestedN
+        : 1000;
+    return {
+      title: "Simulación de estabilidad: completada",
+      subtitle: `Resultado calculado a partir de ${samplesText} muestras.`,
+    };
+  }
+
+  if (mcStatus === "running") {
+    return {
+      title: "Simulación de estabilidad: activada",
+      subtitle: "Se está ejecutando ahora. Puede tardar unos segundos.",
+    };
+  }
+
+  return {
+    title: "Simulación de estabilidad: activada",
+    subtitle: "Se ejecutará al analizar el mazo. Puede tardar unos segundos.",
+  };
 }
 
 export function buildMonteCarloRecommendation(
@@ -849,6 +1086,80 @@ export function buildMonteCarloRecommendation(
 export function formatBuildShaShort(sha?: string): string {
   if (!sha) return "unknown";
   return sha.length >= 7 ? sha.slice(0, 7) : sha;
+}
+
+export function getTaggingIssueForUi(issues: AnalyzerIssue[]): AnalyzerIssue | null {
+  return (
+    issues.find((issue) => issue.code === "TAGGING_ACTIVE") ??
+    issues.find((issue) => issue.code === "TAGGING_UNAVAILABLE") ??
+    issues.find((issue) => issue.code === "TAGGING_NO_MATCHES") ??
+    null
+  );
+}
+
+export function extractCardsIndexedCount(message?: string): number | null {
+  if (!message) return null;
+  const match = message.match(/cards indexed count:\s*(\d+)/i);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isFinite(value) ? value : null;
+}
+
+export function buildFriendlyTaggingStatus(
+  issue: AnalyzerIssue | null,
+  indexedCount: number | null,
+): string | null {
+  if (!issue) return null;
+  if (issue.code === "TAGGING_ACTIVE") {
+    if (indexedCount != null) {
+      return `Índice de cartas cargado · ${indexedCount} cartas`;
+    }
+    return "Índice de cartas cargado correctamente.";
+  }
+  if (issue.code === "TAGGING_NO_MATCHES") {
+    return "No se reconocieron cartas del mazo. Revisa idioma y nombres del export.";
+  }
+  if (issue.code === "TAGGING_UNAVAILABLE") {
+    return "Índice de cartas no disponible en esta ejecución.";
+  }
+  return null;
+}
+
+export function isTechnicalTaggingIssue(issue: AnalyzerIssue): boolean {
+  return issue.code.startsWith("TAGGING_");
+}
+
+export function formatAnalyzerUserIssue(issue: AnalyzerIssue): string {
+  if (issue.code === "ANALYZE_FAILED") {
+    return "No se pudo completar el análisis. Revisa el formato del mazo e inténtalo de nuevo.";
+  }
+  if (issue.message) return issue.message;
+  return issue.code;
+}
+
+export function formatAnalyzerTechnicalIssue(issue: AnalyzerIssue): string {
+  const severity = issue.severity ?? "info";
+  if (!issue.message) {
+    return `${severity}: ${issue.code}`;
+  }
+  return `${severity}: ${issue.code} (${issue.message})`;
+}
+
+export function getCardsIndexBaseUrl(loc?: Location): string | undefined {
+  const locationRef =
+    loc ??
+    (typeof window !== "undefined" && window.location
+      ? window.location
+      : undefined);
+  if (!locationRef?.origin) return undefined;
+  const base =
+    (typeof import.meta !== "undefined" &&
+      (import.meta as any).env &&
+      typeof (import.meta as any).env.BASE_URL === "string"
+      ? (import.meta as any).env.BASE_URL
+      : "/") || "/";
+  const normalized = base.endsWith("/") ? base.slice(0, -1) : base;
+  return normalized ? `${locationRef.origin}${normalized}` : locationRef.origin;
 }
 
 export function parseMcParams(
@@ -922,6 +1233,41 @@ export function formatEdgeCopiesLine(
   const toCount = countsMap.get(e.to);
   if (fromCount == null || toCount == null) return null;
   return `copias: ${fromCount}×${toCount}`;
+}
+
+type RelationGroupForView = {
+  kind: string;
+  total: number;
+  shown: EdgeUi[];
+};
+
+export function buildRelationGroupsForView(
+  groups: ReadonlyArray<readonly [string, EdgeUi[]]>,
+  viewMode: AnalyzerViewMode,
+): RelationGroupForView[] {
+  if (viewMode === "detailed") {
+    return groups.map(([kind, list]) => ({
+      kind,
+      total: list.length,
+      shown: list,
+    }));
+  }
+
+  const perCategoryLimit = 3;
+  let remaining = 5;
+  const compactGroups: RelationGroupForView[] = [];
+  for (const [kind, list] of groups) {
+    if (remaining <= 0) break;
+    const take = Math.min(list.length, perCategoryLimit, remaining);
+    if (take <= 0) continue;
+    compactGroups.push({
+      kind,
+      total: list.length,
+      shown: list.slice(0, take),
+    });
+    remaining -= take;
+  }
+  return compactGroups;
 }
 
 export function formatNumberCompact(n: unknown, decimals = 1): string {

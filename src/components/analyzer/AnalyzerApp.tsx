@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import type { DeckState, ShareDeckState, StructuralSummary } from "../../engine";
+import type { ActionableInsight } from "../../engine/recommendations";
 import {
   analyzeMtgaExportAsync,
   computeStructuralSummary,
@@ -19,6 +20,7 @@ import StructuralPanel from "./panels/StructuralPanel";
 import RoleGraphPanel, { formatRoleLabelForUi } from "./panels/RoleGraphPanel";
 import SharePanel from "./panels/SharePanel";
 import AnalysisStatusPanel from "./panels/AnalysisStatusPanel";
+import RecommendationsDebugPanel from "./panels/RecommendationsDebugPanel";
 import SemanticOverlayPanel from "./SemanticOverlayPanel";
 import HowItWorksSection from "./sections/HowItWorksSection";
 import ExamplesSection from "./sections/ExamplesSection";
@@ -74,6 +76,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
   const [tooLong, setTooLong] = useState(false);
   const [jsonFallback, setJsonFallback] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [actionableInsights, setActionableInsights] = useState<ActionableInsight[] | null>(null);
   const [mcResult, setMcResult] = useState<any | null>(null);
   const [mcStatus, setMcStatus] = useState<
     "idle" | "running" | "done" | "error"
@@ -146,6 +149,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
     () => buildMonteCarloActivationCopy(mcParams.enabled, mcStatus, mcResult),
     [mcParams.enabled, mcStatus, mcResult],
   );
+  const debugRecommendations = useMemo(() => getDebugRecommendationsFlag(), []);
 
   const warn = useMemo(
     () => (shareToken ? isShareWarn(shareToken) : false),
@@ -179,6 +183,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
       setShareUrl(window.location.href);
       setShareImported(true);
       setJsonImported(false);
+      setActionableInsights(null);
     } catch (err) {
       setError("No se pudo cargar el enlace compartido.");
     }
@@ -324,6 +329,9 @@ export default function AnalyzerApp({ buildSha }: Props) {
       setIssues(res.issues);
       setDeckState(res.deckState as ShareDeckState);
       setSummary(res.summary);
+      setActionableInsights(
+        Array.isArray(res.actionableInsights) ? res.actionableInsights : [],
+      );
 
       const shareJson = exportShareJson(res.deckState);
       setJsonFallback(shareJson);
@@ -344,6 +352,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
         }
       }
     } catch (e) {
+      setActionableInsights(null);
       setIssues([
         {
           code: "ANALYZE_FAILED",
@@ -374,6 +383,7 @@ export default function AnalyzerApp({ buildSha }: Props) {
       setError(null);
       setJsonImported(true);
       setShareImported(false);
+      setActionableInsights(null);
     } catch {
       setError("JSON inválido.");
     }
@@ -512,6 +522,10 @@ export default function AnalyzerApp({ buildSha }: Props) {
           analyze(inputText);
         }}
       />
+
+      {debugRecommendations && Array.isArray(actionableInsights) && (
+        <RecommendationsDebugPanel actionableInsights={actionableInsights} />
+      )}
 
       {summary && (
         <>
@@ -1160,6 +1174,37 @@ export function getCardsIndexBaseUrl(loc?: Location): string | undefined {
       : "/") || "/";
   const normalized = base.endsWith("/") ? base.slice(0, -1) : base;
   return normalized ? `${locationRef.origin}${normalized}` : locationRef.origin;
+}
+
+export function getDebugRecommendationsFlag(
+  input?: string | URL | Location,
+): boolean {
+  let url: URL | null = null;
+
+  if (input instanceof URL) {
+    url = input;
+  } else if (typeof input === "string") {
+    try {
+      url = new URL(input, "http://localhost");
+    } catch {
+      url = null;
+    }
+  } else if (input && typeof input === "object" && typeof input.href === "string") {
+    try {
+      url = new URL(input.href);
+    } catch {
+      url = null;
+    }
+  } else if (typeof window !== "undefined" && window.location) {
+    try {
+      url = new URL(window.location.href);
+    } catch {
+      url = null;
+    }
+  }
+
+  if (!url) return false;
+  return new URLSearchParams(url.search).get("debugRecommendations") === "1";
 }
 
 export function parseMcParams(

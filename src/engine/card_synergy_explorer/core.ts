@@ -3,6 +3,7 @@ import type {
   CardSynergyExplorerInput,
   CardSynergyExplorerResult,
 } from "./types";
+import { validateCardSynergyExplorerInput } from "./input_validation";
 
 export const CARD_SYNERGY_EXPLORER_CORE_SKELETON_VERSION =
   "card-synergy-explorer-core-skeleton-v1" as const;
@@ -41,6 +42,21 @@ export function createSemanticIrUnavailableDegradation(): CardSynergyDegradation
 export function runCardSynergyExplorerCoreSkeleton(
   input: CardSynergyExplorerInput,
 ): CardSynergyExplorerResult {
+  const validation = validateCardSynergyExplorerInput(input);
+  if (!validation.ok) {
+    return {
+      input,
+      candidates: [],
+      degradations: validation.degradations,
+      meta: {
+        schemaVersion: "card-synergy-explorer-contract-v1",
+        deterministic: true,
+        usesDeckSps: false,
+        usesMonteCarlo: false,
+      },
+    };
+  }
+
   return {
     input,
     candidates: [],

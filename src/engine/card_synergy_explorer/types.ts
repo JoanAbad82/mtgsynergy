@@ -70,7 +70,9 @@ export interface CardSynergyDegradation {
     | "missing_oracle_text"
     | "semantic_ir_unavailable"
     | "no_explicit_bridge"
-    | "opaque_text";
+    | "opaque_text"
+    | "invalid_input"
+    | "unsupported_seed_count";
   message: string;
   recoverable: boolean;
 }

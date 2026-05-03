@@ -1,9 +1,11 @@
 import type {
+  CardSynergyDataAdapter,
   CardSynergyDegradation,
   CardSynergyExplorerInput,
   CardSynergyExplorerResult,
 } from "./types";
 import { validateCardSynergyExplorerInput } from "./input_validation";
+import { resolveCardSynergySeeds } from "./seed_resolution";
 
 export const CARD_SYNERGY_EXPLORER_CORE_SKELETON_VERSION =
   "card-synergy-explorer-core-skeleton-v1" as const;
@@ -39,33 +41,60 @@ export function createSemanticIrUnavailableDegradation(): CardSynergyDegradation
   };
 }
 
+function createCoreMeta(): CardSynergyExplorerResult["meta"] {
+  return {
+    schemaVersion: "card-synergy-explorer-contract-v1",
+    deterministic: true,
+    usesDeckSps: false,
+    usesMonteCarlo: false,
+  };
+}
+
 export function runCardSynergyExplorerCoreSkeleton(
   input: CardSynergyExplorerInput,
-): CardSynergyExplorerResult {
-  const validation = validateCardSynergyExplorerInput(input);
-  if (!validation.ok) {
+): CardSynergyExplorerResult;
+export function runCardSynergyExplorerCoreSkeleton(
+  input: CardSynergyExplorerInput,
+  adapter: CardSynergyDataAdapter,
+): Promise<CardSynergyExplorerResult>;
+export function runCardSynergyExplorerCoreSkeleton(
+  input: CardSynergyExplorerInput,
+  adapter?: CardSynergyDataAdapter,
+): CardSynergyExplorerResult | Promise<CardSynergyExplorerResult> {
+  if (!adapter) {
+    const validation = validateCardSynergyExplorerInput(input);
+    if (!validation.ok) {
+      return {
+        input,
+        candidates: [],
+        degradations: validation.degradations,
+        meta: createCoreMeta(),
+      };
+    }
+
     return {
       input,
       candidates: [],
-      degradations: validation.degradations,
-      meta: {
-        schemaVersion: "card-synergy-explorer-contract-v1",
-        deterministic: true,
-        usesDeckSps: false,
-        usesMonteCarlo: false,
-      },
+      degradations: [createSemanticIrUnavailableDegradation()],
+      meta: createCoreMeta(),
     };
   }
 
-  return {
-    input,
-    candidates: [],
-    degradations: [createSemanticIrUnavailableDegradation()],
-    meta: {
-      schemaVersion: "card-synergy-explorer-contract-v1",
-      deterministic: true,
-      usesDeckSps: false,
-      usesMonteCarlo: false,
-    },
-  };
+  return resolveCardSynergySeeds(input, adapter).then((seedResolution) => {
+    if (seedResolution.degradations.length > 0) {
+      return {
+        input,
+        candidates: [],
+        degradations: seedResolution.degradations,
+        meta: createCoreMeta(),
+      };
+    }
+
+    return {
+      input,
+      candidates: [],
+      degradations: [createSemanticIrUnavailableDegradation()],
+      meta: createCoreMeta(),
+    };
+  });
 }

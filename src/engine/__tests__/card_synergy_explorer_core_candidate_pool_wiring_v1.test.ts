@@ -6,8 +6,8 @@ import type {
 } from "../card_synergy_explorer";
 import { runCardSynergyExplorerCoreSkeleton } from "../card_synergy_explorer";
 
-describe("card synergy explorer core seed resolution wiring v1", () => {
-  test("invalid input returns validation degradations, does not call adapter, and excludes semantic_ir_unavailable", async () => {
+describe("card synergy explorer core candidate pool wiring v1", () => {
+  test("invalid input returns validation degradation, does not call adapter methods, and excludes semantic_ir_unavailable", async () => {
     const input = { cards: [] } as unknown as CardSynergyExplorerInput;
     const adapter: CardSynergyDataAdapter = {
       async resolveSeedCard() {
@@ -32,7 +32,7 @@ describe("card synergy explorer core seed resolution wiring v1", () => {
     expect(poolSpy).toHaveBeenCalledTimes(0);
   });
 
-  test("valid input with degraded seed returns adapter degradation, excludes semantic_ir_unavailable, and does not call findCandidatePool", async () => {
+  test("valid input with degraded seed returns seed degradation, no pool call, and excludes semantic_ir_unavailable", async () => {
     const input: CardSynergyExplorerInput = {
       cards: [{ name: "Unknown Card" }],
     };
@@ -42,7 +42,7 @@ describe("card synergy explorer core seed resolution wiring v1", () => {
           name: "Unknown Card",
           degradation: {
             reason: "missing_card_record",
-            message: "No cards_index record is available.",
+            message: "No record",
             recoverable: true,
           },
         };
@@ -58,12 +58,13 @@ describe("card synergy explorer core seed resolution wiring v1", () => {
     const reasons = result.degradations.map((d) => d.reason);
 
     expect(resolveSpy).toHaveBeenCalledTimes(1);
+    expect(poolSpy).toHaveBeenCalledTimes(0);
+    expect(result.candidates).toEqual([]);
     expect(reasons).toContain("missing_card_record");
     expect(reasons).not.toContain("semantic_ir_unavailable");
-    expect(poolSpy).toHaveBeenCalledTimes(0);
   });
 
-  test("valid input with resolved seed returns empty candidates and semantic_ir_unavailable", async () => {
+  test("valid resolved seed with empty pool calls findCandidatePool once and returns semantic_ir_unavailable", async () => {
     const input: CardSynergyExplorerInput = {
       cards: [{ name: "Brainstorm" }],
     };
@@ -79,36 +80,63 @@ describe("card synergy explorer core seed resolution wiring v1", () => {
 
     const result = await runCardSynergyExplorerCoreSkeleton(input, adapter);
 
+    expect(poolSpy).toHaveBeenCalledTimes(1);
     expect(result.candidates).toEqual([]);
     expect(result.degradations).toHaveLength(1);
     expect(result.degradations[0].reason).toBe("semantic_ir_unavailable");
-    expect(poolSpy).toHaveBeenCalledTimes(1);
   });
 
-  test("two valid seeds are resolved in order and semantic_ir_unavailable remains final degradation", async () => {
+  test("valid resolved seed with non-empty pool calls findCandidatePool once and still returns semantic_ir_unavailable", async () => {
     const input: CardSynergyExplorerInput = {
-      cards: [{ name: "A" }, { name: "B" }],
+      cards: [{ name: "Ponder" }],
     };
     const adapter: CardSynergyDataAdapter = {
       async resolveSeedCard(seed) {
         return { name: seed.name };
       },
       async findCandidatePool() {
-        return [];
+        return [{ name: "Preordain" }];
+      },
+    };
+    const poolSpy = vi.spyOn(adapter, "findCandidatePool");
+
+    const result = await runCardSynergyExplorerCoreSkeleton(input, adapter);
+
+    expect(poolSpy).toHaveBeenCalledTimes(1);
+    expect(result.candidates).toEqual([]);
+    expect(result.degradations).toHaveLength(1);
+    expect(result.degradations[0].reason).toBe("semantic_ir_unavailable");
+  });
+
+  test("two valid seeds are resolved in order and pool is queried after both", async () => {
+    const input: CardSynergyExplorerInput = {
+      cards: [{ name: "A" }, { name: "B" }],
+    };
+    const events: string[] = [];
+    const adapter: CardSynergyDataAdapter = {
+      async resolveSeedCard(seed) {
+        events.push(`resolve:${seed.name}`);
+        return { name: seed.name };
+      },
+      async findCandidatePool() {
+        events.push("pool");
+        return [{ name: "C" }];
       },
     };
     const resolveSpy = vi.spyOn(adapter, "resolveSeedCard");
+    const poolSpy = vi.spyOn(adapter, "findCandidatePool");
 
     const result = await runCardSynergyExplorerCoreSkeleton(input, adapter);
 
     expect(resolveSpy).toHaveBeenCalledTimes(2);
     expect(resolveSpy).toHaveBeenNthCalledWith(1, input.cards[0]);
     expect(resolveSpy).toHaveBeenNthCalledWith(2, input.cards[1]);
-    expect(result.degradations).toHaveLength(1);
+    expect(poolSpy).toHaveBeenCalledTimes(1);
+    expect(events).toEqual(["resolve:A", "resolve:B", "pool"]);
     expect(result.degradations[0].reason).toBe("semantic_ir_unavailable");
   });
 
-  test("core is deterministic for same input with deterministic adapter", async () => {
+  test("core is deterministic for same input and deterministic adapter", async () => {
     const input: CardSynergyExplorerInput = {
       cards: [{ name: "Opt" }],
     };
@@ -117,7 +145,7 @@ describe("card synergy explorer core seed resolution wiring v1", () => {
         return { name: seed.name, cmc: 1 };
       },
       async findCandidatePool() {
-        return [];
+        return [{ name: "Serum Visions" }];
       },
     };
 
@@ -127,7 +155,7 @@ describe("card synergy explorer core seed resolution wiring v1", () => {
     expect(first).toEqual(second);
   });
 
-  test("core does not mutate input and does not trim original seed name", async () => {
+  test("core does not mutate input or trim original names", async () => {
     const input: CardSynergyExplorerInput = {
       cards: [{ name: "  Opt  " }],
     };
@@ -151,10 +179,10 @@ describe("card synergy explorer core seed resolution wiring v1", () => {
     expect(input.cards[0].name).toBe("  Opt  ");
   });
 
-  test("core.ts has no forbidden runtime hooks and does not invoke findCandidatePool", () => {
+  test("core.ts excludes forbidden hooks and does not directly invoke findCandidatePool", () => {
     const source = readFileSync(new URL("../card_synergy_explorer/core.ts", import.meta.url), "utf-8");
 
-    expect(source.includes("fetch(")).toBe(false);
+    expect(source.includes("fetch")).toBe(false);
     expect(source.includes("Date.now")).toBe(false);
     expect(source.includes("Math.random")).toBe(false);
     expect(source.includes("localStorage")).toBe(false);
@@ -162,6 +190,11 @@ describe("card synergy explorer core seed resolution wiring v1", () => {
     expect(source.includes("window")).toBe(false);
     expect(source.includes("document")).toBe(false);
     expect(source.includes("cards_index")).toBe(false);
+    expect(source.includes("../analyzer")).toBe(false);
+    expect(source.includes("../parser")).toBe(false);
+    expect(source.includes("../semantic")).toBe(false);
+    expect(source.includes("montecarlo")).toBe(false);
+    expect(source.includes("sps")).toBe(false);
     expect(source.includes("findCandidatePool(")).toBe(false);
   });
 });

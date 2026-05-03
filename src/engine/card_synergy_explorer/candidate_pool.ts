@@ -1,4 +1,5 @@
 import { resolveCardSynergySeeds, type CardSynergyResolvedSeed } from "./seed_resolution";
+import { normalizeCardSynergyCandidatePool } from "./candidate_normalization";
 import type {
   CardSynergyCandidateCard,
   CardSynergyDataAdapter,
@@ -51,10 +52,15 @@ export async function resolveCardSynergyCandidatePool(
   }
 
   const candidatePool = await adapter.findCandidatePool(seedResolution.input);
+  const normalization = normalizeCardSynergyCandidatePool({
+    candidatePool,
+    seedCards: seedResolution.resolvedSeeds.map((seed) => seed.card),
+    maxCandidates: input.options?.maxCandidates,
+  });
   return {
     input,
     resolvedSeeds: seedResolution.resolvedSeeds,
-    candidatePool,
+    candidatePool: normalization.normalizedCandidatePool,
     degradations: [],
     meta: CARD_SYNERGY_CANDIDATE_POOL_META,
   };

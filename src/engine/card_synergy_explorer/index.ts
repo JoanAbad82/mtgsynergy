@@ -4,3 +4,4 @@ export * from "./core";
 export * from "./input_validation";
 export * from "./seed_resolution";
 export * from "./candidate_pool";
+export * from "./candidate_normalization";

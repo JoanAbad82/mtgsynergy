@@ -5,7 +5,7 @@ import type {
   CardSynergyExplorerResult,
 } from "./types";
 import { validateCardSynergyExplorerInput } from "./input_validation";
-import { resolveCardSynergySeeds } from "./seed_resolution";
+import { resolveCardSynergyCandidatePool } from "./candidate_pool";
 
 export const CARD_SYNERGY_EXPLORER_CORE_SKELETON_VERSION =
   "card-synergy-explorer-core-skeleton-v1" as const;
@@ -80,12 +80,12 @@ export function runCardSynergyExplorerCoreSkeleton(
     };
   }
 
-  return resolveCardSynergySeeds(input, adapter).then((seedResolution) => {
-    if (seedResolution.degradations.length > 0) {
+  return resolveCardSynergyCandidatePool(input, adapter).then((poolResult) => {
+    if (poolResult.degradations.length > 0) {
       return {
         input,
         candidates: [],
-        degradations: seedResolution.degradations,
+        degradations: poolResult.degradations,
         meta: createCoreMeta(),
       };
     }

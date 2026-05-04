@@ -1,3 +1,5 @@
+import type { CardSynergyCandidateOutput } from "./candidate_output";
+
 export interface CardSynergyExplorerInput {
   cards:
     | readonly [CardSynergySeedCard]
@@ -94,6 +96,7 @@ export interface CardSynergyDegradedCardRecord {
 export interface CardSynergyExplorerResult {
   input: CardSynergyExplorerInput;
   candidates: readonly CardSynergyCandidate[];
+  candidateOutputs: readonly CardSynergyCandidateOutput[];
   degradations: readonly CardSynergyDegradation[];
   meta: CardSynergyExplorerMeta;
 }

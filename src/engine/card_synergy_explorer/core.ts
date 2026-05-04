@@ -6,6 +6,7 @@ import type {
 } from "./types";
 import { validateCardSynergyExplorerInput } from "./input_validation";
 import { resolveCardSynergyCandidatePool } from "./candidate_pool";
+import { createCardSynergyCandidateOutputs } from "./candidate_output";
 
 export const CARD_SYNERGY_EXPLORER_CORE_SKELETON_VERSION =
   "card-synergy-explorer-core-skeleton-v1" as const;
@@ -67,6 +68,7 @@ export function runCardSynergyExplorerCoreSkeleton(
       return {
         input,
         candidates: [],
+        candidateOutputs: [],
         degradations: validation.degradations,
         meta: createCoreMeta(),
       };
@@ -75,6 +77,7 @@ export function runCardSynergyExplorerCoreSkeleton(
     return {
       input,
       candidates: [],
+      candidateOutputs: [],
       degradations: [createSemanticIrUnavailableDegradation()],
       meta: createCoreMeta(),
     };
@@ -85,6 +88,7 @@ export function runCardSynergyExplorerCoreSkeleton(
       return {
         input,
         candidates: [],
+        candidateOutputs: [],
         degradations: poolResult.degradations,
         meta: createCoreMeta(),
       };
@@ -93,6 +97,9 @@ export function runCardSynergyExplorerCoreSkeleton(
     return {
       input,
       candidates: [],
+      candidateOutputs: createCardSynergyCandidateOutputs({
+        candidatePool: poolResult.candidatePool,
+      }),
       degradations: [createSemanticIrUnavailableDegradation()],
       meta: createCoreMeta(),
     };

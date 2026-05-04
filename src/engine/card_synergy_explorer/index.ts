@@ -6,3 +6,4 @@ export * from "./seed_resolution";
 export * from "./candidate_pool";
 export * from "./candidate_normalization";
 export * from "./cards_index_adapter";
+export * from "./candidate_output";

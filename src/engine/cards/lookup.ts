@@ -10,6 +10,7 @@ type CardsIndexPayload = {
 };
 
 type CardsIndexCache = CardsIndexPayload & { count: number };
+const DEFAULT_LIST_CARDS_INDEX_LIMIT = 200;
 
 const indexCache = new Map<string, CardsIndexCache>();
 const indexPromiseCache = new Map<string, Promise<CardsIndexCache>>();
@@ -93,6 +94,32 @@ async function loadCardsIndex(baseUrl?: string): Promise<CardsIndexCache> {
   return promise;
 }
 
+function hasUsableOracleText(record: CardIndexRecord): boolean {
+  return typeof record.oracle_text === "string" && record.oracle_text.trim().length > 0;
+}
+
+function toCardRecordMin(name: string, record: CardIndexRecord): CardRecordMin {
+  return {
+    name,
+    name_norm: normalizeCardName(name),
+    type_line: typeof record.type_line === "string" ? record.type_line : null,
+    oracle_text: typeof record.oracle_text === "string" ? record.oracle_text : null,
+    cmc: typeof record.cmc === "number" ? record.cmc : null,
+  };
+}
+
+function resolveListLimit(limit: number | undefined): number {
+  if (!Number.isFinite(limit)) {
+    return DEFAULT_LIST_CARDS_INDEX_LIMIT;
+  }
+
+  const normalizedLimit = Math.floor(limit as number);
+  if (normalizedLimit <= 0) {
+    return 0;
+  }
+  return normalizedLimit;
+}
+
 function findCardRecord(
   payload: CardsIndexCache,
   nameOrNorm: string,
@@ -128,6 +155,44 @@ export async function lookupCard(
 
 export function getCardsIndexCount(baseUrl?: string): Promise<number> {
   return loadCardsIndex(baseUrl).then((payload) => payload.count);
+}
+
+export interface ListCardsIndexRecordsOptions {
+  baseUrl?: string;
+  limit?: number;
+  includeEmptyOracleText?: boolean;
+}
+
+export async function listCardsIndexRecords(
+  options: ListCardsIndexRecordsOptions = {},
+): Promise<readonly CardRecordMin[]> {
+  const limit = resolveListLimit(options.limit);
+  if (limit <= 0) {
+    return [];
+  }
+
+  const payload = await loadCardsIndex(options.baseUrl);
+  const includeEmptyOracleText = options.includeEmptyOracleText === true;
+  const names = Object.keys(payload.by_name).sort((left, right) =>
+    left < right ? -1 : left > right ? 1 : 0,
+  );
+
+  const records: CardRecordMin[] = [];
+  for (const name of names) {
+    const record = payload.by_name[name];
+    if (!record) {
+      continue;
+    }
+    if (!includeEmptyOracleText && !hasUsableOracleText(record)) {
+      continue;
+    }
+    records.push(toCardRecordMin(name, record));
+    if (records.length >= limit) {
+      break;
+    }
+  }
+
+  return records;
 }
 
 function clearCache() {

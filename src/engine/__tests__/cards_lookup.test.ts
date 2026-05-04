@@ -1,7 +1,12 @@
 import pako from "pako";
 import { describe, expect, test, vi } from "vitest";
 import { normalizeCardName } from "../cards/normalize";
-import { getCardsIndexCount, lookupCard, __testing } from "../cards/lookup";
+import {
+  getCardsIndexCount,
+  listCardsIndexRecords,
+  lookupCard,
+  __testing,
+} from "../cards/lookup";
 import { computeSemanticOverlayFromDeckEntries } from "../semantic/overlay/sem_overlay_compute";
 import { extractFeatures } from "../cards/features";
 
@@ -27,6 +32,38 @@ const payload = {
   by_name_norm: {
     "llanowar elves": "Llanowar Elves",
     forest: "Forest",
+  },
+};
+
+const listPayload = {
+  schema_version: "cardrecordmin-v1",
+  by_name: {
+    Zeta: {
+      type_line: "Creature",
+      oracle_text: "  ",
+      cmc: 3,
+    },
+    Alpha: {
+      type_line: "Instant",
+      oracle_text: "Draw a card.",
+      cmc: 1,
+    },
+    Gamma: {
+      type_line: "Artifact",
+      oracle_text: null,
+      cmc: 2,
+    },
+    Beta: {
+      type_line: "Sorcery",
+      oracle_text: "Deal 2 damage.",
+      cmc: 2,
+    },
+  },
+  by_name_norm: {
+    alpha: "Alpha",
+    beta: "Beta",
+    gamma: "Gamma",
+    zeta: "Zeta",
   },
 };
 
@@ -149,6 +186,92 @@ describe("cards helpers", () => {
       ];
       await computeSemanticOverlayFromDeckEntries(entries, lookupCard);
       await computeSemanticOverlayFromDeckEntries(entries, lookupCard);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("listCardsIndexRecords lists records from mocked payload in deterministic canonical-name order", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(listPayload));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+    }));
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+
+    try {
+      __testing.clearCache();
+      const records = await listCardsIndexRecords();
+      expect(records.map((record) => record.name)).toEqual(["Alpha", "Beta"]);
+      expect(records[0].name_norm).toBe("alpha");
+      expect(records[1].name_norm).toBe("beta");
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("listCardsIndexRecords respects limit and returns [] for limit <= 0", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(listPayload));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+    }));
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+
+    try {
+      __testing.clearCache();
+      const limited = await listCardsIndexRecords({ limit: 1 });
+      expect(limited.map((record) => record.name)).toEqual(["Alpha"]);
+
+      const zero = await listCardsIndexRecords({ limit: 0 });
+      expect(zero).toEqual([]);
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("listCardsIndexRecords includes empty/null oracle text when includeEmptyOracleText is true", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(listPayload));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+    }));
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+
+    try {
+      __testing.clearCache();
+      const records = await listCardsIndexRecords({ includeEmptyOracleText: true, limit: 10 });
+      expect(records.map((record) => record.name)).toEqual(["Alpha", "Beta", "Gamma", "Zeta"]);
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("listCardsIndexRecords reuses existing cache for repeated calls with same baseUrl", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(listPayload));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+    }));
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+
+    try {
+      __testing.clearCache();
+      await listCardsIndexRecords({ baseUrl: "http://x.test" });
+      await listCardsIndexRecords({ baseUrl: "http://x.test" });
       expect(fetchMock).toHaveBeenCalledTimes(1);
     } finally {
       // @ts-expect-error restore

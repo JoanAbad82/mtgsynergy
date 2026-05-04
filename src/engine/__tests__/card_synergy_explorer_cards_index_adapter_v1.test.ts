@@ -19,7 +19,7 @@ describe("card synergy explorer cards index adapter v1", () => {
     expect(CARD_SYNERGY_CARDS_INDEX_ADAPTER_META.deterministic).toBe(true);
     expect(CARD_SYNERGY_CARDS_INDEX_ADAPTER_META.usesCardsIndexLookup).toBe(true);
     expect(CARD_SYNERGY_CARDS_INDEX_ADAPTER_META.directRuntimeFetches).toBe(false);
-    expect(CARD_SYNERGY_CARDS_INDEX_ADAPTER_META.performsCandidateSearch).toBe(false);
+    expect(CARD_SYNERGY_CARDS_INDEX_ADAPTER_META.performsCandidateSearch).toBe(true);
     expect(CARD_SYNERGY_CARDS_INDEX_ADAPTER_META.performsRanking).toBe(false);
     expect(CARD_SYNERGY_CARDS_INDEX_ADAPTER_META.createsScores).toBe(false);
     expect(CARD_SYNERGY_CARDS_INDEX_ADAPTER_META.createsExplanations).toBe(false);
@@ -98,23 +98,144 @@ describe("card synergy explorer cards index adapter v1", () => {
     }
   });
 
-  test("findCandidatePool returns [] and does not call lookup", async () => {
-    const lookup = vi.fn(async () => {
-      return {
-        name: "Should Not Be Used",
-        name_norm: "should not be used",
-        oracle_text: "x",
-      } satisfies CardRecordMin;
+  test("findCandidatePool uses injected list source, does not call lookup, and maps real candidates", async () => {
+    const lookup = vi.fn(async () => null);
+    const listRecords = vi.fn(async () => {
+      return [
+        {
+          name: "Candidate A",
+          name_norm: "candidate a",
+          oracle_id: "a-1",
+          type_line: "Instant",
+          oracle_text: "Draw a card.",
+          cmc: 1,
+        },
+        {
+          name: "Candidate B",
+          name_norm: "candidate b",
+          type_line: "Creature",
+          oracle_text: "Flying",
+          cmc: 2,
+        },
+      ] satisfies readonly CardRecordMin[];
     });
-    const adapter = createCardSynergyCardsIndexAdapter({ lookupCard: lookup });
+    const adapter = createCardSynergyCardsIndexAdapter({
+      lookupCard: lookup,
+      listCardsIndexRecords: listRecords,
+      baseUrl: "http://cards.test",
+    });
     const input: CardSynergyExplorerInput = {
       cards: [{ name: "Seed A" }],
+      options: { maxCandidates: 2 },
+    };
+
+    const result = await adapter.findCandidatePool(input);
+
+    expect(lookup).toHaveBeenCalledTimes(0);
+    expect(listRecords).toHaveBeenCalledTimes(1);
+    expect(listRecords).toHaveBeenCalledWith({
+      baseUrl: "http://cards.test",
+      limit: 18,
+      includeEmptyOracleText: false,
+    });
+    expect(result).toEqual([
+      {
+        name: "Candidate A",
+        oracleId: "a-1",
+        typeLine: "Instant",
+        oracleText: "Draw a card.",
+        cmc: 1,
+      },
+      {
+        name: "Candidate B",
+        typeLine: "Creature",
+        oracleText: "Flying",
+        cmc: 2,
+      },
+    ]);
+  });
+
+  test("findCandidatePool returns [] and does not list when maxCandidates <= 0", async () => {
+    const lookup = vi.fn(async () => null);
+    const listRecords = vi.fn(async () => {
+      return [{ name: "Candidate", name_norm: "candidate", oracle_text: "x" }] satisfies readonly CardRecordMin[];
+    });
+    const adapter = createCardSynergyCardsIndexAdapter({
+      lookupCard: lookup,
+      listCardsIndexRecords: listRecords,
+    });
+    const input: CardSynergyExplorerInput = {
+      cards: [{ name: "Seed A" }],
+      options: { maxCandidates: 0 },
     };
 
     const result = await adapter.findCandidatePool(input);
 
     expect(result).toEqual([]);
     expect(lookup).toHaveBeenCalledTimes(0);
+    expect(listRecords).toHaveBeenCalledTimes(0);
+  });
+
+  test("findCandidatePool uses candidatePoolLimit when maxCandidates is not provided", async () => {
+    const listRecords = vi.fn(async () => {
+      return [{ name: "Candidate A", name_norm: "candidate a", oracle_text: "x" }] satisfies readonly CardRecordMin[];
+    });
+    const adapter = createCardSynergyCardsIndexAdapter({
+      listCardsIndexRecords: listRecords,
+      candidatePoolLimit: 7,
+      candidatePoolOverscan: 3,
+    });
+    const input: CardSynergyExplorerInput = {
+      cards: [{ name: "Seed A" }],
+    };
+
+    await adapter.findCandidatePool(input);
+
+    expect(listRecords).toHaveBeenCalledTimes(1);
+    expect(listRecords).toHaveBeenCalledWith({
+      baseUrl: undefined,
+      limit: 7,
+      includeEmptyOracleText: false,
+    });
+  });
+
+  test("findCandidatePool does not mutate input or list records", async () => {
+    const input: CardSynergyExplorerInput = {
+      cards: [{ name: "  Seed Name  " }],
+      options: { maxCandidates: 1 },
+    };
+    const inputSnapshot = JSON.parse(JSON.stringify(input));
+    const record: CardRecordMin = {
+      name: "  Candidate Name  ",
+      name_norm: "candidate name",
+      oracle_text: "Has oracle text.",
+      type_line: "Artifact",
+      cmc: 2,
+    };
+    const recordSnapshot = JSON.parse(JSON.stringify(record));
+    const listRecords = vi.fn(async () => [record] as readonly CardRecordMin[]);
+    const adapter = createCardSynergyCardsIndexAdapter({
+      listCardsIndexRecords: listRecords,
+    });
+
+    Object.freeze(input.cards[0]);
+    Object.freeze(input.cards);
+    Object.freeze(input.options!);
+    Object.freeze(input);
+    Object.freeze(record);
+
+    const result = await adapter.findCandidatePool(input);
+
+    expect(input).toEqual(inputSnapshot);
+    expect(record).toEqual(recordSnapshot);
+    expect(result).toEqual([
+      {
+        name: "  Candidate Name  ",
+        typeLine: "Artifact",
+        oracleText: "Has oracle text.",
+        cmc: 2,
+      },
+    ]);
   });
 
   test("resolveSeedCard does not mutate seed or record", async () => {

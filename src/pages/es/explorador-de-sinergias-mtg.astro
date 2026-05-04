@@ -16,6 +16,31 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     <p class="notice">No calcula ranking, score ni explicación causal de sinergia todavía.</p>
 
     <div class="beta-card">
+      <h2>Entrada beta</h2>
+      <p class="input-hint">
+        Próximamente: entrada de una o dos cartas. Este bloque todavía no ejecuta el motor y no
+        genera resultados interactivos.
+      </p>
+      <div class="beta-input-grid" aria-label="Entrada beta próximamente">
+        <div class="beta-input-field">
+          <label for="seed-1">Carta seed 1</label>
+          <input id="seed-1" type="text" value="Ejemplo: Lightning Bolt" disabled />
+        </div>
+        <div class="beta-input-field">
+          <label for="seed-2">Carta seed 2 opcional</label>
+          <input id="seed-2" type="text" value="Ejemplo: Monastery Swiftspear" disabled />
+        </div>
+      </div>
+      <button class="beta-disabled-btn" type="button" disabled>
+        Generar candidatos no rankeados (próximamente)
+      </button>
+      <p class="input-footnote">
+        La entrada beta todavía no ejecuta el motor, no calcula ranking, no calcula score y no
+        genera explicación causal de sinergia. La futura versión interactiva será 100% client-side.
+      </p>
+    </div>
+
+    <div class="beta-card">
       <h2>Qué existe ya internamente</h2>
       <ul>
         <li>Resolución de cartas seed.</li>
@@ -124,6 +149,66 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
   .beta-card p:last-child {
     margin-bottom: 0;
+  }
+
+  .beta-card .input-hint,
+  .beta-card .input-footnote {
+    color: #475569;
+    line-height: 1.6;
+  }
+
+  .beta-card .input-footnote {
+    margin-top: 10px;
+    margin-bottom: 0;
+    font-size: 14px;
+  }
+
+  .beta-input-grid {
+    display: grid;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .beta-input-field {
+    display: grid;
+    gap: 6px;
+  }
+
+  .beta-input-field label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1f2937;
+  }
+
+  .beta-input-field input {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #64748b;
+    padding: 10px 11px;
+    line-height: 1.4;
+    font-size: 14px;
+  }
+
+  .beta-disabled-btn {
+    margin-top: 10px;
+    width: 100%;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    background: #f3f4f6;
+    color: #475569;
+    font-weight: 600;
+    padding: 10px 12px;
+    cursor: not-allowed;
+    opacity: 0.95;
+  }
+
+  .beta-disabled-btn:disabled {
+    border-color: #d1d5db;
+    background: #f3f4f6;
+    color: #475569;
   }
 
   .beta-card ul {

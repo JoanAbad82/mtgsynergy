@@ -52,6 +52,10 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     display: grid;
     gap: 14px;
     margin-top: 12px;
+    padding: 18px;
+    border: 1px solid #d8e0eb;
+    border-radius: 14px;
+    background: #f8fafc;
   }
 
   .beta-kicker {
@@ -60,9 +64,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     width: fit-content;
     padding: 6px 10px;
     border-radius: 999px;
-    border: 1px solid #d8e0eb;
+    border: 1px solid #cbd5e1;
     background: #f7fafc;
-    color: #3b4658;
+    color: #334155;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.02em;
@@ -73,22 +77,27 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     margin: 0;
     line-height: 1.12;
     text-wrap: balance;
+    color: #0f172a;
   }
 
   .lead {
     margin: 0;
     line-height: 1.7;
-    color: #d3dae4;
+    color: #374151;
     max-width: 74ch;
+  }
+
+  .lead strong {
+    color: #111827;
   }
 
   .notice {
     margin: 0;
     padding: 10px 12px;
     border-radius: 10px;
-    border: 1px solid #f1c6c6;
-    background: #2c1212;
-    color: #ffdada;
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    color: #7c2d12;
     line-height: 1.6;
     max-width: 74ch;
   }
@@ -96,7 +105,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
   .beta-card {
     border: 1px solid #d8e0eb;
     border-radius: 12px;
-    background: #111723;
+    background: #ffffff;
     padding: 12px 14px;
   }
 
@@ -104,11 +113,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     margin: 0 0 8px;
     font-size: 20px;
     line-height: 1.25;
+    color: #111827;
   }
 
   .beta-card p {
     margin: 0 0 8px;
-    color: #d3dae4;
+    color: #374151;
     line-height: 1.65;
   }
 
@@ -121,7 +131,21 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     padding-left: 18px;
     display: grid;
     gap: 6px;
-    color: #d3dae4;
+    color: #374151;
     line-height: 1.6;
+  }
+
+  .beta-card code {
+    color: #1f2937;
+    background: #f3f4f6;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 1px 6px;
+  }
+
+  .beta-card a {
+    color: #1e40af;
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 </style>

@@ -41,14 +41,24 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
           />
         </div>
         <div class="beta-action-row">
-          <button id="cse-beta-prepare-btn" class="beta-action-btn" type="button">
+          <button
+            id="cse-beta-prepare-btn"
+            class="beta-action-btn"
+            type="button"
+            data-ready="false"
+            aria-disabled="true"
+          >
             Preparar entrada beta
+          </button>
+          <button id="cse-beta-clear-btn" class="beta-clear-btn" type="button">
+            Limpiar entrada
           </button>
         </div>
         <div id="cse-beta-state" class="beta-state" data-state="idle" aria-live="polite">
           <p class="beta-state-label">Estado local</p>
-          <p id="cse-beta-message" class="beta-state-message">
-            Introduce al menos una carta seed para preparar la entrada beta local.
+          <p id="cse-beta-message" class="beta-state-message">Introduce al menos una carta seed.</p>
+          <p id="cse-beta-note" class="beta-state-note">
+            Esta beta todavía no genera candidatos reales.
           </p>
           <ul id="cse-beta-seed-summary" class="beta-state-list" hidden>
             <li><strong>Seed 1 detectada:</strong> <span id="cse-beta-seed-1-summary"></span></li>
@@ -105,8 +115,10 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     const seed1Input = root.querySelector("#cse-beta-seed-1");
     const seed2Input = root.querySelector("#cse-beta-seed-2");
     const prepareButton = root.querySelector("#cse-beta-prepare-btn");
+    const clearButton = root.querySelector("#cse-beta-clear-btn");
     const statePanel = root.querySelector("#cse-beta-state");
     const stateMessage = root.querySelector("#cse-beta-message");
+    const stateNote = root.querySelector("#cse-beta-note");
     const seedSummary = root.querySelector("#cse-beta-seed-summary");
     const seed1Summary = root.querySelector("#cse-beta-seed-1-summary");
     const seed2Row = root.querySelector("#cse-beta-seed-2-row");
@@ -116,8 +128,10 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       !(seed1Input instanceof HTMLInputElement) ||
       !(seed2Input instanceof HTMLInputElement) ||
       !(prepareButton instanceof HTMLButtonElement) ||
+      !(clearButton instanceof HTMLButtonElement) ||
       !(statePanel instanceof HTMLElement) ||
       !(stateMessage instanceof HTMLElement) ||
+      !(stateNote instanceof HTMLElement) ||
       !(seedSummary instanceof HTMLElement) ||
       !(seed1Summary instanceof HTMLElement) ||
       !(seed2Row instanceof HTMLElement) ||
@@ -126,8 +140,23 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       return;
     }
 
+    const readSeeds = () => {
+      return {
+        seed1: seed1Input.value.trim(),
+        seed2: seed2Input.value.trim(),
+      };
+    };
+
+    const syncPrepareButton = () => {
+      const { seed1 } = readSeeds();
+      const isReady = seed1.length > 0;
+      prepareButton.dataset.ready = isReady ? "true" : "false";
+      prepareButton.setAttribute("aria-disabled", isReady ? "false" : "true");
+    };
+
     const setState = (message, seed1, seed2) => {
       stateMessage.textContent = message;
+      stateNote.textContent = "Esta beta todavía no genera candidatos reales.";
 
       if (!seed1) {
         statePanel.dataset.state = "warning";
@@ -151,21 +180,41 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       }
     };
 
-    prepareButton.addEventListener("click", () => {
-      const seed1 = seed1Input.value.trim();
-      const seed2 = seed2Input.value.trim();
+    const prepareEntry = () => {
+      const { seed1, seed2 } = readSeeds();
 
       if (!seed1) {
         setState("Introduce al menos una carta seed.", "", "");
         return;
       }
 
-      setState(
-        "Entrada preparada localmente. Esta beta todavía no genera candidatos reales.",
-        seed1,
-        seed2,
-      );
+      setState("Entrada preparada localmente.", seed1, seed2);
+    };
+
+    const handleEnter = (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      prepareEntry();
+    };
+
+    seed1Input.addEventListener("input", syncPrepareButton);
+    seed2Input.addEventListener("input", syncPrepareButton);
+    seed1Input.addEventListener("keydown", handleEnter);
+    seed2Input.addEventListener("keydown", handleEnter);
+
+    prepareButton.addEventListener("click", () => {
+      prepareEntry();
     });
+
+    clearButton.addEventListener("click", () => {
+      seed1Input.value = "";
+      seed2Input.value = "";
+      syncPrepareButton();
+      setState("Introduce al menos una carta seed.", "", "");
+      seed1Input.focus();
+    });
+
+    syncPrepareButton();
   })();
 </script>
 
@@ -295,10 +344,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
   .beta-action-row {
     margin-top: 4px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .beta-action-btn {
-    margin-top: 10px;
     width: 100%;
     border: 1px solid #d1d5db;
     border-radius: 10px;
@@ -310,6 +361,16 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     transition: background-color 120ms ease;
   }
 
+  .beta-action-btn[data-ready="false"] {
+    background: #f3f4f6;
+    color: #64748b;
+    border-color: #d1d5db;
+  }
+
+  .beta-action-btn[data-ready="false"]:hover {
+    background: #f3f4f6;
+  }
+
   .beta-action-btn:hover {
     background: #e0e7ff;
   }
@@ -317,6 +378,38 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
   .beta-action-btn:focus-visible {
     outline: 2px solid #93c5fd;
     outline-offset: 2px;
+  }
+
+  .beta-clear-btn {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #ffffff;
+    color: #334155;
+    font-weight: 600;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background-color 120ms ease;
+  }
+
+  .beta-clear-btn:hover {
+    background: #f8fafc;
+  }
+
+  .beta-clear-btn:focus-visible {
+    outline: 2px solid #bfdbfe;
+    outline-offset: 2px;
+  }
+
+  @media (min-width: 640px) {
+    .beta-action-row {
+      grid-template-columns: 1fr auto;
+    }
+
+    .beta-clear-btn {
+      width: auto;
+      min-width: 150px;
+    }
   }
 
   .beta-state {
@@ -350,6 +443,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     margin: 0;
     color: #1f2937;
     line-height: 1.55;
+  }
+
+  .beta-state-note {
+    margin: 4px 0 0;
+    color: #475569;
+    line-height: 1.5;
   }
 
   .beta-state-list {

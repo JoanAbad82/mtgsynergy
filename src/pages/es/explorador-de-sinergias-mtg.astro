@@ -18,25 +18,50 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     <div class="beta-card">
       <h2>Entrada beta</h2>
       <p class="input-hint">
-        Próximamente: entrada de una o dos cartas. Este bloque todavía no ejecuta el motor y no
-        genera resultados interactivos.
+        Próximamente: entrada de una o dos cartas con ejecución real. Esta shell local solo prepara
+        estado de entrada y no ejecuta el motor.
       </p>
-      <div class="beta-input-grid" aria-label="Entrada beta próximamente">
+      <div class="beta-input-grid" data-cse-beta-entry aria-label="Entrada beta local">
         <div class="beta-input-field">
-          <label for="seed-1">Carta seed 1</label>
-          <input id="seed-1" type="text" value="Ejemplo: Lightning Bolt" disabled />
+          <label for="cse-beta-seed-1">Carta seed 1</label>
+          <input
+            id="cse-beta-seed-1"
+            type="text"
+            placeholder="Ejemplo: Lightning Bolt"
+            autocomplete="off"
+          />
         </div>
         <div class="beta-input-field">
-          <label for="seed-2">Carta seed 2 opcional</label>
-          <input id="seed-2" type="text" value="Ejemplo: Monastery Swiftspear" disabled />
+          <label for="cse-beta-seed-2">Carta seed 2 opcional</label>
+          <input
+            id="cse-beta-seed-2"
+            type="text"
+            placeholder="Ejemplo: Monastery Swiftspear"
+            autocomplete="off"
+          />
+        </div>
+        <div class="beta-action-row">
+          <button id="cse-beta-prepare-btn" class="beta-action-btn" type="button">
+            Preparar entrada beta
+          </button>
+        </div>
+        <div id="cse-beta-state" class="beta-state" data-state="idle" aria-live="polite">
+          <p class="beta-state-label">Estado local</p>
+          <p id="cse-beta-message" class="beta-state-message">
+            Introduce al menos una carta seed para preparar la entrada beta local.
+          </p>
+          <ul id="cse-beta-seed-summary" class="beta-state-list" hidden>
+            <li><strong>Seed 1 detectada:</strong> <span id="cse-beta-seed-1-summary"></span></li>
+            <li id="cse-beta-seed-2-row" hidden>
+              <strong>Seed 2 detectada:</strong> <span id="cse-beta-seed-2-summary"></span>
+            </li>
+          </ul>
         </div>
       </div>
-      <button class="beta-disabled-btn" type="button" disabled>
-        Generar candidatos no rankeados (próximamente)
-      </button>
       <p class="input-footnote">
-        La entrada beta todavía no ejecuta el motor, no calcula ranking, no calcula score y no
-        genera explicación causal de sinergia. La futura versión interactiva será 100% client-side.
+        La entrada beta todavía no ejecuta el motor, no calcula ranking, no calcula score ni
+        explicación causal de sinergia, y no genera candidatos no rankeados reales. La futura
+        versión interactiva será 100% client-side.
       </p>
     </div>
 
@@ -71,6 +96,78 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     </div>
   </section>
 </BaseLayout>
+
+<script is:inline>
+  (() => {
+    const root = document.querySelector("[data-cse-beta-entry]");
+    if (!root) return;
+
+    const seed1Input = root.querySelector("#cse-beta-seed-1");
+    const seed2Input = root.querySelector("#cse-beta-seed-2");
+    const prepareButton = root.querySelector("#cse-beta-prepare-btn");
+    const statePanel = root.querySelector("#cse-beta-state");
+    const stateMessage = root.querySelector("#cse-beta-message");
+    const seedSummary = root.querySelector("#cse-beta-seed-summary");
+    const seed1Summary = root.querySelector("#cse-beta-seed-1-summary");
+    const seed2Row = root.querySelector("#cse-beta-seed-2-row");
+    const seed2Summary = root.querySelector("#cse-beta-seed-2-summary");
+
+    if (
+      !(seed1Input instanceof HTMLInputElement) ||
+      !(seed2Input instanceof HTMLInputElement) ||
+      !(prepareButton instanceof HTMLButtonElement) ||
+      !(statePanel instanceof HTMLElement) ||
+      !(stateMessage instanceof HTMLElement) ||
+      !(seedSummary instanceof HTMLElement) ||
+      !(seed1Summary instanceof HTMLElement) ||
+      !(seed2Row instanceof HTMLElement) ||
+      !(seed2Summary instanceof HTMLElement)
+    ) {
+      return;
+    }
+
+    const setState = (message, seed1, seed2) => {
+      stateMessage.textContent = message;
+
+      if (!seed1) {
+        statePanel.dataset.state = "warning";
+        seedSummary.hidden = true;
+        seed1Summary.textContent = "";
+        seed2Summary.textContent = "";
+        seed2Row.hidden = true;
+        return;
+      }
+
+      statePanel.dataset.state = "ready";
+      seedSummary.hidden = false;
+      seed1Summary.textContent = seed1;
+
+      if (seed2) {
+        seed2Summary.textContent = seed2;
+        seed2Row.hidden = false;
+      } else {
+        seed2Summary.textContent = "";
+        seed2Row.hidden = true;
+      }
+    };
+
+    prepareButton.addEventListener("click", () => {
+      const seed1 = seed1Input.value.trim();
+      const seed2 = seed2Input.value.trim();
+
+      if (!seed1) {
+        setState("Introduce al menos una carta seed.", "", "");
+        return;
+      }
+
+      setState(
+        "Entrada preparada localmente. Esta beta todavía no genera candidatos reales.",
+        seed1,
+        seed2,
+      );
+    });
+  })();
+</script>
 
 <style>
   .beta-shell {
@@ -186,29 +283,80 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     border: 1px solid #cbd5e1;
     border-radius: 10px;
     background: #f8fafc;
-    color: #64748b;
+    color: #1f2937;
     padding: 10px 11px;
     line-height: 1.4;
     font-size: 14px;
   }
 
-  .beta-disabled-btn {
+  .beta-input-field input::placeholder {
+    color: #64748b;
+  }
+
+  .beta-action-row {
+    margin-top: 4px;
+  }
+
+  .beta-action-btn {
     margin-top: 10px;
     width: 100%;
     border: 1px solid #d1d5db;
     border-radius: 10px;
-    background: #f3f4f6;
-    color: #475569;
+    background: #eef2ff;
+    color: #1e3a8a;
     font-weight: 600;
     padding: 10px 12px;
-    cursor: not-allowed;
-    opacity: 0.95;
+    cursor: pointer;
+    transition: background-color 120ms ease;
   }
 
-  .beta-disabled-btn:disabled {
-    border-color: #d1d5db;
-    background: #f3f4f6;
-    color: #475569;
+  .beta-action-btn:hover {
+    background: #e0e7ff;
+  }
+
+  .beta-action-btn:focus-visible {
+    outline: 2px solid #93c5fd;
+    outline-offset: 2px;
+  }
+
+  .beta-state {
+    margin-top: 10px;
+    border: 1px solid #d8e0eb;
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 10px 11px;
+  }
+
+  .beta-state[data-state="warning"] {
+    border-color: #fed7aa;
+    background: #fff7ed;
+  }
+
+  .beta-state[data-state="ready"] {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+  }
+
+  .beta-state-label {
+    margin: 0 0 4px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: #334155;
+    font-weight: 700;
+  }
+
+  .beta-state-message {
+    margin: 0;
+    color: #1f2937;
+    line-height: 1.55;
+  }
+
+  .beta-state-list {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    color: #1f2937;
+    line-height: 1.5;
   }
 
   .beta-card ul {

@@ -81,11 +81,16 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         Cuando se active la versión interactiva, esta sección mostrará <strong>candidatos no
         rankeados</strong> en formato de salida pública.
       </p>
-      <div class="beta-output-empty">
-        <p class="beta-output-empty-title">Todavía no hay candidatos generados.</p>
-        <p>
-          Cuando se active la versión interactiva, aquí aparecerán candidatos no rankeados.
-        </p>
+      <div id="cse-beta-output-preview" class="beta-output-empty" data-cse-beta-output data-state="empty" aria-live="polite">
+        <p class="beta-output-empty-title">Salida no rankeada pendiente de activación.</p>
+        <p id="cse-beta-output-status" class="beta-output-status">Todavía no hay candidatos generados.</p>
+        <p id="cse-beta-output-note" class="beta-output-note">Todavía no se generan candidatos reales.</p>
+        <ul id="cse-beta-output-seeds" class="beta-output-seeds" hidden>
+          <li><strong>Seed 1 preparada:</strong> <span id="cse-beta-output-seed-1"></span></li>
+          <li id="cse-beta-output-seed-2-row" hidden>
+            <strong>Seed 2 preparada:</strong> <span id="cse-beta-output-seed-2"></span>
+          </li>
+        </ul>
       </div>
       <ul class="beta-output-guardrails">
         <li>No calcula ranking.</li>
@@ -142,6 +147,17 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     const seed1Summary = root.querySelector("#cse-beta-seed-1-summary");
     const seed2Row = root.querySelector("#cse-beta-seed-2-row");
     const seed2Summary = root.querySelector("#cse-beta-seed-2-summary");
+    const shell = root.closest(".beta-shell");
+
+    if (!(shell instanceof HTMLElement)) return;
+
+    const outputPreview = shell.querySelector("#cse-beta-output-preview");
+    const outputStatus = shell.querySelector("#cse-beta-output-status");
+    const outputNote = shell.querySelector("#cse-beta-output-note");
+    const outputSeeds = shell.querySelector("#cse-beta-output-seeds");
+    const outputSeed1 = shell.querySelector("#cse-beta-output-seed-1");
+    const outputSeed2Row = shell.querySelector("#cse-beta-output-seed-2-row");
+    const outputSeed2 = shell.querySelector("#cse-beta-output-seed-2");
 
     if (
       !(seed1Input instanceof HTMLInputElement) ||
@@ -154,7 +170,14 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       !(seedSummary instanceof HTMLElement) ||
       !(seed1Summary instanceof HTMLElement) ||
       !(seed2Row instanceof HTMLElement) ||
-      !(seed2Summary instanceof HTMLElement)
+      !(seed2Summary instanceof HTMLElement) ||
+      !(outputPreview instanceof HTMLElement) ||
+      !(outputStatus instanceof HTMLElement) ||
+      !(outputNote instanceof HTMLElement) ||
+      !(outputSeeds instanceof HTMLElement) ||
+      !(outputSeed1 instanceof HTMLElement) ||
+      !(outputSeed2Row instanceof HTMLElement) ||
+      !(outputSeed2 instanceof HTMLElement)
     ) {
       return;
     }
@@ -199,15 +222,55 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       }
     };
 
+    const setOutputState = (state, seed1, seed2) => {
+      if (state === "warning") {
+        outputPreview.dataset.state = "warning";
+        outputStatus.textContent = "Introduce al menos una carta seed.";
+        outputNote.textContent = "Todavía no se generan candidatos reales.";
+        outputSeeds.hidden = true;
+        outputSeed1.textContent = "";
+        outputSeed2.textContent = "";
+        outputSeed2Row.hidden = true;
+        return;
+      }
+
+      if (state === "prepared") {
+        outputPreview.dataset.state = "prepared";
+        outputStatus.textContent = "Entrada preparada localmente.";
+        outputNote.textContent = "Todavía no se generan candidatos reales.";
+        outputSeeds.hidden = false;
+        outputSeed1.textContent = seed1;
+
+        if (seed2) {
+          outputSeed2.textContent = seed2;
+          outputSeed2Row.hidden = false;
+        } else {
+          outputSeed2.textContent = "";
+          outputSeed2Row.hidden = true;
+        }
+        return;
+      }
+
+      outputPreview.dataset.state = "empty";
+      outputStatus.textContent = "Todavía no hay candidatos generados.";
+      outputNote.textContent = "Todavía no se generan candidatos reales.";
+      outputSeeds.hidden = true;
+      outputSeed1.textContent = "";
+      outputSeed2.textContent = "";
+      outputSeed2Row.hidden = true;
+    };
+
     const prepareEntry = () => {
       const { seed1, seed2 } = readSeeds();
 
       if (!seed1) {
         setState("Introduce al menos una carta seed.", "", "");
+        setOutputState("warning", "", "");
         return;
       }
 
       setState("Entrada preparada localmente.", seed1, seed2);
+      setOutputState("prepared", seed1, seed2);
     };
 
     const handleEnter = (event) => {
@@ -230,10 +293,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       seed2Input.value = "";
       syncPrepareButton();
       setState("Introduce al menos una carta seed.", "", "");
+      setOutputState("empty", "", "");
       seed1Input.focus();
     });
 
     syncPrepareButton();
+    setOutputState("empty", "", "");
   })();
 </script>
 
@@ -336,10 +401,42 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     padding: 10px 11px;
   }
 
+  .beta-output-empty[data-state="warning"] {
+    border-color: #fed7aa;
+    background: #fff7ed;
+  }
+
+  .beta-output-empty[data-state="prepared"] {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+  }
+
   .beta-output-empty-title {
     margin: 0 0 4px;
     font-weight: 700;
     color: #1f2937;
+  }
+
+  .beta-output-status {
+    margin: 0;
+    color: #1f2937;
+    line-height: 1.55;
+  }
+
+  .beta-output-note {
+    margin: 4px 0 0;
+    color: #475569;
+    line-height: 1.5;
+  }
+
+  .beta-output-seeds {
+    margin-top: 8px;
+    margin-bottom: 0;
+    padding-left: 18px;
+    color: #1f2937;
+    line-height: 1.5;
+    display: grid;
+    gap: 4px;
   }
 
   .beta-output-guardrails {

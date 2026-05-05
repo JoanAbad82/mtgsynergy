@@ -10,16 +10,17 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     <p class="beta-kicker">Estado: beta informativa</p>
     <h1>Explorador de Sinergias MTG (Beta)</h1>
     <p class="lead">
-      Esta vista previa pública muestra el alcance técnico actual del explorador. Hoy trabaja con
-      <strong> candidatos no rankeados</strong> y todavía no presenta una lista ordenada por sinergia.
+      Esta beta pública muestra el flujo de interfaz actual del explorador. Hoy trabaja con
+      <strong> candidatos no rankeados</strong> a nivel de vista previa y todavía no presenta una
+      lista ordenada por sinergia.
     </p>
     <p class="notice">No calcula ranking, score ni explicación causal de sinergia todavía.</p>
 
     <div class="beta-card">
       <h2>Entrada beta</h2>
       <p class="input-hint">
-        Próximamente: entrada de una o dos cartas con ejecución real. Esta shell local solo prepara
-        estado de entrada y no ejecuta el motor.
+        La entrada local de una o dos cartas ya está disponible en esta beta pública. Esta shell
+        prepara estado local y no tiene conexión pública al engine.
       </p>
       <div class="beta-input-grid" data-cse-beta-entry aria-label="Entrada beta local">
         <div class="beta-input-field">
@@ -69,17 +70,18 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         </div>
       </div>
       <p class="input-footnote">
-        La entrada beta todavía no ejecuta el motor, no calcula ranking, no calcula score ni
-        explicación causal de sinergia, y no genera candidatos no rankeados reales. La futura
-        versión interactiva será 100% client-side.
+        Esta entrada beta no ejecuta el motor: solo sincroniza estado local con la vista previa de
+        salida. No calcula ranking, no calcula score ni explicación causal de sinergia, y todavía
+        no genera candidatos no rankeados reales. La versión pública seguirá siendo 100%
+        client-side.
       </p>
     </div>
 
     <div class="beta-card">
       <h2>Vista previa de salida</h2>
       <p>
-        Cuando se active la versión interactiva, esta sección mostrará <strong>candidatos no
-        rankeados</strong> en formato de salida pública.
+        Esta vista previa se sincroniza con las seeds introducidas localmente y mantiene formato de
+        salida pública para <strong>candidatos no rankeados</strong>.
       </p>
       <div id="cse-beta-output-preview" class="beta-output-empty" data-cse-beta-output data-state="empty" aria-live="polite">
         <p class="beta-output-empty-title">Salida no rankeada pendiente de activación.</p>
@@ -105,6 +107,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         <li>Resolución de cartas seed.</li>
         <li>Candidate pool real mínimo desde índice local.</li>
         <li>Salida <code>candidateOutputs</code> no rankeada.</li>
+        <li>Sin conexión pública al engine desde esta ruta beta.</li>
       </ul>
     </div>
 
@@ -121,8 +124,11 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
     <div class="beta-card">
       <h2>Próximo paso</h2>
-      <p>Próximamente: entrada de una o dos cartas.</p>
-      <p>100% client-side cuando se active la versión interactiva.</p>
+      <p>
+        Siguiente paso controlado: activar generación pública de candidatos no rankeados reales sin
+        introducir ranking, score ni explicación causal.
+      </p>
+      <p>100% client-side en la evolución pública de esta beta.</p>
       <p>
         Mientras tanto, puedes seguir usando el analizador estructural actual:
         <a href="/es/analizador-de-mazos-mtg/">/es/analizador-de-mazos-mtg/</a>.

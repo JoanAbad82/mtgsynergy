@@ -76,6 +76,25 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     </div>
 
     <div class="beta-card">
+      <h2>Vista previa de salida</h2>
+      <p>
+        Cuando se active la versión interactiva, esta sección mostrará <strong>candidatos no
+        rankeados</strong> en formato de salida pública.
+      </p>
+      <div class="beta-output-empty">
+        <p class="beta-output-empty-title">Todavía no hay candidatos generados.</p>
+        <p>
+          Cuando se active la versión interactiva, aquí aparecerán candidatos no rankeados.
+        </p>
+      </div>
+      <ul class="beta-output-guardrails">
+        <li>No calcula ranking.</li>
+        <li>No calcula score.</li>
+        <li>No genera explicación causal.</li>
+      </ul>
+    </div>
+
+    <div class="beta-card">
       <h2>Qué existe ya internamente</h2>
       <ul>
         <li>Resolución de cartas seed.</li>
@@ -307,6 +326,30 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     margin-top: 10px;
     margin-bottom: 0;
     font-size: 14px;
+  }
+
+  .beta-output-empty {
+    margin-top: 10px;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 10px 11px;
+  }
+
+  .beta-output-empty-title {
+    margin: 0 0 4px;
+    font-weight: 700;
+    color: #1f2937;
+  }
+
+  .beta-output-guardrails {
+    margin-top: 10px;
+    margin-bottom: 0;
+    padding-left: 18px;
+    color: #374151;
+    line-height: 1.6;
+    display: grid;
+    gap: 4px;
   }
 
   .beta-input-grid {

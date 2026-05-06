@@ -72,9 +72,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       </div>
       <p class="input-footnote">
         Esta entrada beta no ejecuta el motor: solo sincroniza estado local con la vista previa de
-        salida. No calcula ranking, no calcula score ni explicación causal de sinergia, y todavía
-        no genera candidatos no rankeados reales. La versión pública seguirá siendo 100%
-        client-side.
+        salida. Puede mostrar un pool inicial filtrado de candidatos reales no rankeados desde el
+        índice local. No calcula ranking, no calcula score ni explicación causal de sinergia. La
+        versión pública seguirá siendo 100% client-side.
       </p>
     </div>
 
@@ -162,8 +162,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     <div class="beta-card">
       <h2>Próximo paso</h2>
       <p>
-        Siguiente paso controlado: activar generación pública de candidatos no rankeados reales sin
-        introducir ranking, score ni explicación causal.
+        Siguiente paso controlado: mejorar el filtrado y conectar señales semánticas más precisas
+        manteniendo salida no rankeada y no definitiva, sin introducir ranking, score ni
+        explicación causal.
       </p>
       <p>100% client-side en la evolución pública de esta beta.</p>
       <p>

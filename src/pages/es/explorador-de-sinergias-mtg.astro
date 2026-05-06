@@ -119,6 +119,20 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         <li>No calcula score.</li>
         <li>No genera explicación causal.</li>
       </ul>
+      <div id="cse-beta-real-pool" class="beta-real-pool" data-state="idle" aria-live="polite">
+        <p class="beta-real-pool-title">Candidatos reales no rankeados</p>
+        <p class="beta-real-pool-subtitle">Pool inicial desde índice local</p>
+        <p id="cse-beta-real-pool-status" class="beta-real-pool-status">
+          No hay candidatos reales disponibles todavía para esta entrada.
+        </p>
+        <ul id="cse-beta-real-pool-list" class="beta-real-pool-list" hidden></ul>
+        <ul class="beta-real-pool-guardrails">
+          <li>No son recomendaciones finales</li>
+          <li>Sin ranking</li>
+          <li>Sin score</li>
+          <li>Sin explicación causal</li>
+        </ul>
+      </div>
     </div>
 
     <div class="beta-card">
@@ -184,6 +198,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     const outputSeed1 = shell.querySelector("#cse-beta-output-seed-1");
     const outputSeed2Row = shell.querySelector("#cse-beta-output-seed-2-row");
     const outputSeed2 = shell.querySelector("#cse-beta-output-seed-2");
+    const realPool = shell.querySelector("#cse-beta-real-pool");
+    const realPoolStatus = shell.querySelector("#cse-beta-real-pool-status");
+    const realPoolList = shell.querySelector("#cse-beta-real-pool-list");
 
     if (
       !(seed1Input instanceof HTMLInputElement) ||
@@ -203,10 +220,148 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       !(outputSeeds instanceof HTMLElement) ||
       !(outputSeed1 instanceof HTMLElement) ||
       !(outputSeed2Row instanceof HTMLElement) ||
-      !(outputSeed2 instanceof HTMLElement)
+      !(outputSeed2 instanceof HTMLElement) ||
+      !(realPool instanceof HTMLElement) ||
+      !(realPoolStatus instanceof HTMLElement) ||
+      !(realPoolList instanceof HTMLElement)
     ) {
       return;
     }
+
+    const CANDIDATE_LIMIT = 8;
+    let cardsIndexCache = null;
+    let cardsIndexPromise = null;
+
+    const normalizeName = (value) => {
+      return value.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+    };
+
+    const hasUsableOracleText = (record) => {
+      return typeof record?.oracle_text === "string" && record.oracle_text.trim().length > 0;
+    };
+
+    const decodeCardsIndexPayload = async (bytes) => {
+      const isGzip = bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
+      if (!isGzip) {
+        return new TextDecoder("utf-8").decode(bytes);
+      }
+
+      if (typeof DecompressionStream !== "undefined") {
+        const ds = new DecompressionStream("gzip");
+        const stream = new Blob([bytes]).stream().pipeThrough(ds);
+        return new Response(stream).text();
+      }
+
+      throw new Error("No gzip decompressor available in this browser.");
+    };
+
+    const loadCardsIndexLocal = async () => {
+      if (cardsIndexCache) {
+        return cardsIndexCache;
+      }
+      if (cardsIndexPromise) {
+        return cardsIndexPromise;
+      }
+
+      cardsIndexPromise = (async () => {
+        const response = await fetch("/data/cards_index.json.gz");
+        if (!response.ok) {
+          throw new Error(`cards_index unavailable (${response.status}).`);
+        }
+
+        const bytes = new Uint8Array(await response.arrayBuffer());
+        const rawPayload = await decodeCardsIndexPayload(bytes);
+        const payload = JSON.parse(rawPayload);
+        cardsIndexCache = payload;
+        return payload;
+      })();
+
+      return cardsIndexPromise;
+    };
+
+    const resolveCanonicalSeedName = (payload, seedName) => {
+      const trimmedSeed = seedName.trim();
+      if (!trimmedSeed) {
+        return null;
+      }
+
+      if (payload?.by_name?.[trimmedSeed]) {
+        return trimmedSeed;
+      }
+
+      const normalizedSeed = normalizeName(trimmedSeed);
+      const canonicalFromMap = payload?.by_name_norm?.[normalizedSeed];
+      if (canonicalFromMap && payload?.by_name?.[canonicalFromMap]) {
+        return canonicalFromMap;
+      }
+
+      for (const name of Object.keys(payload?.by_name ?? {})) {
+        if (normalizeName(name) === normalizedSeed) {
+          return name;
+        }
+      }
+
+      return null;
+    };
+
+    const collectRealCandidates = (payload, seed1Name, seed2Name) => {
+      const canonicalSeed1 = resolveCanonicalSeedName(payload, seed1Name);
+      const canonicalSeed2 = resolveCanonicalSeedName(payload, seed2Name);
+      if (!canonicalSeed1) {
+        return {
+          foundSeed1: false,
+          candidates: [],
+        };
+      }
+
+      const excludedSeeds = new Set([canonicalSeed1]);
+      if (canonicalSeed2) {
+        excludedSeeds.add(canonicalSeed2);
+      }
+
+      const names = Object.keys(payload?.by_name ?? {}).sort((left, right) =>
+        left < right ? -1 : left > right ? 1 : 0,
+      );
+      const candidates = [];
+      for (const name of names) {
+        if (excludedSeeds.has(name)) {
+          continue;
+        }
+        const record = payload.by_name[name];
+        if (!record || !hasUsableOracleText(record)) {
+          continue;
+        }
+        candidates.push(name);
+        if (candidates.length >= CANDIDATE_LIMIT) {
+          break;
+        }
+      }
+
+      return {
+        foundSeed1: true,
+        candidates,
+      };
+    };
+
+    const renderRealPoolEmpty = (message) => {
+      realPool.dataset.state = "empty";
+      realPoolStatus.textContent = message;
+      realPoolList.hidden = true;
+      realPoolList.innerHTML = "";
+    };
+
+    const renderRealPoolCandidates = (candidates) => {
+      realPool.dataset.state = "ready";
+      realPoolStatus.textContent = "La entrada se ha preparado localmente.";
+      realPoolList.hidden = false;
+      realPoolList.innerHTML = "";
+
+      for (const candidateName of candidates) {
+        const item = document.createElement("li");
+        item.textContent = candidateName;
+        realPoolList.appendChild(item);
+      }
+    };
 
     const readSeeds = () => {
       return {
@@ -292,11 +447,31 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       if (!seed1) {
         setState("Introduce al menos una carta seed.", "", "");
         setOutputState("warning", "", "");
+        renderRealPoolEmpty("No hay candidatos reales disponibles todavía para esta entrada.");
         return;
       }
 
       setState("Entrada preparada localmente.", seed1, seed2);
       setOutputState("prepared", seed1, seed2);
+
+      loadCardsIndexLocal()
+        .then((payload) => {
+          const result = collectRealCandidates(payload, seed1, seed2);
+          if (!result.foundSeed1) {
+            renderRealPoolEmpty("No se ha encontrado una carta seed real en el índice local.");
+            return;
+          }
+
+          if (result.candidates.length === 0) {
+            renderRealPoolEmpty("No hay candidatos reales disponibles todavía para esta entrada.");
+            return;
+          }
+
+          renderRealPoolCandidates(result.candidates);
+        })
+        .catch(() => {
+          renderRealPoolEmpty("No hay candidatos reales disponibles todavía para esta entrada.");
+        });
     };
 
     const handleEnter = (event) => {
@@ -320,11 +495,13 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       syncPrepareButton();
       setState("Introduce al menos una carta seed.", "", "");
       setOutputState("empty", "", "");
+      renderRealPoolEmpty("No hay candidatos reales disponibles todavía para esta entrada.");
       seed1Input.focus();
     });
 
     syncPrepareButton();
     setOutputState("empty", "", "");
+    renderRealPoolEmpty("No hay candidatos reales disponibles todavía para esta entrada.");
   })();
 </script>
 
@@ -466,6 +643,61 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
   }
 
   .beta-output-guardrails {
+    margin-top: 10px;
+    margin-bottom: 0;
+    padding-left: 18px;
+    color: #374151;
+    line-height: 1.6;
+    display: grid;
+    gap: 4px;
+  }
+
+  .beta-real-pool {
+    margin-top: 10px;
+    border: 1px solid #d8e0eb;
+    border-radius: 10px;
+    background: #f8fafc;
+    padding: 10px 11px;
+  }
+
+  .beta-real-pool[data-state="ready"] {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+  }
+
+  .beta-real-pool[data-state="empty"] {
+    border-color: #d8e0eb;
+    background: #f8fafc;
+  }
+
+  .beta-real-pool-title {
+    margin: 0;
+    color: #1f2937;
+    font-weight: 700;
+  }
+
+  .beta-real-pool-subtitle {
+    margin: 4px 0 0;
+    color: #475569;
+    line-height: 1.5;
+  }
+
+  .beta-real-pool-status {
+    margin: 8px 0 0;
+    color: #1f2937;
+    line-height: 1.55;
+  }
+
+  .beta-real-pool-list {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    color: #1f2937;
+    line-height: 1.5;
+    display: grid;
+    gap: 4px;
+  }
+
+  .beta-real-pool-guardrails {
     margin-top: 10px;
     margin-bottom: 0;
     padding-left: 18px;

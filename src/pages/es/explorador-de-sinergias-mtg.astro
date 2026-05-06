@@ -94,6 +94,26 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
           </li>
         </ul>
       </div>
+      <div class="beta-output-contract" aria-label="Formato de salida futuro">
+        <p class="beta-output-contract-title">Placeholder no rankeado</p>
+        <p class="beta-output-contract-intro">
+          Formato de salida futuro para la beta pública. Sin candidatos reales.
+        </p>
+        <dl class="beta-output-contract-grid">
+          <dt>Candidato</dt>
+          <dd>Candidato no generado todavía</dd>
+          <dt>Estado</dt>
+          <dd>Placeholder no rankeado</dd>
+          <dt>Motivo</dt>
+          <dd>Pendiente de conexión controlada al contrato de candidatos</dd>
+          <dt>Ranking</dt>
+          <dd>Ranking no disponible</dd>
+          <dt>Score</dt>
+          <dd>Score no disponible</dd>
+          <dt>Explicación causal</dt>
+          <dd>Explicación causal no disponible</dd>
+        </dl>
+      </div>
       <ul class="beta-output-guardrails">
         <li>No calcula ranking.</li>
         <li>No calcula score.</li>
@@ -453,6 +473,44 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     line-height: 1.6;
     display: grid;
     gap: 4px;
+  }
+
+  .beta-output-contract {
+    margin-top: 10px;
+    border: 1px solid #d8e0eb;
+    border-radius: 10px;
+    background: #ffffff;
+    padding: 10px 11px;
+  }
+
+  .beta-output-contract-title {
+    margin: 0;
+    color: #1f2937;
+    font-weight: 700;
+  }
+
+  .beta-output-contract-intro {
+    margin: 4px 0 0;
+    color: #475569;
+    line-height: 1.5;
+  }
+
+  .beta-output-contract-grid {
+    margin: 8px 0 0;
+    display: grid;
+    grid-template-columns: minmax(132px, 168px) 1fr;
+    gap: 6px 10px;
+  }
+
+  .beta-output-contract-grid dt {
+    margin: 0;
+    color: #334155;
+    font-weight: 700;
+  }
+
+  .beta-output-contract-grid dd {
+    margin: 0;
+    color: #1f2937;
   }
 
   .beta-input-grid {

@@ -122,6 +122,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       <div id="cse-beta-real-pool" class="beta-real-pool" data-state="idle" aria-live="polite">
         <p class="beta-real-pool-title">Candidatos reales no rankeados</p>
         <p class="beta-real-pool-subtitle">Pool inicial desde índice local</p>
+        <p class="beta-real-pool-subcopy">Pool inicial filtrado. Filtrado mínimo desde índice local.</p>
         <p id="cse-beta-real-pool-status" class="beta-real-pool-status">
           No hay candidatos reales disponibles todavía para esta entrada.
         </p>
@@ -131,6 +132,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
           <li>Sin ranking</li>
           <li>Sin score</li>
           <li>Sin explicación causal</li>
+          <li>El orden no representa ranking</li>
         </ul>
       </div>
     </div>
@@ -231,13 +233,194 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     const CANDIDATE_LIMIT = 8;
     let cardsIndexCache = null;
     let cardsIndexPromise = null;
+    const STOPWORDS = new Set([
+      "about",
+      "after",
+      "against",
+      "another",
+      "any",
+      "because",
+      "before",
+      "between",
+      "can",
+      "choose",
+      "control",
+      "cost",
+      "could",
+      "damage",
+      "deals",
+      "draw",
+      "each",
+      "from",
+      "have",
+      "into",
+      "its",
+      "may",
+      "one",
+      "only",
+      "other",
+      "target",
+      "that",
+      "their",
+      "them",
+      "then",
+      "this",
+      "those",
+      "until",
+      "when",
+      "with",
+      "your",
+    ]);
+    const PLAYABLE_TYPES = [
+      "artifact",
+      "battle",
+      "creature",
+      "enchantment",
+      "instant",
+      "land",
+      "planeswalker",
+      "sorcery",
+    ];
+    const DAMAGE_SIGNAL_RE =
+      /\b(damage|deals?|target|combat damage|cast|copy|spell|spells|instant|sorcery)\b/;
+    const SPELL_SIGNAL_RE = /\b(cast|spell|spells|instant|sorcery|copy)\b/;
+    const COMBAT_SIGNAL_RE = /\b(combat|attacks?|blocks?|creature)\b/;
 
     const normalizeName = (value) => {
       return value.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
     };
 
+    const isNonEmptyString = (value) => {
+      return typeof value === "string" && value.trim().length > 0;
+    };
+
     const hasUsableOracleText = (record) => {
-      return typeof record?.oracle_text === "string" && record.oracle_text.trim().length > 0;
+      return isNonEmptyString(record?.oracle_text);
+    };
+
+    const tokenize = (value) => {
+      if (!isNonEmptyString(value)) {
+        return [];
+      }
+
+      const parts = value.toLowerCase().match(/[a-z0-9]+/g) ?? [];
+      return parts.filter((token) => token.length >= 4 && !STOPWORDS.has(token) && !/^\d+$/.test(token));
+    };
+
+    const extractPrimaryTypes = (typeLine) => {
+      if (!isNonEmptyString(typeLine)) {
+        return [];
+      }
+
+      const base = typeLine.split("—")[0].split("-")[0].toLowerCase();
+      return PLAYABLE_TYPES.filter((type) => base.includes(type));
+    };
+
+    const buildSeedSignals = (seedName, seedRecord) => {
+      const seedText = isNonEmptyString(seedRecord?.oracle_text)
+        ? seedRecord.oracle_text.toLowerCase()
+        : "";
+      const seedType = isNonEmptyString(seedRecord?.type_line)
+        ? seedRecord.type_line.toLowerCase()
+        : "";
+      const seedTokens = [...tokenize(seedName), ...tokenize(seedText)];
+      const uniqueSeedTokens = [];
+      const seen = new Set();
+      for (const token of seedTokens) {
+        if (seen.has(token)) continue;
+        seen.add(token);
+        uniqueSeedTokens.push(token);
+        if (uniqueSeedTokens.length >= 16) {
+          break;
+        }
+      }
+
+      const primaryTypes = extractPrimaryTypes(seedType);
+      const hasInstantOrSorcerySeed =
+        primaryTypes.includes("instant") || primaryTypes.includes("sorcery");
+      const hasCreatureSeed = primaryTypes.includes("creature");
+
+      return {
+        seedTokens: uniqueSeedTokens,
+        primaryTypes,
+        hasInstantOrSorcerySeed,
+        hasCreatureSeed,
+        expectsDamageSignals: /\b(damage|deals?)\b/.test(seedText),
+        expectsSpellSignals:
+          /\b(cast|spells?|copy)\b/.test(seedText) || hasInstantOrSorcerySeed,
+        expectsCombatSignals: /\bcombat damage\b/.test(seedText) || hasCreatureSeed,
+      };
+    };
+
+    const isLikelyPlayableRecord = (name, record) => {
+      if (!isNonEmptyString(name) || !record || !hasUsableOracleText(record)) {
+        return false;
+      }
+
+      if (isNonEmptyString(record.type_line)) {
+        const primaryTypes = extractPrimaryTypes(record.type_line);
+        if (primaryTypes.length === 0) {
+          return false;
+        }
+      }
+
+      return true;
+    };
+
+    const scoreCandidateMatch = (signals, name, record) => {
+      const text = isNonEmptyString(record?.oracle_text) ? record.oracle_text.toLowerCase() : "";
+      const type = isNonEmptyString(record?.type_line) ? record.type_line.toLowerCase() : "";
+      const searchable = `${normalizeName(name)} ${type} ${text}`;
+
+      let lexicalHits = 0;
+      for (const token of signals.seedTokens) {
+        if (searchable.includes(token)) {
+          lexicalHits += 1;
+        }
+      }
+
+      const candidateTypes = extractPrimaryTypes(record?.type_line);
+      let sharedType = false;
+      for (const seedType of signals.primaryTypes) {
+        if (candidateTypes.includes(seedType)) {
+          sharedType = true;
+          break;
+        }
+      }
+
+      const hasDamageSignal = signals.expectsDamageSignals && DAMAGE_SIGNAL_RE.test(searchable);
+      const hasSpellSignal = signals.expectsSpellSignals && SPELL_SIGNAL_RE.test(searchable);
+      const hasCombatSignal = signals.expectsCombatSignals && COMBAT_SIGNAL_RE.test(searchable);
+
+      let thematicHits = 0;
+      if (hasDamageSignal) thematicHits += 1;
+      if (hasSpellSignal) thematicHits += 1;
+      if (hasCombatSignal) thematicHits += 1;
+
+      const maybeRelevant =
+        lexicalHits >= 1 || thematicHits >= 1 || (sharedType && signals.primaryTypes.length > 0);
+      if (!maybeRelevant) {
+        return null;
+      }
+
+      return {
+        lexicalHits,
+        thematicHits,
+        sharedType: sharedType ? 1 : 0,
+      };
+    };
+
+    const compareCandidateRows = (left, right) => {
+      if (right.match.lexicalHits !== left.match.lexicalHits) {
+        return right.match.lexicalHits - left.match.lexicalHits;
+      }
+      if (right.match.thematicHits !== left.match.thematicHits) {
+        return right.match.thematicHits - left.match.thematicHits;
+      }
+      if (right.match.sharedType !== left.match.sharedType) {
+        return right.match.sharedType - left.match.sharedType;
+      }
+      return left.name < right.name ? -1 : left.name > right.name ? 1 : 0;
     };
 
     const decodeCardsIndexPayload = async (bytes) => {
@@ -319,19 +502,40 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         excludedSeeds.add(canonicalSeed2);
       }
 
+      const seedRecord = payload?.by_name?.[canonicalSeed1];
+      if (!seedRecord || !hasUsableOracleText(seedRecord)) {
+        return {
+          foundSeed1: false,
+          candidates: [],
+        };
+      }
+
+      const seedSignals = buildSeedSignals(canonicalSeed1, seedRecord);
       const names = Object.keys(payload?.by_name ?? {}).sort((left, right) =>
         left < right ? -1 : left > right ? 1 : 0,
       );
-      const candidates = [];
+      const candidateRows = [];
       for (const name of names) {
         if (excludedSeeds.has(name)) {
           continue;
         }
         const record = payload.by_name[name];
-        if (!record || !hasUsableOracleText(record)) {
+        if (!isLikelyPlayableRecord(name, record)) {
           continue;
         }
-        candidates.push(name);
+
+        const match = scoreCandidateMatch(seedSignals, name, record);
+        if (!match) {
+          continue;
+        }
+
+        candidateRows.push({ name, match });
+      }
+
+      candidateRows.sort(compareCandidateRows);
+      const candidates = [];
+      for (const row of candidateRows) {
+        candidates.push(row.name);
         if (candidates.length >= CANDIDATE_LIMIT) {
           break;
         }
@@ -352,7 +556,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
     const renderRealPoolCandidates = (candidates) => {
       realPool.dataset.state = "ready";
-      realPoolStatus.textContent = "La entrada se ha preparado localmente.";
+      realPoolStatus.textContent =
+        "La entrada se ha preparado localmente y se muestra un pool inicial filtrado.";
       realPoolList.hidden = false;
       realPoolList.innerHTML = "";
 
@@ -379,7 +584,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
     const setState = (message, seed1, seed2) => {
       stateMessage.textContent = message;
-      stateNote.textContent = "Esta beta todavía no genera candidatos reales.";
+      stateNote.textContent =
+        "Esta beta pública mantiene guardrails: sin ranking, sin score y sin explicación causal.";
 
       if (!seed1) {
         statePanel.dataset.state = "warning";
@@ -418,7 +624,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       if (state === "prepared") {
         outputPreview.dataset.state = "prepared";
         outputStatus.textContent = "Entrada preparada localmente.";
-        outputNote.textContent = "Todavía no se generan candidatos reales.";
+        outputNote.textContent =
+          "Vista previa sincronizada con seeds locales. Sin ranking, sin score y sin explicación causal.";
         outputSeeds.hidden = false;
         outputSeed1.textContent = seed1;
 
@@ -677,6 +884,12 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
   }
 
   .beta-real-pool-subtitle {
+    margin: 4px 0 0;
+    color: #475569;
+    line-height: 1.5;
+  }
+
+  .beta-real-pool-subcopy {
     margin: 4px 0 0;
     color: #475569;
     line-height: 1.5;

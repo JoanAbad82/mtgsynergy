@@ -59,7 +59,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
           <p class="beta-state-label">Estado local</p>
           <p id="cse-beta-message" class="beta-state-message">Introduce al menos una carta seed.</p>
           <p id="cse-beta-note" class="beta-state-note">
-            Esta beta todavía no genera candidatos reales.
+            Esta beta prepara entrada local y puede mostrar un pool inicial no rankeado desde el
+            índice local.
           </p>
           <ul id="cse-beta-seed-summary" class="beta-state-list" hidden>
             <li><strong>Seed 1 detectada:</strong> <span id="cse-beta-seed-1-summary"></span></li>
@@ -420,7 +421,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       if (right.match.sharedType !== left.match.sharedType) {
         return right.match.sharedType - left.match.sharedType;
       }
-      return left.name < right.name ? -1 : left.name > right.name ? 1 : 0;
+      return left.name.localeCompare(right.name, "es");
     };
 
     const decodeCardsIndexPayload = async (bytes) => {
@@ -511,20 +512,16 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       }
 
       const seedSignals = buildSeedSignals(canonicalSeed1, seedRecord);
-      const names = Object.keys(payload?.by_name ?? {}).sort((left, right) =>
-        left < right ? -1 : left > right ? 1 : 0,
-      );
       const candidateRows = [];
-      for (const name of names) {
+      for (const [name, candidateRecord] of Object.entries(payload?.by_name ?? {})) {
         if (excludedSeeds.has(name)) {
           continue;
         }
-        const record = payload.by_name[name];
-        if (!isLikelyPlayableRecord(name, record)) {
+        if (!isLikelyPlayableRecord(name, candidateRecord)) {
           continue;
         }
 
-        const match = scoreCandidateMatch(seedSignals, name, record);
+        const match = scoreCandidateMatch(seedSignals, name, candidateRecord);
         if (!match) {
           continue;
         }

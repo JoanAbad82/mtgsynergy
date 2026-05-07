@@ -95,7 +95,11 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
           </li>
         </ul>
       </div>
-      <div class="beta-output-contract" aria-label="Formato de salida futuro">
+      <div
+        id="cse-beta-output-contract"
+        class="beta-output-contract"
+        aria-label="Formato de salida futuro"
+      >
         <p class="beta-output-contract-title">Placeholder no rankeado</p>
         <p class="beta-output-contract-intro">
           Formato de salida futuro para la beta pública. Sin candidatos reales.
@@ -202,6 +206,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     const outputSeed1 = shell.querySelector("#cse-beta-output-seed-1");
     const outputSeed2Row = shell.querySelector("#cse-beta-output-seed-2-row");
     const outputSeed2 = shell.querySelector("#cse-beta-output-seed-2");
+    const outputContract = shell.querySelector("#cse-beta-output-contract");
     const realPool = shell.querySelector("#cse-beta-real-pool");
     const realPoolStatus = shell.querySelector("#cse-beta-real-pool-status");
     const realPoolList = shell.querySelector("#cse-beta-real-pool-list");
@@ -225,6 +230,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       !(outputSeed1 instanceof HTMLElement) ||
       !(outputSeed2Row instanceof HTMLElement) ||
       !(outputSeed2 instanceof HTMLElement) ||
+      !(outputContract instanceof HTMLElement) ||
       !(realPool instanceof HTMLElement) ||
       !(realPoolStatus instanceof HTMLElement) ||
       !(realPoolList instanceof HTMLElement)
@@ -283,11 +289,18 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       "planeswalker",
       "sorcery",
     ];
-    const DAMAGE_SIGNAL_RE =
-      /\b(damage|deals?|target|combat damage|cast|copy|spell|spells|instant|sorcery)\b/;
+    const DAMAGE_SIGNAL_RE = /\bdamage\b/;
+    const DAMAGE_ACTIVE_RE =
+      /\bdeal(?:s)?\s+(?:(?:\d+|x)\s+)?damage\b|\bdamage\s+to\s+(?:any target|target(?:\s+\w+){0,2}|each opponent)\b/;
+    const DIRECT_TARGET_DAMAGE_RE =
+      /\bdeal(?:s)?\s+(?:(?:\d+|x)\s+)?damage\s+to\s+(?:any target|target(?:\s+\w+){0,3})\b/;
     const SPELL_SIGNAL_RE = /\b(cast|spell|spells|instant|sorcery|copy)\b/;
     const COMBAT_SIGNAL_RE = /\b(combat|attacks?|blocks?|creature)\b/;
     const COLOR_SYMBOLS = ["W", "U", "B", "R", "G"];
+    const COUNTER_ACTIVE_RE =
+      /\bcounter(?:s|ed|ing)?\s+(?:target|up to one target|each spell|all spells|that spell|unless)\b|\bcounter target\b|\bcountered unless\b/;
+    const COUNTER_NEGATIVE_RE = /\b(can't|cannot)\s+be\s+countered\b/;
+    const MANA_PRODUCER_RE = /\{t\}\s*:\s*add\b|\badd\s+\{[wubrgc]/;
     const SIGNAL_TAG_RULES = [
       { tag: "damage", re: /\b(damage|deals? damage|deals?)\b/ },
       { tag: "target", re: /\btarget\b/ },
@@ -309,7 +322,42 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       { tag: "creature", re: /\bcreature(s)?\b/ },
       { tag: "artifact", re: /\bartifact(s)?\b/ },
       { tag: "enchantment", re: /\benchantment(s)?\b/ },
+      { tag: "land", re: /\bland(s)?\b/ },
+      { tag: "treasure", re: /\btreasure\b/ },
+      { tag: "food", re: /\bfood\b/ },
+      { tag: "equipment", re: /\bequipment\b/ },
+      { tag: "aura", re: /\baura\b/ },
+      { tag: "protection", re: /\bprotection\b/ },
+      { tag: "elf", re: /\belf\b/ },
+      { tag: "druid", re: /\bdruid\b/ },
+      { tag: "combat", re: /\b(combat|attacks?|blocks?)\b/ },
     ];
+    const KEYWORD_SIGNAL_TAG_MAP = {
+      affinity: ["artifact"],
+      deathtouch: ["creature", "combat"],
+      defender: ["creature"],
+      "double strike": ["creature", "combat"],
+      enchant: ["enchantment", "aura"],
+      entwine: ["spell", "cast"],
+      equip: ["artifact", "equipment"],
+      firststrike: ["creature", "combat"],
+      "first strike": ["creature", "combat"],
+      flying: ["creature", "combat"],
+      food: ["artifact", "life", "food"],
+      haste: ["creature", "combat"],
+      indestructible: ["protection", "artifact", "resilience"],
+      kicker: ["spell", "cast"],
+      landfall: ["land"],
+      lifelink: ["life", "creature", "combat"],
+      menace: ["creature", "combat"],
+      prowess: ["spell", "cast", "creature"],
+      protection: ["protection", "creature"],
+      reach: ["creature", "combat"],
+      sacrifice: ["sacrifice"],
+      trample: ["creature", "combat"],
+      treasure: ["mana", "artifact", "treasure"],
+      vigilance: ["creature", "combat"],
+    };
 
     const normalizeName = (value) => {
       return value.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
@@ -317,6 +365,13 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 
     const isNonEmptyString = (value) => {
       return typeof value === "string" && value.trim().length > 0;
+    };
+
+    const normalizeKeyword = (value) => {
+      if (!isNonEmptyString(value)) {
+        return "";
+      }
+      return normalizeName(value).replace(/[_-]+/g, " ");
     };
 
     const hasUsableOracleText = (record) => {
@@ -391,6 +446,41 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       return count;
     };
 
+    const mergeTags = (...tagSets) => {
+      const merged = new Set();
+      for (const tagSet of tagSets) {
+        if (!(tagSet instanceof Set)) {
+          continue;
+        }
+        for (const tag of tagSet) {
+          merged.add(tag);
+        }
+      }
+      return merged;
+    };
+
+    const extractKeywordSignalTags = (record) => {
+      const tags = new Set();
+      if (!Array.isArray(record?.keywords)) {
+        return tags;
+      }
+
+      for (const keyword of record.keywords) {
+        const normalized = normalizeKeyword(keyword);
+        if (!normalized) {
+          continue;
+        }
+        const mappedTags = KEYWORD_SIGNAL_TAG_MAP[normalized];
+        if (!Array.isArray(mappedTags)) {
+          continue;
+        }
+        for (const mappedTag of mappedTags) {
+          tags.add(mappedTag);
+        }
+      }
+      return tags;
+    };
+
     const tokenize = (value) => {
       if (!isNonEmptyString(value)) {
         return [];
@@ -432,14 +522,38 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       const hasInstantOrSorcerySeed =
         primaryTypes.includes("instant") || primaryTypes.includes("sorcery");
       const hasCreatureSeed = primaryTypes.includes("creature");
+      const seedTextTags = extractSignalTags(seedName, seedRecord?.type_line, seedRecord?.oracle_text);
+      const seedKeywordTags = extractKeywordSignalTags(seedRecord);
+      const seedSignalTags = mergeTags(seedTextTags, seedKeywordTags);
+      const hasManaProducerPattern = MANA_PRODUCER_RE.test(seedText);
+      const requiresActiveDamagePattern =
+        seedSignalTags.has("damage") &&
+        /\bdeal(?:s)?\s+(?:(?:\d+|x)\s+)?damage\b|\bdamage\s+to\s+(?:any target|target(?:\s+\w+){0,2}|each opponent)\b/.test(
+          seedText,
+        );
+      const requiresDirectDamageTargetPattern =
+        requiresActiveDamagePattern &&
+        /\bdamage\s+to\s+(?:any target|target(?:\s+\w+){0,3})\b/.test(seedText);
+      const requiresActiveCounterPattern =
+        seedSignalTags.has("counter") &&
+        /\bcounter\s+(?:target|up to one target)\b.*\bspell\b|\bcounter target\b|\bcounter\b.*\bunless\b/.test(
+          seedText,
+        );
+      const requiresManaSignals = hasManaProducerPattern || seedSignalTags.has("mana");
+      const requiresCreatureManaSignals = hasCreatureSeed && requiresManaSignals;
 
       return {
         seedTokens: uniqueSeedTokens,
         primaryTypes,
         seedColorIdentity: toColorIdentitySet(seedRecord),
-        seedSignalTags: extractSignalTags(seedName, seedRecord?.type_line, seedRecord?.oracle_text),
+        seedSignalTags,
         hasInstantOrSorcerySeed,
         hasCreatureSeed,
+        requiresActiveDamagePattern,
+        requiresDirectDamageTargetPattern,
+        requiresActiveCounterPattern,
+        requiresManaSignals,
+        requiresCreatureManaSignals,
         expectsDamageSignals: /\b(damage|deals?)\b/.test(seedText),
         expectsSpellSignals:
           /\b(cast|spells?|copy)\b/.test(seedText) || hasInstantOrSorcerySeed,
@@ -486,26 +600,85 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       const hasDamageSignal = signals.expectsDamageSignals && DAMAGE_SIGNAL_RE.test(searchable);
       const hasSpellSignal = signals.expectsSpellSignals && SPELL_SIGNAL_RE.test(searchable);
       const hasCombatSignal = signals.expectsCombatSignals && COMBAT_SIGNAL_RE.test(searchable);
+      const hasCounterSignal = /\bcounter\b/.test(searchable);
+      const hasActiveCounterPattern = COUNTER_ACTIVE_RE.test(searchable);
+      const hasCounterNegationPattern = COUNTER_NEGATIVE_RE.test(searchable);
+      const hasManaProducerPattern = MANA_PRODUCER_RE.test(searchable);
+      const hasActiveDamagePattern = DAMAGE_ACTIVE_RE.test(searchable);
+      const hasDirectDamageTargetPattern = DIRECT_TARGET_DAMAGE_RE.test(searchable);
 
       let thematicHits = 0;
-      if (hasDamageSignal) thematicHits += 1;
+      if (hasDamageSignal && hasActiveDamagePattern) thematicHits += 1;
       if (hasSpellSignal) thematicHits += 1;
       if (hasCombatSignal) thematicHits += 1;
+      if (hasCounterSignal && hasActiveCounterPattern) thematicHits += 1;
+      if (signals.requiresManaSignals && hasManaProducerPattern) thematicHits += 1;
 
       const candidateColorIdentity = toColorIdentitySet(record);
       const colorOverlap = countColorOverlap(signals.seedColorIdentity, candidateColorIdentity);
-      const candidateTags = extractSignalTags(name, record?.type_line, record?.oracle_text);
+      const candidateTextTags = extractSignalTags(name, record?.type_line, record?.oracle_text);
+      const candidateKeywordTags = extractKeywordSignalTags(record);
+      const candidateTags = mergeTags(candidateTextTags, candidateKeywordTags);
       const sharedSignalTags = countTagOverlap(signals.seedSignalTags, candidateTags);
+      const candidateHasManaSignal =
+        hasManaProducerPattern ||
+        candidateTags.has("mana") ||
+        candidateTags.has("treasure") ||
+        candidateTags.has("land");
+      const candidateLooksLikeManaCreature =
+        candidateTypes.includes("creature") &&
+        (candidateHasManaSignal || candidateTags.has("elf") || candidateTags.has("druid"));
 
-      const hasReasonableSignal = sharedSignalTags >= 1 || colorOverlap >= 1;
+      if (signals.requiresActiveDamagePattern && !hasActiveDamagePattern) {
+        return null;
+      }
+
+      if (signals.requiresDirectDamageTargetPattern && !hasDirectDamageTargetPattern) {
+        return null;
+      }
+
+      if (signals.requiresActiveCounterPattern) {
+        if (!hasActiveCounterPattern) {
+          return null;
+        }
+        if (hasCounterNegationPattern && !/counter target|counter each spell|countered unless/.test(searchable)) {
+          return null;
+        }
+      }
+
+      if (signals.requiresManaSignals && !candidateHasManaSignal) {
+        return null;
+      }
+
+      if (signals.requiresCreatureManaSignals && !candidateLooksLikeManaCreature) {
+        return null;
+      }
+
+      const hasReasonableSignal =
+        sharedSignalTags >= 1 ||
+        colorOverlap >= 1 ||
+        (sharedType && thematicHits >= 1);
       const hasStrongFallback =
-        lexicalHits >= 2 ||
         thematicHits >= 2 ||
-        (sharedType && (lexicalHits >= 1 || thematicHits >= 1));
+        (lexicalHits >= 2 && (sharedType || colorOverlap >= 1 || sharedSignalTags >= 1));
+
+      if (
+        signals.seedSignalTags.size > 0 &&
+        sharedSignalTags === 0 &&
+        colorOverlap === 0 &&
+        thematicHits === 0
+      ) {
+        return null;
+      }
 
       if (!hasReasonableSignal && !hasStrongFallback) {
         return null;
       }
+
+      const counterModePenalty =
+        signals.requiresActiveDamagePattern && hasActiveCounterPattern
+          ? 1
+          : 0;
 
       return {
         lexicalHits,
@@ -513,10 +686,19 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         sharedType: sharedType ? 1 : 0,
         sharedSignalTags,
         colorOverlap,
+        directDamageTarget:
+          signals.requiresActiveDamagePattern && hasDirectDamageTargetPattern ? 1 : 0,
+        counterModePenalty,
       };
     };
 
     const compareCandidateRows = (left, right) => {
+      if (right.match.directDamageTarget !== left.match.directDamageTarget) {
+        return right.match.directDamageTarget - left.match.directDamageTarget;
+      }
+      if (left.match.counterModePenalty !== right.match.counterModePenalty) {
+        return left.match.counterModePenalty - right.match.counterModePenalty;
+      }
       if (right.match.colorOverlap !== left.match.colorOverlap) {
         return right.match.colorOverlap - left.match.colorOverlap;
       }
@@ -660,6 +842,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       realPoolStatus.textContent = message;
       realPoolList.hidden = true;
       realPoolList.innerHTML = "";
+      outputContract.hidden = false;
     };
 
     const renderRealPoolCandidates = (candidates) => {
@@ -668,6 +851,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         "La entrada se ha preparado localmente y se muestra un pool inicial filtrado.";
       realPoolList.hidden = false;
       realPoolList.innerHTML = "";
+      outputContract.hidden = true;
 
       for (const candidateName of candidates) {
         const item = document.createElement("li");

@@ -11,6 +11,7 @@ describe("cards_index manifest verification", () => {
           type_line: "Creature — Elf Druid",
           oracle_text: "{T}: Add {G}.",
           cmc: 1,
+          keywords: ["Mana Ability"],
         },
         Forest: {
           type_line: "Basic Land — Forest",

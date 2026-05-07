@@ -3,8 +3,10 @@ import type { CardRecordMin } from "./types";
 import { normalizeCardName } from "./normalize";
 
 type CardIndexRecord = Pick<CardRecordMin, "type_line" | "oracle_text" | "cmc">;
+type CardIndexRecordWithKeywords = CardIndexRecord &
+  Pick<CardRecordMin, "keywords">;
 type CardsIndexPayload = {
-  by_name: Record<string, CardIndexRecord>;
+  by_name: Record<string, CardIndexRecordWithKeywords>;
   by_name_norm?: Record<string, string>;
   schema_version?: string;
 };
@@ -94,18 +96,36 @@ async function loadCardsIndex(baseUrl?: string): Promise<CardsIndexCache> {
   return promise;
 }
 
-function hasUsableOracleText(record: CardIndexRecord): boolean {
+function hasUsableOracleText(record: CardIndexRecordWithKeywords): boolean {
   return typeof record.oracle_text === "string" && record.oracle_text.trim().length > 0;
 }
 
-function toCardRecordMin(name: string, record: CardIndexRecord): CardRecordMin {
-  return {
+function normalizeKeywords(keywords: unknown): string[] | null {
+  if (!Array.isArray(keywords)) {
+    return null;
+  }
+
+  const normalized = keywords
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  return normalized.length > 0 ? normalized : null;
+}
+
+function toCardRecordMin(name: string, record: CardIndexRecordWithKeywords): CardRecordMin {
+  const cardRecord: CardRecordMin = {
     name,
     name_norm: normalizeCardName(name),
     type_line: typeof record.type_line === "string" ? record.type_line : null,
     oracle_text: typeof record.oracle_text === "string" ? record.oracle_text : null,
     cmc: typeof record.cmc === "number" ? record.cmc : null,
   };
+  const keywords = normalizeKeywords(record.keywords);
+  if (keywords) {
+    cardRecord.keywords = keywords;
+  }
+  return cardRecord;
 }
 
 function resolveListLimit(limit: number | undefined): number {
@@ -123,7 +143,7 @@ function resolveListLimit(limit: number | undefined): number {
 function findCardRecord(
   payload: CardsIndexCache,
   nameOrNorm: string,
-): { name: string; record: CardIndexRecord } | null {
+): { name: string; record: CardIndexRecordWithKeywords } | null {
   const name = nameOrNorm.trim();
   if (payload.by_name[name]) {
     return { name, record: payload.by_name[name] };
@@ -143,14 +163,7 @@ export async function lookupCard(
   const payload = await loadCardsIndex(baseUrl);
   const found = findCardRecord(payload, nameOrNorm);
   if (!found) return null;
-  const name_norm = normalizeCardName(found.name);
-  return {
-    name: found.name,
-    name_norm,
-    type_line: found.record.type_line ?? null,
-    oracle_text: found.record.oracle_text ?? null,
-    cmc: typeof found.record.cmc === "number" ? found.record.cmc : null,
-  };
+  return toCardRecordMin(found.name, found.record);
 }
 
 export function getCardsIndexCount(baseUrl?: string): Promise<number> {

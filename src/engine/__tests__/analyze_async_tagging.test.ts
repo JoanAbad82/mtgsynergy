@@ -10,6 +10,7 @@ const payload = {
       type_line: "Creature \u2014 Elf Druid",
       oracle_text: "{T}: Add {G}.",
       cmc: 1,
+      keywords: ["Mana Ability"],
     },
     Forest: {
       type_line: "Basic Land \u2014 Forest",

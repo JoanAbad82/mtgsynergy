@@ -68,6 +68,50 @@ function buildTypeLine(card) {
   return typeof card?.type_line === "string" ? card.type_line : null;
 }
 
+function normalizeKeywordList(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  const keywords = [];
+  for (const item of value) {
+    if (typeof item !== "string") {
+      continue;
+    }
+    const normalized = item.trim();
+    if (normalized.length === 0) {
+      continue;
+    }
+    keywords.push(normalized);
+  }
+  return keywords;
+}
+
+function buildKeywords(card) {
+  const merged = [];
+  const seen = new Set();
+
+  const append = (value) => {
+    for (const keyword of normalizeKeywordList(value)) {
+      const dedupeKey = keyword.toLowerCase();
+      if (seen.has(dedupeKey)) {
+        continue;
+      }
+      seen.add(dedupeKey);
+      merged.push(keyword);
+    }
+  };
+
+  append(card?.keywords);
+  if (Array.isArray(card?.card_faces)) {
+    for (const face of card.card_faces) {
+      append(face?.keywords);
+    }
+  }
+
+  return merged.length > 0 ? merged : null;
+}
+
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
 
@@ -92,11 +136,13 @@ async function main() {
 
     const name = card.name;
     const nameNorm = normalizeName(name);
+    const keywords = buildKeywords(card);
 
     byName[name] = {
       type_line: buildTypeLine(card),
       oracle_text: buildOracleText(card),
       cmc: typeof card.cmc === "number" ? card.cmc : null,
+      ...(keywords ? { keywords } : {}),
     };
     byNameNorm[nameNorm] = name;
   }

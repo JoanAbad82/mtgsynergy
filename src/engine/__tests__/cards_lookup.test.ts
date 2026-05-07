@@ -17,6 +17,7 @@ const payload = {
       type_line: "Creature \u2014 Elf Druid",
       oracle_text: "{T}: Add {G}.",
       cmc: 1,
+      keywords: [" Elf ", "Mana Ability"],
     },
     Forest: {
       type_line: "Basic Land \u2014 Forest",
@@ -47,6 +48,7 @@ const listPayload = {
       type_line: "Instant",
       oracle_text: "Draw a card.",
       cmc: 1,
+      keywords: [" Cantrip ", "Draw"],
     },
     Gamma: {
       type_line: "Artifact",
@@ -86,6 +88,7 @@ describe("cards helpers", () => {
       __testing.clearCache();
       const card = await lookupCard("Llanowar Elves");
       expect(card?.name_norm).toBe("llanowar elves");
+      expect(card?.keywords).toEqual(["Elf", "Mana Ability"]);
       expect(fetchMock).toHaveBeenCalledWith("/data/cards_index.json.gz");
       const count = await getCardsIndexCount();
       expect(count).toBe(3);
@@ -209,6 +212,8 @@ describe("cards helpers", () => {
       expect(records.map((record) => record.name)).toEqual(["Alpha", "Beta"]);
       expect(records[0].name_norm).toBe("alpha");
       expect(records[1].name_norm).toBe("beta");
+      expect(records[0].keywords).toEqual(["Cantrip", "Draw"]);
+      expect(records[1].keywords).toBeUndefined();
     } finally {
       // @ts-expect-error restore
       globalThis.fetch = originalFetch;

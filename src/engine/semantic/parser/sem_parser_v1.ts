@@ -818,7 +818,7 @@ export function parseSemanticIrV0(input: {
       addWatch(EventId.TOKEN_CREATED);
     }
     if (
-      /\b(when|whenever)[^.]*\bcast\b[^.]*\b(?:instant\b[^.]*\bsorcery|noncreature\s+spell)\b/i.test(
+      /\b(when|whenever)[^.]*\bcast\b[^.]*\b(?:instant\b[^.]*\bsorcery|noncreature\s+spell|creature\s+spell)\b/i.test(
         text,
       )
     ) {
@@ -882,28 +882,13 @@ export function parseSemanticIrV0(input: {
     addUnique(touch, { id: ResourceId.CARD }, (a, b) => a.id === b.id);
   }
 
-  const addGreenManaMatch = /\{t\}:\s*add\s+\{g\}/i.test(text);
-  if (addGreenManaMatch) {
-    // Template v1: add green mana from tap (e.g., "{T}: Add {G}.")
-    doList.push({ action: ActionId.PRODUCE_MANA });
-  }
-
-  const addColorlessTwoManaMatch = /(?:^|\s)\{t\}:\s*add\s+\{c\}\{c\}(?:\.|$)/i.test(text);
-  if (addColorlessTwoManaMatch) {
-    // Template v1: add two colorless mana (e.g., "Worn Powerstone")
-    doList.push({ action: ActionId.PRODUCE_MANA });
-  }
-
-  const addAnyColorManaMatch = /\{t\}:\s*add\s+one\s+mana\s+of\s+any\s+color/i.test(text);
-  if (addAnyColorManaMatch) {
-    // Template v1: add one mana of any color (e.g., "Darksteel Ingot")
-    doList.push({ action: ActionId.PRODUCE_MANA });
-  }
-
-  const addThreeAnyOneColorManaMatch =
-    /\{t\}:\s*add\s+three\s+mana\s+of\s+any\s+one\s+color/i.test(text);
-  if (addThreeAnyOneColorManaMatch) {
-    // Template v1: add three mana of any one color (e.g., "Gilded Lotus")
+  const manaAbilityMinV1ForEffects = kind === FrameKind.ACTIVATED ? classifyManaAbilityMinV1(text) : null;
+  const hasActivatedManaAddSignal =
+    !!manaAbilityMinV1ForEffects &&
+    manaAbilityMinV1ForEffects.reasons.includes("ADDS_MANA") &&
+    manaAbilityMinV1ForEffects.reasons.includes("NOT_LOYALTY");
+  if (hasActivatedManaAddSignal) {
+    // Template v1: generic activated add-mana effects (non-loyalty), including Elf mana engines.
     doList.push({ action: ActionId.PRODUCE_MANA });
   }
 

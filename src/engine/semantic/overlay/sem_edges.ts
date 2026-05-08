@@ -13,6 +13,7 @@ export type SemanticEdge = {
   score: number;
   reasons: SemanticEdgeReason[];
   local_only?: boolean;
+  cast_spell_context?: "CREATURE_SPELL" | "INSTANT_OR_SORCERY_OR_NONCREATURE";
 };
 
 type CardInput = {
@@ -405,7 +406,9 @@ function explicitCastInstantOrSorceryDamagePayoffTextEvidence(text: string): boo
   );
 }
 
-function explicitCastInstantOrSorceryDrawPayoffTextEvidence(text: string): boolean {
+function detectCastSpellDrawPayoffTextContext(
+  text: string,
+): "CREATURE_SPELL" | "INSTANT_OR_SORCERY_OR_NONCREATURE" | null {
   const normalized = text.toLowerCase();
   const hasDraw = /\bdraw\b/.test(normalized);
   const hasCastInstantOrSorcery =
@@ -419,12 +422,12 @@ function explicitCastInstantOrSorceryDrawPayoffTextEvidence(text: string): boole
   const hasSecondSpellPattern = /\bsecond\s+spell\b[^.]*\beach\s+turn\b/i.test(normalized);
   const hasDrawSecondPattern = /\bdraw\b[^.]*\bsecond\s+card\b[^.]*\beach\s+turn\b/i.test(normalized);
 
-  return (
-    hasDraw &&
-    (hasCastInstantOrSorcery || hasCastNoncreature || hasCastCreature || hasCastOrCopyInstantOrSorcery) &&
-    !hasSecondSpellPattern &&
-    !hasDrawSecondPattern
-  );
+  if (!hasDraw || hasSecondSpellPattern || hasDrawSecondPattern) return null;
+  if (hasCastCreature) return "CREATURE_SPELL";
+  if (hasCastInstantOrSorcery || hasCastNoncreature || hasCastOrCopyInstantOrSorcery) {
+    return "INSTANT_OR_SORCERY_OR_NONCREATURE";
+  }
+  return null;
 }
 
 function explicitCastSpellCreateTokenPayoffTextEvidence(text: string): boolean {
@@ -958,7 +961,8 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
   const drawCardsCastSpellKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
   for (const card of cards) {
     const apply = applyCastSpellDrawCardsBridge(card.profile);
-    const textEvidence = explicitCastInstantOrSorceryDrawPayoffTextEvidence(card.oracle_text ?? "");
+    const castSpellContext = detectCastSpellDrawPayoffTextContext(card.oracle_text ?? "");
+    const textEvidence = castSpellContext !== null;
     if (!apply) continue;
     if (!textEvidence) continue;
     const reasons: SemanticEdgeReason[] = [
@@ -972,6 +976,7 @@ export function buildSemanticEdges(inputCards: CardInput[], options?: BuildSeman
       score: 0,
       reasons,
       local_only: true,
+      cast_spell_context: castSpellContext,
     });
   }
 

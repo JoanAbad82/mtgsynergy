@@ -3,7 +3,7 @@ import { normalizeOracleTextV1 } from "../normalize";
 import { parseSemanticIrV0 } from "../parser/sem_parser_v1";
 import { buildSemanticEdges } from "../overlay/sem_edges";
 import { ActionId, EventId } from "../contract";
-import { KeyKind, keyOf } from "../overlay/sem_profile";
+import { KeyKind, explainKeyHuman, keyOf } from "../overlay/sem_profile";
 
 type CardInput = {
   card_id: number;
@@ -88,6 +88,33 @@ describe("semantic overlay cast spell draw cards local bridge min v1", () => {
     expect(genericSpellsMatterBridgeEdge).toBeTruthy();
     expect(genericSpellsMatterBridgeEdge?.local_only).toBe(true);
     expect(genericSpellsMatterBridgeEdge?.score).toBe(0);
+    expect(genericSpellsMatterBridgeEdge?.cast_spell_context).toBe("INSTANT_OR_SORCERY_OR_NONCREATURE");
     expect(genericSpellsMatterBridgeEdge?.reasons.map((reason) => reason.key)).toEqual(expectedReasonKeys);
+
+    const creatureSpellsMatterCards = buildCardsFromLiterals([
+      {
+        name: "Creature Spells Matter",
+        oracle_text: "Whenever you cast a creature spell, draw a card.",
+      },
+    ]);
+    const creatureSpellsMatterEdges = buildSemanticEdges(creatureSpellsMatterCards, { includeLocalOnly: true });
+    const creatureSpellsMatterBridgeEdge = findCastDrawLocalBridgeEdge(creatureSpellsMatterEdges, 1);
+
+    expect(creatureSpellsMatterBridgeEdge).toBeTruthy();
+    expect(creatureSpellsMatterBridgeEdge?.local_only).toBe(true);
+    expect(creatureSpellsMatterBridgeEdge?.score).toBe(0);
+    expect(creatureSpellsMatterBridgeEdge?.cast_spell_context).toBe("CREATURE_SPELL");
+    expect(creatureSpellsMatterBridgeEdge?.reasons.map((reason) => reason.key)).toEqual(expectedReasonKeys);
+
+    expect(
+      explainKeyHuman(castSpellKey, expectedReasonKeys, {
+        castSpellContext: creatureSpellsMatterBridgeEdge?.cast_spell_context,
+      }),
+    ).toContain("Lanzas un hechizo de criatura (experimental)");
+    expect(
+      explainKeyHuman(castSpellKey, expectedReasonKeys, {
+        castSpellContext: genericSpellsMatterBridgeEdge?.cast_spell_context,
+      }),
+    ).toContain("Lanzas instantáneo o conjuro (experimental)");
   });
 });

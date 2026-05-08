@@ -350,7 +350,9 @@ export default function SemanticOverlayPanel({
             {reasons.length > 0 && (
               <div className="muted semantic-edge-reasons">
                 {reasons.map((reason) => {
-                  const label = explainKeyHuman(reason.key, reasonKeys);
+                  const label = explainKeyHuman(reason.key, reasonKeys, {
+                    castSpellContext: edge.cast_spell_context,
+                  });
                   const raw = label !== "Unknown" ? label : explainKey(reason.key);
                   const shown = formatSemanticKeyLabelForUi(raw);
                   return (

@@ -105,6 +105,10 @@ describe("semantic overlay cast spell draw cards bridge min v1", () => {
         name: "Instant Sorcery Draw",
         oracle_text: "Whenever you cast an instant or sorcery spell, draw a card.",
       },
+      {
+        name: "Creature Spell Draw",
+        oracle_text: "Whenever you cast a creature spell, draw a card.",
+      },
     ]);
     const positiveEdges = buildSemanticEdges(positives, { includeLocalOnly: true });
 
@@ -114,6 +118,11 @@ describe("semantic overlay cast spell draw cards bridge min v1", () => {
       expect(edge?.local_only).toBe(true);
       expect(edge?.score).toBe(0);
       expect(edge?.reasons.map((reason) => reason.key)).toEqual(expectedReasonKeys);
+      if (card.name === "Creature Spell Draw") {
+        expect(edge?.cast_spell_context).toBe("CREATURE_SPELL");
+      } else {
+        expect(edge?.cast_spell_context).toBe("INSTANT_OR_SORCERY_OR_NONCREATURE");
+      }
     }
 
     const negatives = buildCardsFromLiterals([

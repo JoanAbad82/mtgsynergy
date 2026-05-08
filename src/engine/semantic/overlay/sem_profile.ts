@@ -278,6 +278,10 @@ const DEAL_DAMAGE_KEY = keyOf(KeyKind.ACTION, ActionId.DEAL_DAMAGE);
 const DRAW_SECOND_GENERIC_LABEL = "Robas cartas adicionales en el turno (experimental)";
 const DRAW_SECOND_CREATE_TOKEN_LABEL = "Robas tu segunda carta del turno -> creas una ficha";
 const DRAW_SECOND_DEAL_DAMAGE_LABEL = "Robas tu segunda carta del turno -> haces daño";
+const CAST_SPELL_INSTANT_OR_SORCERY_LABEL = "Lanzas instantáneo o conjuro (experimental)";
+const CAST_SPELL_CREATURE_LABEL = "Lanzas un hechizo de criatura (experimental)";
+
+export type CastSpellHumanLabelContext = "CREATURE_SPELL" | "INSTANT_OR_SORCERY_OR_NONCREATURE";
 
 function hasDrawSecondCreateTokenEvidence(reasonKeys?: number[]): boolean {
   if (!reasonKeys || reasonKeys.length === 0) return false;
@@ -289,13 +293,22 @@ function hasDrawSecondDealDamageEvidence(reasonKeys?: number[]): boolean {
   return reasonKeys.includes(DRAW_SECOND_KEY) && reasonKeys.includes(DEAL_DAMAGE_KEY);
 }
 
-export function explainKeyHuman(key: number, reasonKeys?: number[]): string {
+export function explainKeyHuman(
+  key: number,
+  reasonKeys?: number[],
+  context?: { castSpellContext?: CastSpellHumanLabelContext },
+): string {
   const raw = explainKey(key);
   if (raw === "UNKNOWN") return "Unknown";
   const [prefix, rest] = raw.split(":");
   if (!prefix || !rest) return "Unknown";
   if (prefix === "EVENT") {
-    if (rest === "CAST_SPELL") return "Lanzas instantáneo o conjuro (experimental)";
+    if (rest === "CAST_SPELL") {
+      if (context?.castSpellContext === "CREATURE_SPELL") {
+        return CAST_SPELL_CREATURE_LABEL;
+      }
+      return CAST_SPELL_INSTANT_OR_SORCERY_LABEL;
+    }
     if (rest === "DRAW_EXTRA_CARD_TURN") {
       if (hasDrawSecondCreateTokenEvidence(reasonKeys)) {
         return DRAW_SECOND_CREATE_TOKEN_LABEL;

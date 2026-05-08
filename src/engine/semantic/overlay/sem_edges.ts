@@ -412,6 +412,8 @@ function explicitCastInstantOrSorceryDrawPayoffTextEvidence(text: string): boole
     /\bwhenever\s+you\s+cast\s+an?\s+instant\s+or\s+sorcery\s+spell\b/i.test(normalized);
   const hasCastNoncreature =
     /\bwhenever\s+you\s+cast\s+a\s+noncreature\s+spell\b/i.test(normalized);
+  const hasCastCreature =
+    /\bwhenever\s+you\s+cast\s+a\s+creature\s+spell\b/i.test(normalized);
   const hasCastOrCopyInstantOrSorcery =
     /\bwhenever\s+you\s+cast\s+or\s+copy\s+an?\s+instant\s+or\s+sorcery\s+spell\b/i.test(normalized);
   const hasSecondSpellPattern = /\bsecond\s+spell\b[^.]*\beach\s+turn\b/i.test(normalized);
@@ -419,7 +421,7 @@ function explicitCastInstantOrSorceryDrawPayoffTextEvidence(text: string): boole
 
   return (
     hasDraw &&
-    (hasCastInstantOrSorcery || hasCastNoncreature || hasCastOrCopyInstantOrSorcery) &&
+    (hasCastInstantOrSorcery || hasCastNoncreature || hasCastCreature || hasCastOrCopyInstantOrSorcery) &&
     !hasSecondSpellPattern &&
     !hasDrawSecondPattern
   );

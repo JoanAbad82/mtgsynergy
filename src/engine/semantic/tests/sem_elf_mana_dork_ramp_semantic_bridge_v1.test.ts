@@ -3,7 +3,7 @@ import type { CardRecordMin } from "../../cards/types";
 import { ActionId, EventId } from "../contract";
 import { buildSemanticCoverageReport } from "../overlay/sem_coverage_report";
 import { buildSemanticEdges } from "../overlay/sem_edges";
-import { KeyKind, keyOf } from "../overlay/sem_profile";
+import { KeyKind, explainKeyHuman, keyOf } from "../overlay/sem_profile";
 import { parseSemanticIrV0 } from "../parser/sem_parser_v1";
 
 function createLocalLookup(cards: ReadonlyArray<CardRecordMin>) {
@@ -117,5 +117,11 @@ describe("semantic elf mana dork / ramp bridge v1", () => {
     );
 
     expect(bridge).toBeTruthy();
+    expect(bridge?.cast_spell_context).toBe("CREATURE_SPELL");
+    expect(
+      explainKeyHuman(castSpellKey, [castSpellKey, drawCardsKey], {
+        castSpellContext: bridge?.cast_spell_context,
+      }),
+    ).toBe("Lanzas un hechizo de criatura (experimental)");
   });
 });

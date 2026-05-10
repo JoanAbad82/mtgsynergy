@@ -27,6 +27,10 @@ import {
   type ZonePermissionMinV1,
 } from "../parser/sem_parser_v1";
 import { type SummoningSicknessTapQMin } from "../types/sem_cost_target_legality_types";
+import {
+  analyzeCostTargetLegalityCaseV1,
+  type CostTargetLegalityCaseV1,
+} from "../cost_target_legality/sem_cost_target_legality_service_v1";
 import { analyzeCostTargetLegalityMinV1 } from "../services/sem_cost_target_legality_min_v1";
 
 type AbilityIrEffect = {
@@ -215,6 +219,71 @@ function sortedUnique(items: string[]): string[] {
   return Array.from(new Set(items)).sort();
 }
 
+function splitClausesMinV1(text: string): string[] {
+  return text
+    .split(".")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+    .map((part) => `${part}.`);
+}
+
+function looksLikeActivatedCostPrefixMinV1(text: string): boolean {
+  return (
+    /\{[^}]+\}/.test(text) ||
+    /\bsacrifice\b/i.test(text) ||
+    /\bdiscard\b/i.test(text) ||
+    /\bpay\b[^.]*\blife\b/i.test(text) ||
+    /\bremove\b[^.]*\bcounter\b/i.test(text)
+  );
+}
+
+function buildCostTargetLegalityCaseMinV1(
+  oracleText: string,
+): CostTargetLegalityCaseV1 {
+  const normalized = oracleText.replace(/\s+/g, " ").trim();
+  const costClauses: string[] = [];
+  const targetClauses: string[] = [];
+  const legalityClauses: string[] = [];
+  const effectClauses: string[] = [];
+  const colonIndex = normalized.indexOf(":");
+  let remainder = normalized;
+
+  if (colonIndex > -1) {
+    const prefix = normalized.slice(0, colonIndex).trim();
+    const after = normalized.slice(colonIndex + 1).trim();
+    if (prefix.length > 0 && looksLikeActivatedCostPrefixMinV1(prefix)) {
+      costClauses.push(prefix);
+    }
+    remainder = after;
+  }
+
+  for (const clause of splitClausesMinV1(remainder)) {
+    if (/^\s*activate only if\b/i.test(clause) || /^\s*cast only if\b/i.test(clause)) {
+      legalityClauses.push(clause);
+      continue;
+    }
+    if (/^\s*as an additional cost to cast this spell\b/i.test(clause)) {
+      costClauses.push(clause);
+      continue;
+    }
+    if (/\btarget\b/i.test(clause)) {
+      targetClauses.push(clause);
+    }
+    effectClauses.push(clause);
+  }
+
+  return {
+    cardName: "lowering-hint-source",
+    context: colonIndex > -1 ? "ACTIVATE" : "CAST",
+    clauses: {
+      costClauses,
+      targetClauses,
+      legalityClauses,
+      effectClauses,
+    },
+  };
+}
+
 type CostTargetLegalityHintsBundle = {
   costTargetLegalityMin?: NonNullable<AbilityIrMin["semantic_hints"]>["cost_target_legality_min"];
   legalitySummoningSicknessTapQMin?: SummoningSicknessTapQMin;
@@ -263,16 +332,22 @@ export function detectTriggeredZoneChangeGuardMinV1(
   };
 }
 
-function buildCostTargetLegalityHints(
+export function buildCostTargetLegalityHints(
   oracleText: string,
   sourceTypeLine?: string | null,
 ): CostTargetLegalityHintsBundle {
-  const analyzed = analyzeCostTargetLegalityMinV1(oracleText, { sourceTypeLine });
-  const costKinds = sortedUnique(analyzed.costIr.items.map((item) => item.kind));
-  const targetKinds = sortedUnique(analyzed.targetSpecs.flatMap((spec) => spec.targetKinds));
-  const legalityKinds = sortedUnique(analyzed.legalityGates.map((gate) => gate.kind));
-  const targetCount = analyzed.targetSpecs.length;
-  const legalityCount = analyzed.legalityGates.length;
+  const analysisCase = buildCostTargetLegalityCaseMinV1(oracleText);
+  const analyzed = analyzeCostTargetLegalityCaseV1(analysisCase);
+  const legacy = analyzeCostTargetLegalityMinV1(oracleText, { sourceTypeLine });
+  const hasSummoningSicknessTapQ = !!legacy.summoningSicknessTapQMin;
+  const costKinds = sortedUnique(analyzed.costs.items.map((item) => item.kind));
+  const targetKinds = sortedUnique(analyzed.targets.flatMap((spec) => spec.targetKinds));
+  const legalityKinds = sortedUnique([
+    ...analyzed.legality.map((gate) => gate.kind),
+    ...(hasSummoningSicknessTapQ ? (["SUMMONING_SICKNESS_TAP_Q_RESTRICTION"] as const) : []),
+  ]);
+  const targetCount = analyzed.targets.length;
+  const legalityCount = analyzed.legality.length + (hasSummoningSicknessTapQ ? 1 : 0);
 
   const shouldEmitCostTargetLegalityMin = !(
     costKinds.length === 0 &&
@@ -292,7 +367,7 @@ function buildCostTargetLegalityHints(
         legality_count: legalityCount,
       }
       : undefined,
-    legalitySummoningSicknessTapQMin: analyzed.summoningSicknessTapQMin,
+    legalitySummoningSicknessTapQMin: legacy.summoningSicknessTapQMin,
   };
 }
 

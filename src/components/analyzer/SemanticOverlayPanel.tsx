@@ -1,6 +1,7 @@
 import type { SemanticEdge } from "../../engine/semantic/overlay/sem_edges";
 import type { SemanticOverlayMetrics } from "../../engine/semantic/overlay/sem_metrics";
 import type { SemanticCoverageReport, SemanticCoverageReasonId } from "../../engine/semantic/overlay/sem_coverage_report";
+import type { ExplainKeyHumanContext } from "../../engine/semantic/overlay/sem_profile";
 
 export const SEMANTIC_OVERLAY_COPY = {
   title: "Superposición semántica (experimental)",
@@ -296,7 +297,11 @@ type Props = {
   metrics: SemanticOverlayMetrics;
   edges: SemanticEdge[];
   explainKey: (key: number) => string;
-  explainKeyHuman: (key: number, reasonKeys?: number[]) => string;
+  explainKeyHuman: (
+    key: number,
+    reasonKeys?: number[],
+    context?: ExplainKeyHumanContext,
+  ) => string;
   idToName: Record<number, string>;
   deckEntriesCount: number;
   resolvedUnique: number;
@@ -351,7 +356,7 @@ export default function SemanticOverlayPanel({
               <div className="muted semantic-edge-reasons">
                 {reasons.map((reason) => {
                   const label = explainKeyHuman(reason.key, reasonKeys, {
-                    castSpellContext: edge.cast_spell_context,
+                    cast_spell_context: edge.cast_spell_context,
                   });
                   const raw = label !== "Unknown" ? label : explainKey(reason.key);
                   const shown = formatSemanticKeyLabelForUi(raw);

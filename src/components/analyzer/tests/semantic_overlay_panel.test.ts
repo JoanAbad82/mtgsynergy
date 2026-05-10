@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+  default as SemanticOverlayPanel,
   formatSemanticKeyLabelForUi,
   formatUncoveredAuditExamples,
   partitionSemanticEdgesByStrength,
@@ -14,6 +15,8 @@ import {
   filterRedundancyGroups,
   getSignalStatus,
 } from "../SemanticOverlayPanel";
+import { ActionId, EventId } from "../../../engine/semantic/contract";
+import { explainKey, explainKeyHuman, KeyKind, keyOf } from "../../../engine/semantic/overlay/sem_profile";
 
 const panelCopyText = [
   SEMANTIC_OVERLAY_COPY.title,
@@ -154,6 +157,58 @@ describe("SemanticOverlayPanel semantic summary helpers", () => {
 
     const fallback = formatSemanticKeyLabelForUi("Unknown");
     expect(fallback).toBe("Unknown");
+  });
+
+  it("wires cast_spell_context into CAST_SPELL reason labels", () => {
+    const castSpellKey = keyOf(KeyKind.EVENT, EventId.CAST_SPELL);
+    const drawCardsKey = keyOf(KeyKind.ACTION, ActionId.DRAW_CARDS);
+    const explainKeyHumanSpy = vi.fn(explainKeyHuman);
+    const prevReact = (globalThis as any).React;
+    (globalThis as any).React = {
+      createElement: () => null,
+      Fragment: "Fragment",
+    };
+    try {
+      SemanticOverlayPanel({
+        metrics: {
+          covered_count: 1,
+          card_count: 1,
+          SOS: 0,
+          total_edge_score: 0,
+          orphan_listeners: [],
+          excess_producers: [],
+          redundancy_groups: [],
+        } as any,
+        edges: [
+          {
+            from: 1,
+            to: 1,
+            score: 0,
+            local_only: true,
+            cast_spell_context: "CREATURE_SPELL",
+            reasons: [
+              { key: castSpellKey, weight: 1 },
+              { key: drawCardsKey, weight: 1 },
+            ],
+          },
+        ] as any,
+        explainKey,
+        explainKeyHuman: explainKeyHumanSpy,
+        idToName: { 1: "Creature Spells Matter" },
+        deckEntriesCount: 1,
+        resolvedUnique: 1,
+        missingUnique: 0,
+      });
+    } finally {
+      (globalThis as any).React = prevReact;
+    }
+
+    const castSpellCall = explainKeyHumanSpy.mock.calls.find((call) => call[0] === castSpellKey);
+    expect(castSpellCall).toBeTruthy();
+    expect(castSpellCall?.[2]).toEqual({ cast_spell_context: "CREATURE_SPELL" });
+    expect(explainKeyHuman(castSpellKey, castSpellCall?.[1], castSpellCall?.[2])).toBe(
+      "Lanzas un hechizo de criatura (experimental)",
+    );
   });
 
   it("partitions semantic edges by score without mutating input", () => {

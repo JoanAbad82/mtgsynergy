@@ -282,6 +282,10 @@ const CAST_SPELL_INSTANT_OR_SORCERY_LABEL = "Lanzas instantáneo o conjuro (expe
 const CAST_SPELL_CREATURE_LABEL = "Lanzas un hechizo de criatura (experimental)";
 
 export type CastSpellHumanLabelContext = "CREATURE_SPELL" | "INSTANT_OR_SORCERY_OR_NONCREATURE";
+export type ExplainKeyHumanContext = {
+  castSpellContext?: CastSpellHumanLabelContext;
+  cast_spell_context?: CastSpellHumanLabelContext;
+};
 
 function hasDrawSecondCreateTokenEvidence(reasonKeys?: number[]): boolean {
   if (!reasonKeys || reasonKeys.length === 0) return false;
@@ -296,7 +300,7 @@ function hasDrawSecondDealDamageEvidence(reasonKeys?: number[]): boolean {
 export function explainKeyHuman(
   key: number,
   reasonKeys?: number[],
-  context?: { castSpellContext?: CastSpellHumanLabelContext },
+  context?: ExplainKeyHumanContext,
 ): string {
   const raw = explainKey(key);
   if (raw === "UNKNOWN") return "Unknown";
@@ -304,7 +308,8 @@ export function explainKeyHuman(
   if (!prefix || !rest) return "Unknown";
   if (prefix === "EVENT") {
     if (rest === "CAST_SPELL") {
-      if (context?.castSpellContext === "CREATURE_SPELL") {
+      const castSpellContext = context?.castSpellContext ?? context?.cast_spell_context;
+      if (castSpellContext === "CREATURE_SPELL") {
         return CAST_SPELL_CREATURE_LABEL;
       }
       return CAST_SPELL_INSTANT_OR_SORCERY_LABEL;

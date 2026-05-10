@@ -113,8 +113,16 @@ describe("semantic overlay cast spell draw cards local bridge min v1", () => {
     ).toContain("Lanzas un hechizo de criatura (experimental)");
     expect(
       explainKeyHuman(castSpellKey, expectedReasonKeys, {
+        cast_spell_context: creatureSpellsMatterBridgeEdge?.cast_spell_context,
+      }),
+    ).toContain("Lanzas un hechizo de criatura (experimental)");
+    expect(
+      explainKeyHuman(castSpellKey, expectedReasonKeys, {
         castSpellContext: genericSpellsMatterBridgeEdge?.cast_spell_context,
       }),
     ).toContain("Lanzas instantáneo o conjuro (experimental)");
+    expect(explainKeyHuman(castSpellKey, expectedReasonKeys)).toContain(
+      "Lanzas instantáneo o conjuro (experimental)",
+    );
   });
 });

@@ -302,7 +302,10 @@ function buildCostTargetLegalityCaseMinV1(
   }
 
   for (const clause of splitClausesMinV1(remainder)) {
-    if (/^\s*activate only\b/i.test(clause) || /^\s*cast only if\b/i.test(clause)) {
+    if (
+      /^\s*activate only\b/i.test(clause) ||
+      /cast this spell only (if|during|before)\b/i.test(clause)
+    ) {
       legalityClauses.push(clause);
       continue;
     }

@@ -87,6 +87,20 @@ describe("cost target legality lowering hint wiring v1", () => {
     expect(hints.costTargetLegalityMin?.target_kinds).not.toContain("ACTIVATE_ONLY_AS_SORCERY");
   });
 
+  it("maps Cast this spell only (if/during/before) into CAST_ONLY_IF legality gate without leakage", () => {
+    const hints = buildCostTargetLegalityHints(
+      "Cast this spell only before blockers are declared. Target creature gains first strike until end of turn.",
+      "Instant",
+    );
+
+    expect(hints.costTargetLegalityMin).toBeTruthy();
+    expect(hints.costTargetLegalityMin?.legality_kinds).toContain("CAST_ONLY_IF");
+    expect(hints.costTargetLegalityMin?.legality_count).toBeGreaterThanOrEqual(1);
+    expect(hints.costTargetLegalityMin?.target_kinds).toContain("CREATURE");
+    expect(hints.costTargetLegalityMin?.target_kinds).not.toContain("CAST_ONLY_IF");
+    expect(hints.costTargetLegalityMin?.cost_kinds).not.toContain("CAST_ONLY_IF");
+  });
+
   it("adds cost_target_legality_min hint additively without breaking existing semantic_hints", () => {
     const loweredCrystalBall = lowerToAbilityIrMinV1({
       name: "Crystal Ball",

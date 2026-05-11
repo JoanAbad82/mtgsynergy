@@ -237,6 +237,14 @@ function looksLikeActivatedCostPrefixMinV1(text: string): boolean {
   );
 }
 
+function lineStartsLikeActivatedAbilityMinV1(text: string): boolean {
+  const normalized = text.trim();
+  return (
+    /^\{[^}]+\}/.test(normalized) ||
+    /^(sacrifice|discard|pay|remove)\b/i.test(normalized)
+  );
+}
+
 function isSimpleManaAbilityEffectTextMinV1(text: string): boolean {
   const normalized = text.replace(/\s+/g, " ").trim().replace(/\.$/, "");
   return (
@@ -262,7 +270,11 @@ function selectPreferredActivatedLineMinV1(oracleText: string): string | null {
 
   if (withColon.length === 0) return null;
 
-  const activatedCandidates = withColon.filter((row) => looksLikeActivatedCostPrefixMinV1(row.prefix));
+  const activatedCandidates = withColon.filter(
+    (row) =>
+      lineStartsLikeActivatedAbilityMinV1(row.line) &&
+      looksLikeActivatedCostPrefixMinV1(row.prefix),
+  );
   const pool = activatedCandidates.length > 0 ? activatedCandidates : withColon;
   const preferred = pool.find((row) => !isSimpleManaAbilityEffectTextMinV1(row.suffix));
   return (preferred ?? pool[0])?.line ?? null;
@@ -290,7 +302,7 @@ function buildCostTargetLegalityCaseMinV1(
   }
 
   for (const clause of splitClausesMinV1(remainder)) {
-    if (/^\s*activate only if\b/i.test(clause) || /^\s*cast only if\b/i.test(clause)) {
+    if (/^\s*activate only\b/i.test(clause) || /^\s*cast only if\b/i.test(clause)) {
       legalityClauses.push(clause);
       continue;
     }

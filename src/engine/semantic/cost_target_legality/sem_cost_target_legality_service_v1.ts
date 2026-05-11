@@ -113,6 +113,10 @@ function detectTargetKindsFromClause(clause: string): TargetKind[] {
   if (/\btarget artifact,\s*creature,\s*or\s*land\b/.test(lowered)) {
     return ["ARTIFACT", "CREATURE", "LAND"];
   }
+  if (/\bany target\b/.test(lowered)) return ["ANY_TARGET"];
+  if (/\btarget opponent\b/.test(lowered)) return ["OPPONENT"];
+  if (/\btarget player\b/.test(lowered)) return ["PLAYER"];
+  if (/\btarget nonland permanent\b/.test(lowered)) return ["PERMANENT"];
   if (/\btarget creature\b/.test(lowered)) return ["CREATURE"];
   if (/\btarget artifact\b/.test(lowered)) return ["ARTIFACT"];
   if (/\btarget land\b/.test(lowered)) return ["LAND"];

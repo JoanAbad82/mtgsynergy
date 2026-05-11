@@ -57,6 +57,21 @@ describe("cost target legality lowering hint wiring v1", () => {
     expect(hints.costTargetLegalityMin?.legality_kinds).not.toContain("SCRY");
   });
 
+  it("selects Castle Vantress non-mana activated line from real multi-ability oracle text", () => {
+    const hints = buildCostTargetLegalityHints(
+      "This land enters tapped unless you control an Island.\n{T}: Add {U}.\n{2}{U}{U}, {T}: Scry 2.",
+      "Land",
+    );
+
+    expect(hints.costTargetLegalityMin).toBeTruthy();
+    expect(hints.costTargetLegalityMin?.cost_kinds).toEqual(expect.arrayContaining(["MANA", "TAP"]));
+    expect(hints.costTargetLegalityMin?.target_kinds).toEqual([]);
+    expect(hints.costTargetLegalityMin?.target_count).toBe(0);
+    expect(hints.costTargetLegalityMin?.legality_kinds).toEqual([]);
+    expect(hints.costTargetLegalityMin?.legality_count).toBe(0);
+    expect(hints.costTargetLegalityMin?.legality_kinds).not.toContain("SCRY");
+  });
+
   it("adds cost_target_legality_min hint additively without breaking existing semantic_hints", () => {
     const loweredCrystalBall = lowerToAbilityIrMinV1({
       name: "Crystal Ball",

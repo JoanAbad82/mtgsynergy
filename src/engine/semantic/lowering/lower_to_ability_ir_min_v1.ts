@@ -237,10 +237,42 @@ function looksLikeActivatedCostPrefixMinV1(text: string): boolean {
   );
 }
 
+function isSimpleManaAbilityEffectTextMinV1(text: string): boolean {
+  const normalized = text.replace(/\s+/g, " ").trim().replace(/\.$/, "");
+  return (
+    /^add\s+\{[wubrgc]\}(?:\s*(?:,|or)\s*\{[wubrgc]\})*$/i.test(normalized) ||
+    /^add\s+one\s+mana\s+of\s+any\s+color$/i.test(normalized)
+  );
+}
+
+function selectPreferredActivatedLineMinV1(oracleText: string): string | null {
+  const lines = oracleText
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  const withColon = lines
+    .map((line) => {
+      const colonIndex = line.indexOf(":");
+      if (colonIndex < 0) return null;
+      const prefix = line.slice(0, colonIndex).trim();
+      const suffix = line.slice(colonIndex + 1).trim();
+      return { line, prefix, suffix };
+    })
+    .filter((row): row is { line: string; prefix: string; suffix: string } => !!row);
+
+  if (withColon.length === 0) return null;
+
+  const activatedCandidates = withColon.filter((row) => looksLikeActivatedCostPrefixMinV1(row.prefix));
+  const pool = activatedCandidates.length > 0 ? activatedCandidates : withColon;
+  const preferred = pool.find((row) => !isSimpleManaAbilityEffectTextMinV1(row.suffix));
+  return (preferred ?? pool[0])?.line ?? null;
+}
+
 function buildCostTargetLegalityCaseMinV1(
   oracleText: string,
 ): CostTargetLegalityCaseV1 {
-  const normalized = oracleText.replace(/\s+/g, " ").trim();
+  const selectedSource = selectPreferredActivatedLineMinV1(oracleText) ?? oracleText;
+  const normalized = selectedSource.replace(/\s+/g, " ").trim();
   const costClauses: string[] = [];
   const targetClauses: string[] = [];
   const legalityClauses: string[] = [];

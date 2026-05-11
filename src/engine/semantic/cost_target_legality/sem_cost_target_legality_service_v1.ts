@@ -155,6 +155,14 @@ function analyzeLegality(legalityClauses: string[]): LegalityGate[] {
       });
       continue;
     }
+    if (/cast this spell only (if|during|before)\b/i.test(clause)) {
+      gates.push({
+        kind: "CAST_ONLY_IF" as LegalityGate["kind"],
+        detail: clause,
+        sourceTextSpan: clause,
+      });
+      continue;
+    }
     gates.push({
       kind: "OTHER_LEGALITY_TEXT",
       detail: clause,

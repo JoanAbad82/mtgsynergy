@@ -25,7 +25,6 @@ type RealOracleSnapshot = {
 const here = dirname(fileURLToPath(import.meta.url));
 const cardsIndexPath = join(here, "../../../../public/data/cards_index.json.gz");
 const A2_10_ANCHOR_NAMES = ["Village Rites", "Bone Splinters", "Icy Manipulator", "Castle Vantress"] as const;
-const CASTLE_REAL_ORACLE_KNOWN_GAP = "MULTI_ABILITY_SELECTION_CASTLE_VANTRESS_REAL_ORACLE";
 const EXPECTED_REAL_ORACLE_SNAPSHOT_BY_CARD: Record<string, RealOracleSnapshot> = {
   "Village Rites": {
     cardName: "Village Rites",
@@ -60,13 +59,12 @@ const EXPECTED_REAL_ORACLE_SNAPSHOT_BY_CARD: Record<string, RealOracleSnapshot> 
   "Castle Vantress": {
     cardName: "Castle Vantress",
     hasOracleText: true,
-    cost_kinds: ["TAP"],
+    cost_kinds: ["MANA", "TAP"],
     target_kinds: [],
     legality_kinds: [],
     target_count: 0,
     legality_count: 0,
-    // Oracle real local contiene varias lineas/habilidades; esta microfase congela el gap actual, no lo corrige.
-    known_gap: CASTLE_REAL_ORACLE_KNOWN_GAP,
+    known_gap: null,
   },
 };
 
@@ -128,12 +126,12 @@ function snapshotFromRealOracle(payload: CardsIndexPayload, cardName: string): R
     legality_kinds: [...min.legality_kinds],
     target_count: min.target_count,
     legality_count: min.legality_count,
-    known_gap: cardName === "Castle Vantress" ? CASTLE_REAL_ORACLE_KNOWN_GAP : null,
+    known_gap: null,
   };
 }
 
 describe("cost target legality real oracle lowering ring v1", () => {
-  it("loads local cards_index oracle text and freezes deterministic snapshots for covered anchors plus documented Castle gap", () => {
+  it("loads local cards_index oracle text and freezes deterministic snapshots for the four A2.10 anchors", () => {
     const payload = loadCardsIndex();
     const runA = A2_10_ANCHOR_NAMES.map((cardName) => snapshotFromRealOracle(payload, cardName));
     const runB = A2_10_ANCHOR_NAMES.map((cardName) => snapshotFromRealOracle(payload, cardName));
@@ -142,7 +140,7 @@ describe("cost target legality real oracle lowering ring v1", () => {
     expect(runA).toEqual(A2_10_ANCHOR_NAMES.map((cardName) => EXPECTED_REAL_ORACLE_SNAPSHOT_BY_CARD[cardName]));
   });
 
-  it("keeps covered-anchor invariants and documents the Castle multi-ability selection gap without overclaiming full coverage", () => {
+  it("keeps A2.10 anchor invariants and no-leakage checks with Castle multi-ability selection repaired", () => {
     const payload = loadCardsIndex();
     const byName = new Map(
       A2_10_ANCHOR_NAMES.map((cardName) => [cardName, snapshotFromRealOracle(payload, cardName)]),
@@ -170,11 +168,12 @@ describe("cost target legality real oracle lowering ring v1", () => {
     expect(icy?.target_kinds).not.toContain("TAP_PERMANENT");
 
     const castle = byName.get("Castle Vantress");
-    expect(castle?.known_gap).toBe(CASTLE_REAL_ORACLE_KNOWN_GAP);
-    expect(castle?.cost_kinds).toEqual(["TAP"]);
+    expect(castle?.known_gap).toBeNull();
+    expect(castle?.cost_kinds).toEqual(expect.arrayContaining(["MANA", "TAP"]));
+    expect(castle?.target_kinds).toEqual([]);
+    expect(castle?.target_count).toBe(0);
     expect(castle?.legality_kinds).toEqual([]);
-    expect(castle?.cost_kinds).toContain("TAP");
-    // No-leakage se mantiene, pero aqui se interpreta bajo el known gap documentado.
+    expect(castle?.legality_count).toBe(0);
     expect(castle?.legality_kinds).not.toContain("SCRY");
   });
 });

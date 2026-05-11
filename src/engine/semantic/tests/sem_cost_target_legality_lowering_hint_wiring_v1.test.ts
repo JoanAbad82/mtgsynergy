@@ -72,6 +72,21 @@ describe("cost target legality lowering hint wiring v1", () => {
     expect(hints.costTargetLegalityMin?.legality_kinds).not.toContain("SCRY");
   });
 
+  it("maps Activate only as a sorcery into legality gate without leaking into target channel", () => {
+    const hints = buildCostTargetLegalityHints(
+      "{T}, Sacrifice Bloodtithe Harvester: Target creature gets -X/-X until end of turn, where X is twice the number of Blood tokens you control. Activate only as a sorcery.",
+      "Creature — Vampire",
+    );
+
+    expect(hints.costTargetLegalityMin).toBeTruthy();
+    expect(hints.costTargetLegalityMin?.cost_kinds).toEqual(expect.arrayContaining(["SACRIFICE", "TAP"]));
+    expect(hints.costTargetLegalityMin?.target_kinds).toContain("CREATURE");
+    expect(hints.costTargetLegalityMin?.target_count).toBeGreaterThanOrEqual(1);
+    expect(hints.costTargetLegalityMin?.legality_kinds).toContain("ACTIVATE_ONLY_AS_SORCERY");
+    expect(hints.costTargetLegalityMin?.legality_count).toBeGreaterThanOrEqual(1);
+    expect(hints.costTargetLegalityMin?.target_kinds).not.toContain("ACTIVATE_ONLY_AS_SORCERY");
+  });
+
   it("adds cost_target_legality_min hint additively without breaking existing semantic_hints", () => {
     const loweredCrystalBall = lowerToAbilityIrMinV1({
       name: "Crystal Ball",

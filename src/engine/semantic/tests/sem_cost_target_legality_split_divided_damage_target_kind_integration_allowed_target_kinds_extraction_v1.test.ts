@@ -30,10 +30,10 @@ type SplitDividedDamageTargetModelSnapshot = {
   target_kinds_policy: string;
   notes: string;
   known_gap: string | null;
-  allowed_target_kinds?: string[];
-  allowedTargetKinds?: string[];
-  target_kinds?: string[];
-  targetKinds?: string[];
+  allowed_target_kinds?: unknown;
+  allowedTargetKinds?: unknown;
+  target_kinds?: unknown;
+  targetKinds?: unknown;
 };
 
 type Snapshot = {
@@ -46,6 +46,7 @@ type Snapshot = {
   current_legality_kinds: string[];
   split_divided_damage_target_model: SplitDividedDamageTargetModelSnapshot | null;
   model_structured_target_kinds: string[];
+  projected_target_kinds_from_model: string[];
 };
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -57,6 +58,15 @@ const CORPUS = [
   "Flames of the Firebrand",
   "Pyrotechnics",
   "Rolling Thunder",
+] as const;
+
+const FORBIDDEN_LEGALITY = [
+  "CAST_ONLY_IF",
+  "ACTIVATE_ONLY_AS_SORCERY",
+  "CONTROLS_X",
+  "ATTACKED_THIS_TURN",
+  "ONCE_EACH_TURN",
+  "OTHER_LEGALITY_TEXT",
 ] as const;
 
 function loadCardsIndex(): CardsIndexPayload {
@@ -90,23 +100,21 @@ function readStructuredAllowedTargetKinds(
   model: SplitDividedDamageTargetModelSnapshot | null,
 ): string[] {
   if (!model) return [];
-
   const buckets = [
     model.allowed_target_kinds,
     model.allowedTargetKinds,
     model.target_kinds,
     model.targetKinds,
   ];
-
   const out: string[] = [];
   for (const candidate of buckets) {
     if (!Array.isArray(candidate)) continue;
     for (const value of candidate) {
-      if (typeof value === "string") out.push(value);
+      if (typeof value !== "string") continue;
+      out.push(value.trim().toUpperCase());
     }
   }
-
-  return Array.from(new Set(out));
+  return Array.from(new Set(out)).sort();
 }
 
 function buildSnapshot(payload: CardsIndexPayload, cardName: string): Snapshot {
@@ -114,7 +122,6 @@ function buildSnapshot(payload: CardsIndexPayload, cardName: string): Snapshot {
   if (!canonicalName) {
     throw new Error(`Card not found in local cards index: ${cardName}`);
   }
-
   const row = payload.by_name?.[canonicalName];
   if (!row) {
     throw new Error(`Missing by_name row for canonical card: ${canonicalName}`);
@@ -125,6 +132,7 @@ function buildSnapshot(payload: CardsIndexPayload, cardName: string): Snapshot {
   const splitModel =
     (hints.splitDividedDamageTargetModel as SplitDividedDamageTargetModelSnapshot | undefined) ??
     null;
+  const modelStructuredTargetKinds = readStructuredAllowedTargetKinds(splitModel);
 
   return {
     cardName,
@@ -135,38 +143,17 @@ function buildSnapshot(payload: CardsIndexPayload, cardName: string): Snapshot {
     current_modal_selection_model: min?.modal_selection_model ? "present" : null,
     current_legality_kinds: min ? [...min.legality_kinds] : [],
     split_divided_damage_target_model: splitModel,
-    model_structured_target_kinds: readStructuredAllowedTargetKinds(splitModel),
+    model_structured_target_kinds: modelStructuredTargetKinds,
+    projected_target_kinds_from_model:
+      __testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1(splitModel),
   };
 }
 
-describe("cost target legality split divided damage target kind integration extraction v1", () => {
-  it("proves positive structured projection behavior for split model target kind data", () => {
-    const fromAllowedSnake = __testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1({
-      allowed_target_kinds: ["ANY_TARGET", "CREATURE", "ANY_TARGET", "INVALID_KIND", 42],
-    });
-    expect(fromAllowedSnake).toEqual(["ANY_TARGET"]);
-
-    const fromAllowedCamel = __testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1({
-      allowedTargetKinds: ["creature", "PLAYER", "PLAYER", "cast_only_if"],
-    });
-    expect(fromAllowedCamel).toEqual(["CREATURE", "PLAYER"]);
-
-    const fromTargetSnake = __testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1({
-      target_kinds: ["PLANESWALKER", "battle", "once_each_turn"],
-    });
-    expect(fromTargetSnake).toEqual(["BATTLE", "PLANESWALKER"]);
-
-    const fromTargetCamel = __testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1({
-      targetKinds: ["ANY_TARGET", "CREATURE", "PLAYER"],
-    });
-    // ANY_TARGET must remain umbrella and must not be expanded.
-    expect(fromTargetCamel).toEqual(["ANY_TARGET"]);
-  });
-
-  it("projects target_kinds conservatively from structured split model data without replacing independent channels", () => {
+describe("cost target legality split divided damage target kind integration allowed target kinds extraction v1", () => {
+  it("adds conservative allowed_target_kinds to split_divided_damage_target_model without changing independent channels", () => {
     const payload = loadCardsIndex();
-    const runA = CORPUS.map((cardName) => buildSnapshot(payload, cardName));
-    const runB = CORPUS.map((cardName) => buildSnapshot(payload, cardName));
+    const runA = CORPUS.map((name) => buildSnapshot(payload, name));
+    const runB = CORPUS.map((name) => buildSnapshot(payload, name));
 
     expect(runA).toEqual(runB);
 
@@ -186,53 +173,45 @@ describe("cost target legality split divided damage target kind integration extr
       expect(row.split_divided_damage_target_model?.split_damage_model_kind).toBe(
         expectedKinds[row.cardName],
       );
-      expect(row.split_divided_damage_target_model?.damage_allocation_is_divided).toBe(true);
       expect(
         row.split_divided_damage_target_model?.productive_min_hint_currently_models_split_damage,
       ).toBe(true);
-      expect(
-        row.split_divided_damage_target_model?.target_kinds_policy,
-      ).toBe("CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS");
-      expect((row.split_divided_damage_target_model?.notes ?? "").trim().length).toBeGreaterThan(0);
+      expect(row.split_divided_damage_target_model?.damage_allocation_is_divided).toBe(true);
 
-      // Structured split model now carries conservative allowed target kind evidence.
+      // Structured source-of-truth evidence inside split_divided_damage_target_model.
       expect(row.model_structured_target_kinds).toEqual(["ANY_TARGET"]);
-      const projectedKinds =
-        __testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1(
-          row.split_divided_damage_target_model,
-        );
-      expect(projectedKinds).toEqual(["ANY_TARGET"]);
+      // Projection keeps ANY_TARGET as umbrella and does not expand it.
+      expect(row.projected_target_kinds_from_model).toEqual(["ANY_TARGET"]);
 
-      // target_kinds channel remains conservative/independent in the current min emission path.
+      // Independent channels remain unchanged in this phase.
       expect(row.current_min_exists).toBe(false);
       expect(row.current_target_kinds).toEqual([]);
       expect(row.current_target_count).toBeNull();
-
-      // split_divided damage must not create modal or legality channels.
       expect(row.current_modal_selection_model).toBeNull();
       expect(row.current_legality_kinds).toEqual([]);
 
-      expect(row.current_target_kinds).not.toContain("ANY_TARGET");
+      // No legality leakage from split/divided damage extraction.
       expect(row.current_target_kinds).not.toContain("CAST_ONLY_IF");
       expect(row.current_target_kinds).not.toContain("ACTIVATE_ONLY_AS_SORCERY");
-      expect(row.current_legality_kinds).not.toContain("CAST_ONLY_IF");
-      expect(row.current_legality_kinds).not.toContain("ACTIVATE_ONLY_AS_SORCERY");
-      expect(row.current_legality_kinds).not.toContain("CONTROLS_X");
-      expect(row.current_legality_kinds).not.toContain("ATTACKED_THIS_TURN");
-      expect(row.current_legality_kinds).not.toContain("ONCE_EACH_TURN");
-      expect(row.current_legality_kinds).not.toContain("OTHER_LEGALITY_TEXT");
+      for (const forbidden of FORBIDDEN_LEGALITY) {
+        expect(row.current_legality_kinds).not.toContain(forbidden);
+      }
 
       const serializedModel = JSON.stringify(row.split_divided_damage_target_model);
-      expect(serializedModel).not.toContain("CAST_ONLY_IF");
-      expect(serializedModel).not.toContain("ACTIVATE_ONLY_AS_SORCERY");
-      expect(serializedModel).not.toContain("CONTROLS_X");
-      expect(serializedModel).not.toContain("ATTACKED_THIS_TURN");
-      expect(serializedModel).not.toContain("ONCE_EACH_TURN");
-      expect(serializedModel).not.toContain("OTHER_LEGALITY_TEXT");
+      for (const forbidden of FORBIDDEN_LEGALITY) {
+        expect(serializedModel).not.toContain(forbidden);
+      }
 
       console.log(JSON.stringify(row));
     }
 
-    console.log("SPLIT_DIVIDED_DAMAGE_TARGET_KIND_INTEGRATION_EXTRACTION_V1_COMPLETE");
+    for (const cardName of ["Pyrotechnics", "Rolling Thunder"] as const) {
+      const row = runA.find((entry) => entry.cardName === cardName);
+      expect(row?.split_divided_damage_target_model?.conceptual_target_slots_min).toBe(0);
+      expect(row?.split_divided_damage_target_model?.conceptual_target_slots_max).toBeNull();
+      expect(row?.current_target_count).toBeNull();
+    }
+
+    console.log("SPLIT_DIVIDED_DAMAGE_TARGET_KIND_INTEGRATION_ALLOWED_TARGET_KINDS_EXTRACTION_V1_COMPLETE");
   });
 });

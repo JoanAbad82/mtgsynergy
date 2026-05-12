@@ -25,6 +25,10 @@ type SplitDividedDamageTargetModelSnapshot = {
   damage_allocation_is_divided: boolean;
   productive_min_hint_currently_models_split_damage: boolean;
   target_kinds_policy: string;
+  allowed_target_kinds?: string[];
+  allowedTargetKinds?: string[];
+  target_kinds?: string[];
+  targetKinds?: string[];
   notes: string;
   known_gap: string | null;
 };
@@ -118,6 +122,27 @@ function assertNoLeakage(snapshot: Snapshot): void {
   expect(modelSerialized).not.toContain("ACTIVATE_ONLY_AS_SORCERY");
 }
 
+function readStructuredAllowedTargetKinds(
+  model: SplitDividedDamageTargetModelSnapshot | null,
+): string[] {
+  if (!model) return [];
+  const buckets = [
+    model.allowed_target_kinds,
+    model.allowedTargetKinds,
+    model.target_kinds,
+    model.targetKinds,
+  ];
+  const out: string[] = [];
+  for (const candidate of buckets) {
+    if (!Array.isArray(candidate)) continue;
+    for (const value of candidate) {
+      if (typeof value !== "string") continue;
+      out.push(value);
+    }
+  }
+  return Array.from(new Set(out));
+}
+
 describe("cost target legality split divided damage target model extraction guardrail ring v1", () => {
   it("freezes additive split_divided_damage_target_model while keeping min target channels unmodelled", () => {
     const payload = loadCardsIndex();
@@ -157,6 +182,9 @@ describe("cost target legality split divided damage target model extraction guar
         row.split_divided_damage_target_model?.target_kinds_policy,
       ).toBe("CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS");
       expect((row.split_divided_damage_target_model?.notes ?? "").trim().length).toBeGreaterThan(0);
+      expect(readStructuredAllowedTargetKinds(row.split_divided_damage_target_model)).toEqual([
+        "ANY_TARGET",
+      ]);
 
       assertNoLeakage(row);
       console.log(JSON.stringify(row));

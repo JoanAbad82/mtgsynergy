@@ -30,10 +30,10 @@ type SplitDividedDamageTargetModelSnapshot = {
   target_kinds_policy: string;
   notes: string;
   known_gap: string | null;
-  allowed_target_kinds?: string[];
-  allowedTargetKinds?: string[];
-  target_kinds?: string[];
-  targetKinds?: string[];
+  allowed_target_kinds?: unknown;
+  allowedTargetKinds?: unknown;
+  target_kinds?: unknown;
+  targetKinds?: unknown;
 };
 
 type Snapshot = {
@@ -66,6 +66,15 @@ const CANONICAL_ALLOWED = new Set([
   "BATTLE",
   "ANY_TARGET",
 ]);
+
+const FORBIDDEN = [
+  "CAST_ONLY_IF",
+  "ACTIVATE_ONLY_AS_SORCERY",
+  "CONTROLS_X",
+  "ATTACKED_THIS_TURN",
+  "ONCE_EACH_TURN",
+  "OTHER_LEGALITY_TEXT",
+] as const;
 
 function loadCardsIndex(): CardsIndexPayload {
   const gz = readFileSync(cardsIndexPath);
@@ -168,9 +177,10 @@ describe("cost target legality split divided damage target kind integration extr
     const fromTargetCamel = __testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1({
       targetKinds: ["ANY_TARGET", "CREATURE", "PLAYER"],
     });
+    // ANY_TARGET must remain umbrella and must not be expanded.
     expect(fromTargetCamel).toEqual(["ANY_TARGET"]);
 
-    // Conservative fallback for empty/invalid/non-object values.
+    // Conservative fallback for empty/invalid/non-object inputs.
     expect(__testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1(undefined)).toEqual([]);
     expect(__testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1(null)).toEqual([]);
     expect(__testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1({})).toEqual([]);
@@ -186,14 +196,8 @@ describe("cost target legality split divided damage target kind integration extr
     ]) {
       expect(CANONICAL_ALLOWED.has(kind)).toBe(true);
     }
-    for (const forbidden of [
-      "CAST_ONLY_IF",
-      "ACTIVATE_ONLY_AS_SORCERY",
-      "CONTROLS_X",
-      "ATTACKED_THIS_TURN",
-      "ONCE_EACH_TURN",
-      "OTHER_LEGALITY_TEXT",
-    ]) {
+
+    for (const forbidden of FORBIDDEN) {
       expect(fromAllowedSnake).not.toContain(forbidden);
       expect(fromAllowedCamel).not.toContain(forbidden);
       expect(fromTargetSnake).not.toContain(forbidden);
@@ -228,28 +232,26 @@ describe("cost target legality split divided damage target kind integration extr
         true,
       );
 
-      // Baseline stays conservative when no structured allowed kind properties exist in the model.
-      expect(row.model_structured_target_kinds).toEqual([]);
+      // Structured split model carries conservative allowed target kind evidence.
+      expect(row.model_structured_target_kinds).toEqual(["ANY_TARGET"]);
       expect(row.current_target_kinds).toEqual([]);
       expect(row.current_target_count).toBeNull();
       expect(row.current_modal_selection_model).toBeNull();
       expect(row.current_legality_kinds).toEqual([]);
 
       // No forbidden leakage into target/model/legality channels.
-      for (const forbidden of [
-        "CAST_ONLY_IF",
-        "ACTIVATE_ONLY_AS_SORCERY",
-        "CONTROLS_X",
-        "ATTACKED_THIS_TURN",
-        "ONCE_EACH_TURN",
-        "OTHER_LEGALITY_TEXT",
-      ]) {
+      for (const forbidden of FORBIDDEN) {
         expect(row.current_target_kinds).not.toContain(forbidden);
         expect(row.current_legality_kinds).not.toContain(forbidden);
         expect(JSON.stringify(row.split_divided_damage_target_model)).not.toContain(forbidden);
       }
 
-      // ANY_TARGET must not be synthesized from absent structured model target-kind data.
+      // ANY_TARGET remains an umbrella in model projection and is not expanded.
+      const projectedKinds =
+        __testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1(
+          row.split_divided_damage_target_model,
+        );
+      expect(projectedKinds).toEqual(["ANY_TARGET"]);
       expect(row.current_target_kinds).not.toContain("ANY_TARGET");
 
       console.log(JSON.stringify(row));

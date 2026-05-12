@@ -382,6 +382,7 @@ function inferSplitDividedDamageTargetModelMinV1(
   const lower = oracleText.toLowerCase();
   const notes =
     "split_divided_damage_target_model is additive and target_kinds/target_count remain diagnostic channels.";
+  const allowedTargetKindsAnyTarget = ["ANY_TARGET"];
 
   if (lower.includes("damage divided as you choose among one or two targets")) {
     return {
@@ -392,6 +393,7 @@ function inferSplitDividedDamageTargetModelMinV1(
       damage_allocation_is_divided: true,
       productive_min_hint_currently_models_split_damage: true,
       target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+      allowed_target_kinds: [...allowedTargetKindsAnyTarget],
       notes,
       known_gap: "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",
     };
@@ -406,6 +408,7 @@ function inferSplitDividedDamageTargetModelMinV1(
       damage_allocation_is_divided: true,
       productive_min_hint_currently_models_split_damage: true,
       target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+      allowed_target_kinds: [...allowedTargetKindsAnyTarget],
       notes,
       known_gap: "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",
     };
@@ -423,6 +426,7 @@ function inferSplitDividedDamageTargetModelMinV1(
       damage_allocation_is_divided: true,
       productive_min_hint_currently_models_split_damage: true,
       target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+      allowed_target_kinds: [...allowedTargetKindsAnyTarget],
       notes,
       known_gap:
         "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",
@@ -438,6 +442,7 @@ function inferSplitDividedDamageTargetModelMinV1(
       damage_allocation_is_divided: true,
       productive_min_hint_currently_models_split_damage: true,
       target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+      allowed_target_kinds: [...allowedTargetKindsAnyTarget],
       notes,
       known_gap:
         "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",

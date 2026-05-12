@@ -76,6 +76,7 @@ type SplitDividedDamageTargetModelMinV1 = {
   damage_allocation_is_divided: boolean;
   productive_min_hint_currently_models_split_damage: boolean;
   target_kinds_policy: string;
+  allowed_target_kinds?: string[];
   notes: string;
   known_gap: string | null;
 };
@@ -460,6 +461,65 @@ function inferSplitDividedDamageTargetModelMinV1(
   return undefined;
 }
 
+const SPLIT_DIVIDED_TARGET_KIND_CANONICAL_SET_MIN_V1 = new Set([
+  "CREATURE",
+  "PLAYER",
+  "PLANESWALKER",
+  "BATTLE",
+  "ANY_TARGET",
+]);
+
+function projectTargetKindsFromSplitDividedDamageModelMinV1(
+  splitModel: SplitDividedDamageTargetModelMinV1 | undefined,
+): string[] {
+  if (!splitModel) {
+    return [];
+  }
+
+  const rawCandidates: unknown[] = [];
+  const recordLike = splitModel as Record<string, unknown>;
+  rawCandidates.push(
+    recordLike.allowed_target_kinds,
+    recordLike.allowedTargetKinds,
+    recordLike.target_kinds,
+    recordLike.targetKinds,
+  );
+
+  const collected: string[] = [];
+  for (const candidate of rawCandidates) {
+    if (!Array.isArray(candidate)) continue;
+    for (const value of candidate) {
+      if (typeof value !== "string") continue;
+      const normalized = value.trim().toUpperCase();
+      if (!SPLIT_DIVIDED_TARGET_KIND_CANONICAL_SET_MIN_V1.has(normalized)) continue;
+      collected.push(normalized);
+    }
+  }
+
+  if (collected.includes("ANY_TARGET")) {
+    // Keep ANY_TARGET as umbrella; do not expand to specific classes.
+    return ["ANY_TARGET"];
+  }
+
+  return sortedUnique(collected);
+}
+
+export function __testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1(
+  splitModel:
+    | {
+      allowed_target_kinds?: unknown;
+      allowedTargetKinds?: unknown;
+      target_kinds?: unknown;
+      targetKinds?: unknown;
+    }
+    | null
+    | undefined,
+): string[] {
+  return projectTargetKindsFromSplitDividedDamageModelMinV1(
+    splitModel as SplitDividedDamageTargetModelMinV1 | undefined,
+  );
+}
+
 function isSimpleManaAbilityEffectTextMinV1(text: string): boolean {
   const normalized = text.replace(/\s+/g, " ").trim().replace(/\.$/, "");
   return (
@@ -602,9 +662,13 @@ export function buildCostTargetLegalityHints(
   const analysisCase = buildCostTargetLegalityCaseMinV1(oracleText);
   const analyzed = analyzeCostTargetLegalityCaseV1(analysisCase);
   const legacy = analyzeCostTargetLegalityMinV1(oracleText, { sourceTypeLine });
+  const splitDividedDamageTargetModel = inferSplitDividedDamageTargetModelMinV1(oracleText);
+  const splitProjectedTargetKinds = projectTargetKindsFromSplitDividedDamageModelMinV1(
+    splitDividedDamageTargetModel,
+  );
   const hasSummoningSicknessTapQ = !!legacy.summoningSicknessTapQMin;
   const costKinds = sortedUnique(analyzed.costs.items.map((item) => item.kind));
-  const targetKinds = sortedUnique(analyzed.targets.flatMap((spec) => spec.targetKinds));
+  const analyzedTargetKinds = sortedUnique(analyzed.targets.flatMap((spec) => spec.targetKinds));
   const legalityKinds = sortedUnique([
     ...analyzed.legality.map((gate) => gate.kind),
     ...(hasSummoningSicknessTapQ ? (["SUMMONING_SICKNESS_TAP_Q_RESTRICTION"] as const) : []),
@@ -614,15 +678,19 @@ export function buildCostTargetLegalityHints(
 
   const shouldEmitCostTargetLegalityMin = !(
     costKinds.length === 0 &&
-    targetKinds.length === 0 &&
+    analyzedTargetKinds.length === 0 &&
     legalityKinds.length === 0 &&
     targetCount === 0 &&
     legalityCount === 0
   );
+  const targetKinds = sortedUnique(
+    shouldEmitCostTargetLegalityMin
+      ? [...analyzedTargetKinds, ...splitProjectedTargetKinds]
+      : analyzedTargetKinds,
+  );
   const modalSelectionModel = shouldEmitCostTargetLegalityMin
     ? buildModalSelectionModelMinV1(oracleText, targetKinds)
     : undefined;
-  const splitDividedDamageTargetModel = inferSplitDividedDamageTargetModelMinV1(oracleText);
 
   return {
     costTargetLegalityMin: shouldEmitCostTargetLegalityMin

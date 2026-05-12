@@ -42,6 +42,25 @@ type LegalityActionBindingMinV1 = "CAST_ONLY" | "ACTIVATE_ONLY";
 type LoyaltyActivationRestrictionKindMinV1 = "ACTIVATE_ONLY_AS_SORCERY";
 type LoyaltyOnceEachTurnRestrictionMinV1 = "ONCE_EACH_TURN";
 type LoyaltySymbolCostTokenMinV1 = "LOYALTY_PLUS" | "LOYALTY_MINUS" | "LOYALTY_ZERO";
+type ModalSelectionModelModeSelectionKindMinV1 =
+  | "CHOOSE_ONE"
+  | "CHOOSE_TWO"
+  | "CHOOSE_ONE_OR_MORE"
+  | "UNKNOWN_MODAL_SELECTION";
+
+type ModalSelectionModelMinV1 = {
+  kind: "MODAL_SELECTION_MODEL";
+  mode_selection_kind: ModalSelectionModelModeSelectionKindMinV1;
+  selected_modes_min: number | null;
+  selected_modes_max: number | null;
+  modes_total: number | null;
+  targeted_modes_count: number | null;
+  conceptual_target_slots_min: number | null;
+  conceptual_target_slots_max: number | null;
+  aggregated_target_kinds: string[];
+  notes: string;
+  known_gap: string | null;
+};
 
 export type AbilityIrMin = {
   kind: "Activated" | "ConditionalTriggered";
@@ -101,6 +120,7 @@ export type AbilityIrMin = {
       legality_kinds: string[];
       target_count: number;
       legality_count: number;
+      modal_selection_model?: ModalSelectionModelMinV1;
     };
   };
 };
@@ -243,6 +263,97 @@ function lineStartsLikeActivatedAbilityMinV1(text: string): boolean {
     /^\{[^}]+\}/.test(normalized) ||
     /^(sacrifice|discard|pay|remove)\b/i.test(normalized)
   );
+}
+
+function modeLinesFromOracleMinV1(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("•"));
+}
+
+function inferModalSelectionKindFromOracleMinV1(
+  oracleText: string,
+): ModalSelectionModelModeSelectionKindMinV1 | null {
+  const normalized = oracleText.toLowerCase();
+  // Split/divided damage is explicitly out-of-scope for productive extraction in this phase.
+  if (normalized.includes("damage divided as you choose among one or two targets")) {
+    return null;
+  }
+  if (/choose one or more\s*[—-]/i.test(oracleText)) {
+    return "CHOOSE_ONE_OR_MORE";
+  }
+  if (/choose two\s*[—-]/i.test(oracleText)) {
+    return "CHOOSE_TWO";
+  }
+  if (/choose one\s*[—-]/i.test(oracleText)) {
+    return "CHOOSE_ONE";
+  }
+  const modeLines = modeLinesFromOracleMinV1(oracleText);
+  if (/\bchoose\b/i.test(oracleText) && modeLines.length > 0) {
+    return "UNKNOWN_MODAL_SELECTION";
+  }
+  return null;
+}
+
+function buildModalSelectionModelMinV1(
+  oracleText: string,
+  aggregatedTargetKinds: string[],
+): ModalSelectionModelMinV1 | undefined {
+  const modeSelectionKind = inferModalSelectionKindFromOracleMinV1(oracleText);
+  if (!modeSelectionKind) return undefined;
+
+  const modeLines = modeLinesFromOracleMinV1(oracleText);
+  if (modeLines.length === 0) return undefined;
+
+  const modesTotal = modeLines.length;
+  const targetedModesCount = modeLines.filter((line) => /\btarget\b/i.test(line)).length;
+  const nonTargetedModes = modesTotal - targetedModesCount;
+
+  let selectedModesMin: number | null = null;
+  let selectedModesMax: number | null = null;
+  let conceptualTargetSlotsMin: number | null = null;
+  let conceptualTargetSlotsMax: number | null = null;
+  let notes = "modal_selection_model is additive and target_count remains a diagnostic aggregation signal.";
+  let knownGap: string | null = null;
+
+  if (modeSelectionKind === "CHOOSE_ONE") {
+    selectedModesMin = 1;
+    selectedModesMax = 1;
+    conceptualTargetSlotsMin = targetedModesCount > 0 ? 1 : 0;
+    conceptualTargetSlotsMax = targetedModesCount > 0 ? 1 : 0;
+  } else if (modeSelectionKind === "CHOOSE_TWO") {
+    selectedModesMin = 2;
+    selectedModesMax = 2;
+    conceptualTargetSlotsMin = Math.max(0, 2 - nonTargetedModes);
+    conceptualTargetSlotsMax = Math.min(2, targetedModesCount);
+  } else if (modeSelectionKind === "CHOOSE_ONE_OR_MORE") {
+    selectedModesMin = 1;
+    selectedModesMax = modesTotal;
+    conceptualTargetSlotsMin = targetedModesCount === 0 ? 0 : nonTargetedModes > 0 ? 0 : 1;
+    conceptualTargetSlotsMax = targetedModesCount;
+  } else {
+    selectedModesMin = null;
+    selectedModesMax = null;
+    conceptualTargetSlotsMin = null;
+    conceptualTargetSlotsMax = null;
+    knownGap = "UNKNOWN_MODAL_SELECTION_UNMODELLED";
+    notes = "unknown modal selection wording fallback; diagnostic extraction only.";
+  }
+
+  return {
+    kind: "MODAL_SELECTION_MODEL",
+    mode_selection_kind: modeSelectionKind,
+    selected_modes_min: selectedModesMin,
+    selected_modes_max: selectedModesMax,
+    modes_total: modesTotal,
+    targeted_modes_count: targetedModesCount,
+    conceptual_target_slots_min: conceptualTargetSlotsMin,
+    conceptual_target_slots_max: conceptualTargetSlotsMax,
+    aggregated_target_kinds: [...aggregatedTargetKinds],
+    notes,
+    known_gap: knownGap,
+  };
 }
 
 function isSimpleManaAbilityEffectTextMinV1(text: string): boolean {
@@ -403,6 +514,9 @@ export function buildCostTargetLegalityHints(
     targetCount === 0 &&
     legalityCount === 0
   );
+  const modalSelectionModel = shouldEmitCostTargetLegalityMin
+    ? buildModalSelectionModelMinV1(oracleText, targetKinds)
+    : undefined;
 
   return {
     costTargetLegalityMin: shouldEmitCostTargetLegalityMin
@@ -412,6 +526,11 @@ export function buildCostTargetLegalityHints(
         legality_kinds: legalityKinds,
         target_count: targetCount,
         legality_count: legalityCount,
+        ...(modalSelectionModel
+          ? {
+            modal_selection_model: modalSelectionModel,
+          }
+          : {}),
       }
       : undefined,
     legalitySummoningSicknessTapQMin: legacy.summoningSicknessTapQMin,

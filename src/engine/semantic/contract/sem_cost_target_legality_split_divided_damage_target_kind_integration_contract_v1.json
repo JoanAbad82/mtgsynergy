@@ -1,0 +1,206 @@
+{
+  "metadata": {
+    "document_id": "sem_cost_target_legality_split_divided_damage_target_kind_integration_contract_v1",
+    "version": "v1",
+    "status": "contract-freeze",
+    "phase": "A2.10",
+    "scope": "Additive split/divided damage target-kind integration contract freeze, without runtime behavior changes."
+  },
+  "scope_rules": {
+    "contract_only_no_runtime_change": true,
+    "no_parser_changes": true,
+    "no_lowering_changes": true,
+    "no_service_changes": true,
+    "no_ui_cse_scoring_overlay_changes": true,
+    "no_public_data_or_package_changes": true
+  },
+  "compatibility": {
+    "source_model_for_future_target_kind_integration": "split_divided_damage_target_model",
+    "additive_to_sem_cost_target_legality_min_v1": true,
+    "derived_target_kinds_are_diagnostic_aggregation_only": true,
+    "derived_target_kinds_replace_split_model": false,
+    "derived_target_kinds_replace_target_count": false,
+    "derived_target_kinds_must_not_create_or_modify_modal_selection_model": true,
+    "modal_selection_model_independent_extraction_only": true,
+    "preserve_existing_rings": true,
+    "semantic_migration_requires_explicit_future_phase": true
+  },
+  "split_divided_damage_target_kind_integration_contract": {
+    "split_model_kind_required": "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+    "contract_is_not_extraction_implementation": true,
+    "must_not_widen_runtime_behavior": true,
+    "explicit_evidence_required_for_target_kind_derivation": true,
+    "allowed_target_kind_candidates_when_explicit_evidence_exists": [
+      "CREATURE",
+      "PLAYER",
+      "PLANESWALKER",
+      "BATTLE",
+      "ANY_TARGET"
+    ],
+    "forbidden_legality_inference_kinds_from_split_wording": [
+      "CAST_ONLY_IF",
+      "ACTIVATE_ONLY_AS_SORCERY",
+      "CONTROLS_X",
+      "ATTACKED_THIS_TURN",
+      "ONCE_EACH_TURN",
+      "OTHER_LEGALITY_TEXT"
+    ],
+    "forbidden_in_target_or_model_channels": [
+      "CAST_ONLY_IF",
+      "ACTIVATE_ONLY_AS_SORCERY"
+    ],
+    "unknown_model_fallback": "UNKNOWN_SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+    "any_number_targets_policy": "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0",
+    "notes": [
+      "split_divided_damage_target_model remains the source model for future split/divided target-kind integration.",
+      "target_kinds derived from split/divided damage must stay diagnostic aggregation only in this contract phase.",
+      "target_kinds must not replace split_divided_damage_target_model, target_count, or modal_selection_model.",
+      "legality gates are out of scope for split/divided target-kind integration."
+    ]
+  },
+  "initial_corpus_policy": [
+    {
+      "card_name": "Electrolyze",
+      "split_divided_damage_target_model_baseline": {
+        "kind": "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+        "split_damage_model_kind": "ONE_OR_TWO_TARGETS",
+        "conceptual_target_slots_min": 1,
+        "conceptual_target_slots_max": 2,
+        "damage_allocation_is_divided": true,
+        "productive_min_hint_currently_models_split_damage": true,
+        "target_kinds_policy": "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+        "known_gap": "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS"
+      },
+      "current_runtime_baseline": {
+        "min_exists": false,
+        "target_kinds": [],
+        "target_count": null,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "future_target_kind_integration_expectation": {
+        "explicit_target_kind_evidence_required": true,
+        "explicit_target_kind_evidence_present": false,
+        "candidate_target_kinds": [],
+        "derivation_allowed_now": false,
+        "known_gap": "INSUFFICIENT_EXPLICIT_TARGET_KIND_EVIDENCE_FOR_DERIVATION"
+      }
+    },
+    {
+      "card_name": "Arc Lightning",
+      "split_divided_damage_target_model_baseline": {
+        "kind": "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+        "split_damage_model_kind": "ONE_TWO_OR_THREE_TARGETS",
+        "conceptual_target_slots_min": 1,
+        "conceptual_target_slots_max": 3,
+        "damage_allocation_is_divided": true,
+        "productive_min_hint_currently_models_split_damage": true,
+        "target_kinds_policy": "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+        "known_gap": "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS"
+      },
+      "current_runtime_baseline": {
+        "min_exists": false,
+        "target_kinds": [],
+        "target_count": null,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "future_target_kind_integration_expectation": {
+        "explicit_target_kind_evidence_required": true,
+        "explicit_target_kind_evidence_present": false,
+        "candidate_target_kinds": [],
+        "derivation_allowed_now": false,
+        "known_gap": "INSUFFICIENT_EXPLICIT_TARGET_KIND_EVIDENCE_FOR_DERIVATION"
+      }
+    },
+    {
+      "card_name": "Flames of the Firebrand",
+      "split_divided_damage_target_model_baseline": {
+        "kind": "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+        "split_damage_model_kind": "ONE_TWO_OR_THREE_TARGETS",
+        "conceptual_target_slots_min": 1,
+        "conceptual_target_slots_max": 3,
+        "damage_allocation_is_divided": true,
+        "productive_min_hint_currently_models_split_damage": true,
+        "target_kinds_policy": "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+        "known_gap": "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS"
+      },
+      "current_runtime_baseline": {
+        "min_exists": false,
+        "target_kinds": [],
+        "target_count": null,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "future_target_kind_integration_expectation": {
+        "explicit_target_kind_evidence_required": true,
+        "explicit_target_kind_evidence_present": false,
+        "candidate_target_kinds": [],
+        "derivation_allowed_now": false,
+        "known_gap": "INSUFFICIENT_EXPLICIT_TARGET_KIND_EVIDENCE_FOR_DERIVATION"
+      }
+    },
+    {
+      "card_name": "Pyrotechnics",
+      "split_divided_damage_target_model_baseline": {
+        "kind": "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+        "split_damage_model_kind": "ANY_NUMBER_OF_TARGETS",
+        "conceptual_target_slots_min": 0,
+        "conceptual_target_slots_max": null,
+        "damage_allocation_is_divided": true,
+        "productive_min_hint_currently_models_split_damage": true,
+        "target_kinds_policy": "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+        "known_gap": "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS"
+      },
+      "current_runtime_baseline": {
+        "min_exists": false,
+        "target_kinds": [],
+        "target_count": null,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "future_target_kind_integration_expectation": {
+        "explicit_target_kind_evidence_required": true,
+        "explicit_target_kind_evidence_present": false,
+        "candidate_target_kinds": [],
+        "derivation_allowed_now": false,
+        "known_gap": "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;INSUFFICIENT_EXPLICIT_TARGET_KIND_EVIDENCE_FOR_DERIVATION"
+      }
+    },
+    {
+      "card_name": "Rolling Thunder",
+      "split_divided_damage_target_model_baseline": {
+        "kind": "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+        "split_damage_model_kind": "ANY_NUMBER_OF_TARGETS",
+        "conceptual_target_slots_min": 0,
+        "conceptual_target_slots_max": null,
+        "damage_allocation_is_divided": true,
+        "productive_min_hint_currently_models_split_damage": true,
+        "target_kinds_policy": "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+        "known_gap": "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS"
+      },
+      "current_runtime_baseline": {
+        "min_exists": false,
+        "target_kinds": [],
+        "target_count": null,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "future_target_kind_integration_expectation": {
+        "explicit_target_kind_evidence_required": true,
+        "explicit_target_kind_evidence_present": false,
+        "candidate_target_kinds": [],
+        "derivation_allowed_now": false,
+        "known_gap": "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;INSUFFICIENT_EXPLICIT_TARGET_KIND_EVIDENCE_FOR_DERIVATION"
+      }
+    }
+  ],
+  "no_goals": [
+    "no_productive_split_divided_target_kind_integration_implementation_in_this_phase",
+    "no_parser_or_lowering_changes",
+    "no_runtime_behavior_changes",
+    "no_modal_selection_model_changes",
+    "no_ui_cse_scoring_overlay_changes",
+    "no_target_kinds_or_target_count_replacement"
+  ]
+}

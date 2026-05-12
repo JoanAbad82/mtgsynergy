@@ -48,6 +48,12 @@ type ModalSelectionModelModeSelectionKindMinV1 =
   | "CHOOSE_ONE_OR_MORE"
   | "UNKNOWN_MODAL_SELECTION";
 
+type SplitDividedDamageModelKindMinV1 =
+  | "ONE_OR_TWO_TARGETS"
+  | "ONE_TWO_OR_THREE_TARGETS"
+  | "ANY_NUMBER_OF_TARGETS"
+  | "UNKNOWN_SPLIT_DIVIDED_DAMAGE_TARGET_MODEL";
+
 type ModalSelectionModelMinV1 = {
   kind: "MODAL_SELECTION_MODEL";
   mode_selection_kind: ModalSelectionModelModeSelectionKindMinV1;
@@ -58,6 +64,18 @@ type ModalSelectionModelMinV1 = {
   conceptual_target_slots_min: number | null;
   conceptual_target_slots_max: number | null;
   aggregated_target_kinds: string[];
+  notes: string;
+  known_gap: string | null;
+};
+
+type SplitDividedDamageTargetModelMinV1 = {
+  kind: "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL";
+  split_damage_model_kind: SplitDividedDamageModelKindMinV1;
+  conceptual_target_slots_min: number | null;
+  conceptual_target_slots_max: number | null;
+  damage_allocation_is_divided: boolean;
+  productive_min_hint_currently_models_split_damage: boolean;
+  target_kinds_policy: string;
   notes: string;
   known_gap: string | null;
 };
@@ -121,6 +139,7 @@ export type AbilityIrMin = {
       target_count: number;
       legality_count: number;
       modal_selection_model?: ModalSelectionModelMinV1;
+      split_divided_damage_target_model?: SplitDividedDamageTargetModelMinV1;
     };
   };
 };
@@ -356,6 +375,91 @@ function buildModalSelectionModelMinV1(
   };
 }
 
+function inferSplitDividedDamageTargetModelMinV1(
+  oracleText: string,
+): SplitDividedDamageTargetModelMinV1 | undefined {
+  const lower = oracleText.toLowerCase();
+  const notes =
+    "split_divided_damage_target_model is additive and target_kinds/target_count remain diagnostic channels.";
+
+  if (lower.includes("damage divided as you choose among one or two targets")) {
+    return {
+      kind: "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+      split_damage_model_kind: "ONE_OR_TWO_TARGETS",
+      conceptual_target_slots_min: 1,
+      conceptual_target_slots_max: 2,
+      damage_allocation_is_divided: true,
+      productive_min_hint_currently_models_split_damage: true,
+      target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+      notes,
+      known_gap: "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",
+    };
+  }
+
+  if (lower.includes("damage divided as you choose among one, two, or three targets")) {
+    return {
+      kind: "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+      split_damage_model_kind: "ONE_TWO_OR_THREE_TARGETS",
+      conceptual_target_slots_min: 1,
+      conceptual_target_slots_max: 3,
+      damage_allocation_is_divided: true,
+      productive_min_hint_currently_models_split_damage: true,
+      target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+      notes,
+      known_gap: "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",
+    };
+  }
+
+  if (
+    lower.includes("damage divided as you choose among any number of target") &&
+    lower.includes("and/or players")
+  ) {
+    return {
+      kind: "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+      split_damage_model_kind: "ANY_NUMBER_OF_TARGETS",
+      conceptual_target_slots_min: 0,
+      conceptual_target_slots_max: null,
+      damage_allocation_is_divided: true,
+      productive_min_hint_currently_models_split_damage: true,
+      target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+      notes,
+      known_gap:
+        "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",
+    };
+  }
+
+  if (lower.includes("damage divided as you choose among any number of targets")) {
+    return {
+      kind: "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+      split_damage_model_kind: "ANY_NUMBER_OF_TARGETS",
+      conceptual_target_slots_min: 0,
+      conceptual_target_slots_max: null,
+      damage_allocation_is_divided: true,
+      productive_min_hint_currently_models_split_damage: true,
+      target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+      notes,
+      known_gap:
+        "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",
+    };
+  }
+
+  if (lower.includes("damage divided as you choose among")) {
+    return {
+      kind: "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+      split_damage_model_kind: "UNKNOWN_SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+      conceptual_target_slots_min: null,
+      conceptual_target_slots_max: null,
+      damage_allocation_is_divided: true,
+      productive_min_hint_currently_models_split_damage: true,
+      target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
+      notes,
+      known_gap: "UNKNOWN_SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+    };
+  }
+
+  return undefined;
+}
+
 function isSimpleManaAbilityEffectTextMinV1(text: string): boolean {
   const normalized = text.replace(/\s+/g, " ").trim().replace(/\.$/, "");
   return (
@@ -445,6 +549,7 @@ function buildCostTargetLegalityCaseMinV1(
 type CostTargetLegalityHintsBundle = {
   costTargetLegalityMin?: NonNullable<AbilityIrMin["semantic_hints"]>["cost_target_legality_min"];
   legalitySummoningSicknessTapQMin?: SummoningSicknessTapQMin;
+  splitDividedDamageTargetModel?: SplitDividedDamageTargetModelMinV1;
 };
 
 type TriggeredZoneChangeGuardMinV1 = {
@@ -517,6 +622,7 @@ export function buildCostTargetLegalityHints(
   const modalSelectionModel = shouldEmitCostTargetLegalityMin
     ? buildModalSelectionModelMinV1(oracleText, targetKinds)
     : undefined;
+  const splitDividedDamageTargetModel = inferSplitDividedDamageTargetModelMinV1(oracleText);
 
   return {
     costTargetLegalityMin: shouldEmitCostTargetLegalityMin
@@ -531,9 +637,15 @@ export function buildCostTargetLegalityHints(
             modal_selection_model: modalSelectionModel,
           }
           : {}),
+        ...(splitDividedDamageTargetModel
+          ? {
+            split_divided_damage_target_model: splitDividedDamageTargetModel,
+          }
+          : {}),
       }
       : undefined,
     legalitySummoningSicknessTapQMin: legacy.summoningSicknessTapQMin,
+    splitDividedDamageTargetModel,
   };
 }
 

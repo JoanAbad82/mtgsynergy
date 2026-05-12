@@ -1,0 +1,215 @@
+{
+  "metadata": {
+    "document_id": "sem_cost_target_legality_modal_target_selection_model_contract_v1",
+    "version": "v1",
+    "status": "contract-freeze",
+    "phase": "A2.10",
+    "scope": "Additive modal_selection_model contract for planning and freeze, without runtime behavior changes."
+  },
+  "scope_rules": {
+    "contract_only_no_runtime_change": true,
+    "no_parser_changes": true,
+    "no_lowering_changes": true,
+    "no_service_changes": true,
+    "no_ui_cse_scoring_overlay_changes": true,
+    "no_public_data_or_package_changes": true
+  },
+  "compatibility": {
+    "additive_to_sem_cost_target_legality_min_v1": true,
+    "replaces_target_kinds": false,
+    "replaces_target_count": false,
+    "target_kinds_remain_diagnostic_aggregation": true,
+    "target_count_remains_diagnostic_aggregation": true,
+    "preserve_existing_rings": true,
+    "semantic_migration_requires_explicit_future_phase": true
+  },
+  "integration_dependencies": {
+    "requires_ui_changes": false,
+    "requires_cse_changes": false,
+    "requires_scoring_changes": false,
+    "requires_overlay_changes": false
+  },
+  "fallback_policy": {
+    "unknown_mode_selection_kind": "UNKNOWN_MODAL_SELECTION",
+    "allow_known_gap": true,
+    "must_not_break_output": true
+  },
+  "modal_selection_model_contract": {
+    "field_order": [
+      "kind",
+      "mode_selection_kind",
+      "selected_modes_min",
+      "selected_modes_max",
+      "modes_total",
+      "targeted_modes_count",
+      "conceptual_target_slots_min",
+      "conceptual_target_slots_max",
+      "aggregated_target_kinds",
+      "notes",
+      "known_gap"
+    ],
+    "required_fields": [
+      "kind",
+      "mode_selection_kind",
+      "selected_modes_min",
+      "selected_modes_max",
+      "modes_total",
+      "targeted_modes_count",
+      "conceptual_target_slots_min",
+      "conceptual_target_slots_max",
+      "aggregated_target_kinds",
+      "notes",
+      "known_gap"
+    ],
+    "mode_selection_kind_enum": [
+      "CHOOSE_ONE",
+      "CHOOSE_TWO",
+      "CHOOSE_ONE_OR_MORE",
+      "SPLIT_DIVIDED_DAMAGE_NON_MODAL",
+      "UNKNOWN_MODAL_SELECTION"
+    ],
+    "split_divided_damage_separate_from_modal_normal": true,
+    "unknown_modal_selection_fallback_required": true,
+    "total_function_fallback_required": true,
+    "forbidden_in_aggregated_target_kinds": [
+      "CAST_ONLY_IF",
+      "ACTIVATE_ONLY_AS_SORCERY"
+    ],
+    "notes": [
+      "modal_selection_model is additive in v1 and does not replace target_kinds or target_count.",
+      "target_kinds and target_count remain diagnostic aggregation channels in v1.",
+      "split/divided damage remains a separate category from modal selection."
+    ]
+  },
+  "initial_contract_corpus": [
+    {
+      "card_name": "Abrade",
+      "kind": "MODAL_SELECTION_MODEL",
+      "mode_selection_kind": "CHOOSE_ONE",
+      "selected_modes_min": 1,
+      "selected_modes_max": 1,
+      "modes_total": 2,
+      "targeted_modes_count": 2,
+      "conceptual_target_slots_min": 1,
+      "conceptual_target_slots_max": 1,
+      "aggregated_target_kinds": ["ARTIFACT", "CREATURE"],
+      "notes": "target_count=2 is aggregated across alternative modes and does not imply simultaneous targets.",
+      "known_gap": null
+    },
+    {
+      "card_name": "Kolaghan's Command",
+      "kind": "MODAL_SELECTION_MODEL",
+      "mode_selection_kind": "CHOOSE_TWO",
+      "selected_modes_min": 2,
+      "selected_modes_max": 2,
+      "modes_total": 4,
+      "targeted_modes_count": 4,
+      "conceptual_target_slots_min": 2,
+      "conceptual_target_slots_max": 2,
+      "aggregated_target_kinds": ["ANY_TARGET", "ARTIFACT", "CREATURE", "PLAYER"],
+      "notes": "target_count=4 is aggregated across selectable targeted modes.",
+      "known_gap": null
+    },
+    {
+      "card_name": "Cryptic Command",
+      "kind": "MODAL_SELECTION_MODEL",
+      "mode_selection_kind": "CHOOSE_TWO",
+      "selected_modes_min": 2,
+      "selected_modes_max": 2,
+      "modes_total": 4,
+      "targeted_modes_count": 2,
+      "conceptual_target_slots_min": 0,
+      "conceptual_target_slots_max": 2,
+      "aggregated_target_kinds": ["PERMANENT", "UNKNOWN_TARGET_KIND"],
+      "notes": "two non-target modes allow a zero-target execution path.",
+      "known_gap": null
+    },
+    {
+      "card_name": "Prismari Command",
+      "kind": "MODAL_SELECTION_MODEL",
+      "mode_selection_kind": "CHOOSE_TWO",
+      "selected_modes_min": 2,
+      "selected_modes_max": 2,
+      "modes_total": 4,
+      "targeted_modes_count": 4,
+      "conceptual_target_slots_min": 2,
+      "conceptual_target_slots_max": 2,
+      "aggregated_target_kinds": ["ANY_TARGET", "ARTIFACT", "PLAYER"],
+      "notes": "duplicate PLAYER target modes are aggregated in current output.",
+      "known_gap": null
+    },
+    {
+      "card_name": "Casualties of War",
+      "kind": "MODAL_SELECTION_MODEL",
+      "mode_selection_kind": "CHOOSE_ONE_OR_MORE",
+      "selected_modes_min": 1,
+      "selected_modes_max": 5,
+      "modes_total": 5,
+      "targeted_modes_count": 5,
+      "conceptual_target_slots_min": 1,
+      "conceptual_target_slots_max": 5,
+      "aggregated_target_kinds": ["ARTIFACT", "CREATURE", "LAND", "UNKNOWN_TARGET_KIND"],
+      "notes": "all modes are targeted and can be selected in one-or-more combinations.",
+      "known_gap": null
+    },
+    {
+      "card_name": "Electrolyze",
+      "kind": "MODAL_SELECTION_MODEL",
+      "mode_selection_kind": "SPLIT_DIVIDED_DAMAGE_NON_MODAL",
+      "selected_modes_min": null,
+      "selected_modes_max": null,
+      "modes_total": null,
+      "targeted_modes_count": null,
+      "conceptual_target_slots_min": 1,
+      "conceptual_target_slots_max": 2,
+      "aggregated_target_kinds": [],
+      "notes": "split/divided target wording is intentionally separated from standard modal selection.",
+      "known_gap": "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS"
+    }
+  ],
+  "current_aggregated_baseline": [
+    {
+      "card_name": "Abrade",
+      "min_exists": true,
+      "target_kinds": ["ARTIFACT", "CREATURE"],
+      "target_count": 2
+    },
+    {
+      "card_name": "Kolaghan's Command",
+      "min_exists": true,
+      "target_kinds": ["ANY_TARGET", "ARTIFACT", "CREATURE", "PLAYER"],
+      "target_count": 4
+    },
+    {
+      "card_name": "Cryptic Command",
+      "min_exists": true,
+      "target_kinds": ["PERMANENT", "UNKNOWN_TARGET_KIND"],
+      "target_count": 2
+    },
+    {
+      "card_name": "Prismari Command",
+      "min_exists": true,
+      "target_kinds": ["ANY_TARGET", "ARTIFACT", "PLAYER"],
+      "target_count": 4
+    },
+    {
+      "card_name": "Casualties of War",
+      "min_exists": true,
+      "target_kinds": ["ARTIFACT", "CREATURE", "LAND", "UNKNOWN_TARGET_KIND"],
+      "target_count": 5
+    },
+    {
+      "card_name": "Electrolyze",
+      "min_exists": false,
+      "target_kinds": [],
+      "target_count": null
+    }
+  ],
+  "no_goals": [
+    "no_productive_modal_extraction_implementation_in_this_phase",
+    "no_parser_or_lowering_changes",
+    "no_runtime_behavior_changes",
+    "no_ui_cse_scoring_overlay_changes",
+    "no_split_divided_damage_repair"
+  ]
+}

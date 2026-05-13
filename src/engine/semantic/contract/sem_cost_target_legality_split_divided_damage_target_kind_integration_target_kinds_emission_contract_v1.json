@@ -1,0 +1,203 @@
+{
+  "contract_id": "A2.10_REAL_ORACLE_SPLIT_DIVIDED_DAMAGE_TARGET_KIND_INTEGRATION_TARGET_KINDS_EMISSION_CONTRACT_V1",
+  "status": "contract_only_no_runtime_emission",
+  "baseline": "94252e9",
+  "source_model": "split_divided_damage_target_model",
+  "source_field": "allowed_target_kinds",
+  "projected_field": "projected_target_kinds_from_model",
+  "emission_target": "costTargetLegalityMin.target_kinds",
+  "runtime_emission_in_this_phase": false,
+  "target_kinds_is_source_of_truth": false,
+  "allowed_target_kinds_is_structured_source": true,
+  "costTargetLegalityMin_must_not_be_forced_in_this_phase": true,
+  "any_target_policy": {
+    "any_target_is_canonical_umbrella": true,
+    "any_target_must_not_expand_to": [
+      "CREATURE",
+      "PLAYER",
+      "PLANESWALKER",
+      "BATTLE"
+    ],
+    "future_emitted_target_kinds_requires_any_target_source": true,
+    "future_emitted_target_kinds_when_any_target": [
+      "ANY_TARGET"
+    ]
+  },
+  "independent_channels": {
+    "target_count_remains_independent": true,
+    "modal_selection_model_remains_independent": true,
+    "legality_kinds_remains_independent": true,
+    "legality_gates_remain_independent": true
+  },
+  "forbidden_leakage": [
+    "CAST_ONLY_IF",
+    "ACTIVATE_ONLY_AS_SORCERY",
+    "CONTROLS_X",
+    "ATTACKED_THIS_TURN",
+    "ONCE_EACH_TURN",
+    "OTHER_LEGALITY_TEXT"
+  ],
+  "corpus": [
+    {
+      "cardName": "Electrolyze",
+      "expected_split_damage_model_kind": "ONE_OR_TWO_TARGETS",
+      "current_runtime": {
+        "current_min_exists": false,
+        "current_target_kinds": [],
+        "target_count": null,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "source_model_expectation": {
+        "split_divided_damage_target_model_present": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "projected_target_kinds_from_model": [
+          "ANY_TARGET"
+        ]
+      },
+      "future_emission_contract": {
+        "may_emit_costTargetLegalityMin_for_target_kinds_only_after_contract_implementation": true,
+        "allowed_future_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model_must_remain_null": true,
+        "legality_kinds_must_remain_empty": true
+      }
+    },
+    {
+      "cardName": "Arc Lightning",
+      "expected_split_damage_model_kind": "ONE_TWO_OR_THREE_TARGETS",
+      "current_runtime": {
+        "current_min_exists": false,
+        "current_target_kinds": [],
+        "target_count": null,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "source_model_expectation": {
+        "split_divided_damage_target_model_present": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "projected_target_kinds_from_model": [
+          "ANY_TARGET"
+        ]
+      },
+      "future_emission_contract": {
+        "may_emit_costTargetLegalityMin_for_target_kinds_only_after_contract_implementation": true,
+        "allowed_future_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model_must_remain_null": true,
+        "legality_kinds_must_remain_empty": true
+      }
+    },
+    {
+      "cardName": "Flames of the Firebrand",
+      "expected_split_damage_model_kind": "ONE_TWO_OR_THREE_TARGETS",
+      "current_runtime": {
+        "current_min_exists": false,
+        "current_target_kinds": [],
+        "target_count": null,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "source_model_expectation": {
+        "split_divided_damage_target_model_present": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "projected_target_kinds_from_model": [
+          "ANY_TARGET"
+        ]
+      },
+      "future_emission_contract": {
+        "may_emit_costTargetLegalityMin_for_target_kinds_only_after_contract_implementation": true,
+        "allowed_future_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model_must_remain_null": true,
+        "legality_kinds_must_remain_empty": true
+      }
+    },
+    {
+      "cardName": "Pyrotechnics",
+      "expected_split_damage_model_kind": "ANY_NUMBER_OF_TARGETS",
+      "current_runtime": {
+        "current_min_exists": false,
+        "current_target_kinds": [],
+        "target_count": null,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "source_model_expectation": {
+        "split_divided_damage_target_model_present": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "projected_target_kinds_from_model": [
+          "ANY_TARGET"
+        ]
+      },
+      "future_emission_contract": {
+        "may_emit_costTargetLegalityMin_for_target_kinds_only_after_contract_implementation": true,
+        "allowed_future_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model_must_remain_null": true,
+        "legality_kinds_must_remain_empty": true
+      },
+      "any_number_of_targets_policy": {
+        "conceptual_target_slots_min": 0,
+        "conceptual_target_slots_max": null,
+        "target_count": null,
+        "target_kinds_emission_must_not_invent_target_count": true
+      }
+    },
+    {
+      "cardName": "Rolling Thunder",
+      "expected_split_damage_model_kind": "ANY_NUMBER_OF_TARGETS",
+      "current_runtime": {
+        "current_min_exists": false,
+        "current_target_kinds": [],
+        "target_count": null,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "source_model_expectation": {
+        "split_divided_damage_target_model_present": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "projected_target_kinds_from_model": [
+          "ANY_TARGET"
+        ]
+      },
+      "future_emission_contract": {
+        "may_emit_costTargetLegalityMin_for_target_kinds_only_after_contract_implementation": true,
+        "allowed_future_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model_must_remain_null": true,
+        "legality_kinds_must_remain_empty": true
+      },
+      "any_number_of_targets_policy": {
+        "conceptual_target_slots_min": 0,
+        "conceptual_target_slots_max": null,
+        "target_count": null,
+        "target_kinds_emission_must_not_invent_target_count": true
+      }
+    }
+  ],
+  "suggested_next_phases": [
+    "A2.10_REAL_ORACLE_SPLIT_DIVIDED_DAMAGE_TARGET_KIND_INTEGRATION_TARGET_KINDS_EMISSION_V1",
+    "A2.10_REAL_ORACLE_SPLIT_DIVIDED_DAMAGE_TARGET_KIND_INTEGRATION_TARGET_KINDS_EMISSION_GUARDRAIL_RING_V1"
+  ]
+}

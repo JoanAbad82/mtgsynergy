@@ -54,6 +54,23 @@ type SplitDividedDamageModelKindMinV1 =
   | "ANY_NUMBER_OF_TARGETS"
   | "UNKNOWN_SPLIT_DIVIDED_DAMAGE_TARGET_MODEL";
 
+type SplitDividedDamageTargetCountModelKindMinV1 =
+  | "ONE_OR_TWO_TARGETS"
+  | "ONE_TWO_OR_THREE_TARGETS"
+  | "ANY_NUMBER_OF_TARGETS";
+
+type SplitDividedDamageTargetCountModelMinV1 = {
+  kind: SplitDividedDamageTargetCountModelKindMinV1;
+  min_targets: number;
+  max_targets: number | null;
+  is_variable: boolean;
+  variable_symbol: string | null;
+  requires_damage_allocation: true;
+  damage_amount_kind: "FIXED" | "VARIABLE";
+  damage_amount: number | null;
+  raw_text: string;
+};
+
 type ModalSelectionModelMinV1 = {
   kind: "MODAL_SELECTION_MODEL";
   mode_selection_kind: ModalSelectionModelModeSelectionKindMinV1;
@@ -77,6 +94,7 @@ type SplitDividedDamageTargetModelMinV1 = {
   productive_min_hint_currently_models_split_damage: boolean;
   target_kinds_policy: string;
   allowed_target_kinds?: string[];
+  target_count_model?: SplitDividedDamageTargetCountModelMinV1;
   notes: string;
   known_gap: string | null;
 };
@@ -379,6 +397,7 @@ function buildModalSelectionModelMinV1(
 function inferSplitDividedDamageTargetModelMinV1(
   oracleText: string,
 ): SplitDividedDamageTargetModelMinV1 | undefined {
+  const targetCountModel = buildSplitDividedDamageTargetCountModelMinV1(oracleText);
   const lower = oracleText.toLowerCase();
   const notes =
     "split_divided_damage_target_model is additive and target_kinds/target_count remain diagnostic channels.";
@@ -394,6 +413,11 @@ function inferSplitDividedDamageTargetModelMinV1(
       productive_min_hint_currently_models_split_damage: true,
       target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
       allowed_target_kinds: [...allowedTargetKindsAnyTarget],
+      ...(targetCountModel
+        ? {
+          target_count_model: targetCountModel,
+        }
+        : {}),
       notes,
       known_gap: "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",
     };
@@ -409,6 +433,11 @@ function inferSplitDividedDamageTargetModelMinV1(
       productive_min_hint_currently_models_split_damage: true,
       target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
       allowed_target_kinds: [...allowedTargetKindsAnyTarget],
+      ...(targetCountModel
+        ? {
+          target_count_model: targetCountModel,
+        }
+        : {}),
       notes,
       known_gap: "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",
     };
@@ -427,6 +456,11 @@ function inferSplitDividedDamageTargetModelMinV1(
       productive_min_hint_currently_models_split_damage: true,
       target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
       allowed_target_kinds: [...allowedTargetKindsAnyTarget],
+      ...(targetCountModel
+        ? {
+          target_count_model: targetCountModel,
+        }
+        : {}),
       notes,
       known_gap:
         "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",
@@ -443,6 +477,11 @@ function inferSplitDividedDamageTargetModelMinV1(
       productive_min_hint_currently_models_split_damage: true,
       target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
       allowed_target_kinds: [...allowedTargetKindsAnyTarget],
+      ...(targetCountModel
+        ? {
+          target_count_model: targetCountModel,
+        }
+        : {}),
       notes,
       known_gap:
         "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS",
@@ -460,6 +499,91 @@ function inferSplitDividedDamageTargetModelMinV1(
       target_kinds_policy: "CURRENTLY_UNMODELLED_EMPTY_TARGET_KINDS",
       notes,
       known_gap: "UNKNOWN_SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+    };
+  }
+
+  return undefined;
+}
+
+function buildSplitDividedDamageTargetCountModelMinV1(
+  oracleText: string,
+): SplitDividedDamageTargetCountModelMinV1 | undefined {
+  const normalized = oracleText.replace(/\s+/g, " ").trim();
+  const lower = normalized.toLowerCase();
+  if (
+    !lower.includes("damage") ||
+    !lower.includes("divided as you choose") ||
+    !lower.includes("among") ||
+    !lower.includes("target")
+  ) {
+    return undefined;
+  }
+
+  const oneOrTwoMatch = normalized.match(
+    /(\d+)\s+damage\s+divided\s+as\s+you\s+choose\s+among\s+one\s+or\s+two\s+targets/i,
+  );
+  if (oneOrTwoMatch) {
+    return {
+      kind: "ONE_OR_TWO_TARGETS",
+      min_targets: 1,
+      max_targets: 2,
+      is_variable: false,
+      variable_symbol: null,
+      requires_damage_allocation: true,
+      damage_amount_kind: "FIXED",
+      damage_amount: Number.parseInt(oneOrTwoMatch[1], 10),
+      raw_text: oneOrTwoMatch[0],
+    };
+  }
+
+  const oneTwoThreeMatch = normalized.match(
+    /(\d+)\s+damage\s+divided\s+as\s+you\s+choose\s+among\s+one,\s*two,\s*or\s+three\s+targets/i,
+  );
+  if (oneTwoThreeMatch) {
+    return {
+      kind: "ONE_TWO_OR_THREE_TARGETS",
+      min_targets: 1,
+      max_targets: 3,
+      is_variable: false,
+      variable_symbol: null,
+      requires_damage_allocation: true,
+      damage_amount_kind: "FIXED",
+      damage_amount: Number.parseInt(oneTwoThreeMatch[1], 10),
+      raw_text: oneTwoThreeMatch[0],
+    };
+  }
+
+  const fixedAnyNumberMatch = normalized.match(
+    /(\d+)\s+damage\s+divided\s+as\s+you\s+choose\s+among\s+any\s+number\s+of\s+targets/i,
+  );
+  if (fixedAnyNumberMatch) {
+    return {
+      kind: "ANY_NUMBER_OF_TARGETS",
+      min_targets: 1,
+      max_targets: null,
+      is_variable: true,
+      variable_symbol: null,
+      requires_damage_allocation: true,
+      damage_amount_kind: "FIXED",
+      damage_amount: Number.parseInt(fixedAnyNumberMatch[1], 10),
+      raw_text: fixedAnyNumberMatch[0],
+    };
+  }
+
+  const variableAnyNumberMatch = normalized.match(
+    /\bX\b\s+damage\s+divided\s+as\s+you\s+choose\s+among\s+any\s+number\s+of\s+targets/i,
+  );
+  if (variableAnyNumberMatch) {
+    return {
+      kind: "ANY_NUMBER_OF_TARGETS",
+      min_targets: 1,
+      max_targets: null,
+      is_variable: true,
+      variable_symbol: "X",
+      requires_damage_allocation: true,
+      damage_amount_kind: "VARIABLE",
+      damage_amount: null,
+      raw_text: variableAnyNumberMatch[0],
     };
   }
 

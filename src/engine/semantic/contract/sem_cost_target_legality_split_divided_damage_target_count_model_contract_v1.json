@@ -1,0 +1,174 @@
+{
+  "version": "v1",
+  "phase": "A2.10_REAL_ORACLE_SPLIT_DIVIDED_DAMAGE_TARGET_COUNT_MODEL_CONTRACT_V1",
+  "status": "contract-freeze",
+  "purpose": "Freeze additive split/divided damage target-count/allocation semantics without runtime extraction changes.",
+  "no_runtime_change": true,
+  "policy": {
+    "keep_costTargetLegalityMin_target_count_null_for_now": true
+  },
+  "guardrails": {
+    "target_kinds_must_remain_any_target_only": true,
+    "allowed_target_kinds_must_remain_any_target_only": true,
+    "target_count_must_remain_null": true,
+    "modal_selection_model_must_remain_null": true,
+    "legality_kinds_must_remain_empty": true,
+    "do_not_expand_any_target_to_specific_kinds": true,
+    "do_not_leak_legality_or_gate_values_into_target_kinds": true,
+    "forbidden_values": [
+      "CAST_ONLY_IF",
+      "ACTIVATE_ONLY_AS_SORCERY",
+      "CONTROLS_X",
+      "ATTACKED_THIS_TURN",
+      "ONCE_EACH_TURN",
+      "OTHER_LEGALITY_TEXT"
+    ]
+  },
+  "cases": [
+    {
+      "card": "Electrolyze",
+      "oracle_excerpt": "Electrolyze deals 2 damage divided as you choose among one or two targets.",
+      "expected": {
+        "split_divided_damage_target_model_exists": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "cost_target_legality_min": {
+          "target_kinds": [
+            "ANY_TARGET"
+          ],
+          "target_count": null,
+          "modal_selection_model": null,
+          "legality_kinds": []
+        },
+        "target_count_model": {
+          "kind": "ONE_OR_TWO_TARGETS",
+          "min_targets": 1,
+          "max_targets": 2,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 2,
+          "raw_text": "one or two targets"
+        }
+      }
+    },
+    {
+      "card": "Arc Lightning",
+      "oracle_excerpt": "Arc Lightning deals 3 damage divided as you choose among one, two, or three targets.",
+      "expected": {
+        "split_divided_damage_target_model_exists": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "cost_target_legality_min": {
+          "target_kinds": [
+            "ANY_TARGET"
+          ],
+          "target_count": null,
+          "modal_selection_model": null,
+          "legality_kinds": []
+        },
+        "target_count_model": {
+          "kind": "ONE_TWO_OR_THREE_TARGETS",
+          "min_targets": 1,
+          "max_targets": 3,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 3,
+          "raw_text": "one, two, or three targets"
+        }
+      }
+    },
+    {
+      "card": "Flames of the Firebrand",
+      "oracle_excerpt": "Flames of the Firebrand deals 3 damage divided as you choose among one, two, or three targets.",
+      "expected": {
+        "split_divided_damage_target_model_exists": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "cost_target_legality_min": {
+          "target_kinds": [
+            "ANY_TARGET"
+          ],
+          "target_count": null,
+          "modal_selection_model": null,
+          "legality_kinds": []
+        },
+        "target_count_model": {
+          "kind": "ONE_TWO_OR_THREE_TARGETS",
+          "min_targets": 1,
+          "max_targets": 3,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 3,
+          "raw_text": "one, two, or three targets"
+        }
+      }
+    },
+    {
+      "card": "Pyrotechnics",
+      "oracle_excerpt": "Pyrotechnics deals 4 damage divided as you choose among any number of targets.",
+      "expected": {
+        "split_divided_damage_target_model_exists": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "cost_target_legality_min": {
+          "target_kinds": [
+            "ANY_TARGET"
+          ],
+          "target_count": null,
+          "modal_selection_model": null,
+          "legality_kinds": []
+        },
+        "target_count_model": {
+          "kind": "ANY_NUMBER_OF_TARGETS",
+          "min_targets": 1,
+          "max_targets": null,
+          "is_variable": true,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 4,
+          "raw_text": "any number of targets"
+        }
+      }
+    },
+    {
+      "card": "Rolling Thunder",
+      "oracle_excerpt": "Rolling Thunder deals X damage divided as you choose among any number of targets.",
+      "expected": {
+        "split_divided_damage_target_model_exists": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "cost_target_legality_min": {
+          "target_kinds": [
+            "ANY_TARGET"
+          ],
+          "target_count": null,
+          "modal_selection_model": null,
+          "legality_kinds": []
+        },
+        "target_count_model": {
+          "kind": "ANY_NUMBER_OF_TARGETS",
+          "min_targets": 1,
+          "max_targets": null,
+          "is_variable": true,
+          "variable_symbol": "X",
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "VARIABLE",
+          "damage_amount": null,
+          "raw_text": "X damage divided as you choose among any number of targets"
+        }
+      }
+    }
+  ]
+}

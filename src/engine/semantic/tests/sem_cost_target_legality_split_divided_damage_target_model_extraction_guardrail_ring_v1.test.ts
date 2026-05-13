@@ -144,7 +144,7 @@ function readStructuredAllowedTargetKinds(
 }
 
 describe("cost target legality split divided damage target model extraction guardrail ring v1", () => {
-  it("freezes additive split_divided_damage_target_model while keeping min target channels unmodelled", () => {
+  it("freezes additive split_divided_damage_target_model with emitted ANY_TARGET min baseline", () => {
     const payload = loadCardsIndex();
     const runA = CORPUS.map((cardName) => buildSnapshot(payload, cardName));
     const runB = CORPUS.map((cardName) => buildSnapshot(payload, cardName));
@@ -163,8 +163,12 @@ describe("cost target legality split divided damage target model extraction guar
       expect(row.canonicalName.length).toBeGreaterThan(0);
 
       // target_kinds / target_count remain diagnostic channels and are not replaced in this phase.
-      expect(row.current_min_exists).toBe(false);
-      expect(row.current_target_kinds).toEqual([]);
+      expect(row.current_min_exists).toBe(true);
+      expect(row.current_target_kinds).toEqual(["ANY_TARGET"]);
+      expect(row.current_target_kinds).not.toContain("CREATURE");
+      expect(row.current_target_kinds).not.toContain("PLAYER");
+      expect(row.current_target_kinds).not.toContain("PLANESWALKER");
+      expect(row.current_target_kinds).not.toContain("BATTLE");
       expect(row.current_target_count).toBeNull();
       expect(row.current_modal_selection_model).toBeNull();
 

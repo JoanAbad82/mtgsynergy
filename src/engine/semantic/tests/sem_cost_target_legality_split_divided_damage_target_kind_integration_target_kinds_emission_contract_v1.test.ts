@@ -254,7 +254,7 @@ describe("cost target legality split divided damage target kinds emission contra
     ]);
   });
 
-  it("freezes real-corpus baseline and future emission contract expectations without runtime widening", () => {
+  it("freezes contract baseline and validates post-contract runtime target_kinds emission boundary", () => {
     const contract = loadContract();
     const payload = loadCardsIndex();
     const runA = contract.corpus.map((row) => buildSnapshot(payload, row.cardName));
@@ -276,11 +276,19 @@ describe("cost target legality split divided damage target kinds emission contra
         row.expected_split_damage_model_kind,
       );
 
-      expect(snapshot?.current_min_exists).toBe(row.current_runtime.current_min_exists);
-      expect(snapshot?.current_target_kinds).toEqual(row.current_runtime.current_target_kinds);
-      expect(snapshot?.current_target_count).toBe(row.current_runtime.target_count);
-      expect(snapshot?.current_modal_selection_model).toBe(row.current_runtime.modal_selection_model);
-      expect(snapshot?.current_legality_kinds).toEqual(row.current_runtime.legality_kinds);
+      // Contract v1 captured pre-emission runtime baseline and must remain frozen.
+      expect(row.current_runtime.current_min_exists).toBe(false);
+      expect(row.current_runtime.current_target_kinds).toEqual([]);
+      expect(row.current_runtime.target_count).toBeNull();
+      expect(row.current_runtime.modal_selection_model).toBeNull();
+      expect(row.current_runtime.legality_kinds).toEqual([]);
+
+      // Post-contract productive emission baseline (this microphase).
+      expect(snapshot?.current_min_exists).toBe(true);
+      expect(snapshot?.current_target_kinds).toEqual(["ANY_TARGET"]);
+      expect(snapshot?.current_target_count).toBeNull();
+      expect(snapshot?.current_modal_selection_model).toBeNull();
+      expect(snapshot?.current_legality_kinds).toEqual([]);
 
       expect(snapshot?.split_divided_damage_target_model).toBeTruthy();
       expect(snapshot?.model_structured_target_kinds).toEqual(

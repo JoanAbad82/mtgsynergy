@@ -175,7 +175,7 @@ describe("cost target legality split divided damage target kind integration allo
     expect(__testOnlyProjectTargetKindsFromSplitDividedDamageModelMinV1(42 as any)).toEqual([]);
   });
 
-  it("freezes real-corpus structured allowed_target_kinds without widening runtime channels", () => {
+  it("freezes real-corpus structured allowed_target_kinds with emitted runtime target_kinds baseline", () => {
     const payload = loadCardsIndex();
     const runA = CORPUS.map((name) => buildSnapshot(payload, name));
     const runB = CORPUS.map((name) => buildSnapshot(payload, name));
@@ -206,9 +206,9 @@ describe("cost target legality split divided damage target kind integration allo
       expect(row.model_structured_target_kinds).toEqual(["ANY_TARGET"]);
       expect(row.projected_target_kinds_from_model).toEqual(["ANY_TARGET"]);
 
-      // Runtime channel gating baseline stays unchanged.
-      expect(row.current_min_exists).toBe(false);
-      expect(row.current_target_kinds).toEqual([]);
+      // Runtime now emits a minimal min payload from structured split-model evidence.
+      expect(row.current_min_exists).toBe(true);
+      expect(row.current_target_kinds).toEqual(["ANY_TARGET"]);
       expect(row.current_target_count).toBeNull();
       expect(row.current_modal_selection_model).toBeNull();
       expect(row.current_legality_kinds).toEqual([]);

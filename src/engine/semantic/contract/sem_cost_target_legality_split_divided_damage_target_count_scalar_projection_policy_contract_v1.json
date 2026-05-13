@@ -1,0 +1,205 @@
+{
+  "version": "v1",
+  "phase": "A2.10_REAL_ORACLE_SPLIT_DIVIDED_DAMAGE_TARGET_COUNT_MODEL_SCALAR_PROJECTION_POLICY_CONTRACT_V1",
+  "status": "contract-freeze",
+  "purpose": "Freeze scalar projection policy from split_divided_damage_target_model.target_count_model into costTargetLegalityMin.target_count without runtime changes.",
+  "no_runtime_change": true,
+  "policy_name": "split_divided_damage_target_count_scalar_projection_policy_v1",
+  "policy_summary": "For split/divided range-based or open-ended target models, keep costTargetLegalityMin.target_count as null and retain target_count_model as canonical structure.",
+  "recommended_policy": "KEEP_TARGET_COUNT_NULL_FOR_SPLIT_DIVIDED_RANGE_OR_OPEN_ENDED_CASES",
+  "rejected_policies": [
+    "TARGET_COUNT_EQUALS_MIN_TARGETS",
+    "TARGET_COUNT_EQUALS_MAX_TARGETS",
+    "TARGET_COUNT_EQUALS_DAMAGE_AMOUNT",
+    "TARGET_COUNT_EQUALS_CONCEPTUAL_TARGET_SLOTS_MIN",
+    "TARGET_COUNT_EQUALS_CONCEPTUAL_TARGET_SLOTS_MAX",
+    "TARGET_COUNT_EQUALS_ZERO_FOR_ANY_NUMBER",
+    "TARGET_COUNT_EQUALS_ONE_FOR_ANY_NUMBER",
+    "TARGET_COUNT_EQUALS_COMMA_SEPARATED_TARGET_WORDS"
+  ],
+  "exact_only_future_candidate": {
+    "documented": true,
+    "applies_in_this_contract": false,
+    "conditions": {
+      "min_targets_equals_max_targets": true,
+      "max_targets_is_number": true,
+      "is_variable_false": true,
+      "target_count_model_kind_not_any_number_of_targets": true,
+      "target_count_model_kind_not_one_or_two_targets": true,
+      "target_count_model_kind_not_one_two_or_three_targets": true
+    },
+    "note": "This candidate is intentionally not applied to the current five-card corpus."
+  },
+  "guardrails": {
+    "split_divided_damage_target_count_model_remains_canonical": true,
+    "cost_target_legality_min_target_count_remains_null_for_current_corpus": true,
+    "target_kinds_must_remain_any_target_only": true,
+    "allowed_target_kinds_must_remain_any_target_only": true,
+    "modal_selection_model_must_remain_null": true,
+    "legality_kinds_must_remain_empty": true,
+    "any_target_must_not_expand_to_concrete_target_subtypes": true,
+    "no_legality_gate_leakage_into_target_kind_fields": true,
+    "forbidden_legality_or_gate_values": [
+      "CAST_ONLY_IF",
+      "ACTIVATE_ONLY_AS_SORCERY",
+      "CONTROLS_X",
+      "ATTACKED_THIS_TURN",
+      "ONCE_EACH_TURN",
+      "OTHER_LEGALITY_TEXT"
+    ],
+    "forbidden_target_kind_expansion_values": [
+      "CREATURE",
+      "PLAYER",
+      "PLANESWALKER",
+      "BATTLE"
+    ]
+  },
+  "cases": [
+    {
+      "card": "Electrolyze",
+      "target_count_model_kind": "ONE_OR_TWO_TARGETS",
+      "min_targets": 1,
+      "max_targets": 2,
+      "is_variable": false,
+      "variable_symbol": null,
+      "damage_amount_kind": "FIXED",
+      "damage_amount": 2,
+      "expected_channels": {
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_kinds": [
+          "ANY_TARGET"
+        ],
+        "current_modal_selection_model": null,
+        "current_legality_kinds": []
+      },
+      "scalar_projection": {
+        "expected_target_count": null,
+        "policy_result": "DO_NOT_PROJECT",
+        "reason": "Range 1..2 is not exact and must not collapse into a scalar target_count.",
+        "rejected_scalar_values": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "card": "Arc Lightning",
+      "target_count_model_kind": "ONE_TWO_OR_THREE_TARGETS",
+      "min_targets": 1,
+      "max_targets": 3,
+      "is_variable": false,
+      "variable_symbol": null,
+      "damage_amount_kind": "FIXED",
+      "damage_amount": 3,
+      "expected_channels": {
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_kinds": [
+          "ANY_TARGET"
+        ],
+        "current_modal_selection_model": null,
+        "current_legality_kinds": []
+      },
+      "scalar_projection": {
+        "expected_target_count": null,
+        "policy_result": "DO_NOT_PROJECT",
+        "reason": "Range 1..3 is not exact and must not collapse into a scalar target_count.",
+        "rejected_scalar_values": [
+          1,
+          3
+        ]
+      }
+    },
+    {
+      "card": "Flames of the Firebrand",
+      "target_count_model_kind": "ONE_TWO_OR_THREE_TARGETS",
+      "min_targets": 1,
+      "max_targets": 3,
+      "is_variable": false,
+      "variable_symbol": null,
+      "damage_amount_kind": "FIXED",
+      "damage_amount": 3,
+      "expected_channels": {
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_kinds": [
+          "ANY_TARGET"
+        ],
+        "current_modal_selection_model": null,
+        "current_legality_kinds": []
+      },
+      "scalar_projection": {
+        "expected_target_count": null,
+        "policy_result": "DO_NOT_PROJECT",
+        "reason": "Range 1..3 is not exact and must not collapse into a scalar target_count.",
+        "rejected_scalar_values": [
+          1,
+          3
+        ]
+      }
+    },
+    {
+      "card": "Pyrotechnics",
+      "target_count_model_kind": "ANY_NUMBER_OF_TARGETS",
+      "min_targets": 1,
+      "max_targets": null,
+      "is_variable": true,
+      "variable_symbol": null,
+      "damage_amount_kind": "FIXED",
+      "damage_amount": 4,
+      "expected_channels": {
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_kinds": [
+          "ANY_TARGET"
+        ],
+        "current_modal_selection_model": null,
+        "current_legality_kinds": []
+      },
+      "scalar_projection": {
+        "expected_target_count": null,
+        "policy_result": "DO_NOT_PROJECT",
+        "reason": "Open-ended range prevents exact scalar projection.",
+        "rejected_scalar_values": [
+          0,
+          1,
+          4
+        ]
+      }
+    },
+    {
+      "card": "Rolling Thunder",
+      "target_count_model_kind": "ANY_NUMBER_OF_TARGETS",
+      "min_targets": 1,
+      "max_targets": null,
+      "is_variable": true,
+      "variable_symbol": "X",
+      "damage_amount_kind": "VARIABLE",
+      "damage_amount": null,
+      "expected_channels": {
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_kinds": [
+          "ANY_TARGET"
+        ],
+        "current_modal_selection_model": null,
+        "current_legality_kinds": []
+      },
+      "scalar_projection": {
+        "expected_target_count": null,
+        "policy_result": "DO_NOT_PROJECT",
+        "reason": "Open-ended range and variable X damage prevent exact scalar projection.",
+        "rejected_scalar_values": [
+          0,
+          1
+        ]
+      }
+    }
+  ]
+}

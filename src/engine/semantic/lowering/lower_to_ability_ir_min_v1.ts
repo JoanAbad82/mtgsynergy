@@ -137,8 +137,8 @@ export type AbilityIrMin = {
       cost_kinds: string[];
       target_kinds: string[];
       legality_kinds: string[];
-      target_count: number;
-      legality_count: number;
+      target_count: number | null;
+      legality_count: number | null;
       modal_selection_model?: ModalSelectionModelMinV1;
       split_divided_damage_target_model?: SplitDividedDamageTargetModelMinV1;
     };
@@ -681,18 +681,24 @@ export function buildCostTargetLegalityHints(
   const targetCount = analyzed.targets.length;
   const legalityCount = analyzed.legality.length + (hasSummoningSicknessTapQ ? 1 : 0);
 
-  const shouldEmitCostTargetLegalityMin = !(
+  const shouldEmitBaseCostTargetLegalityMin = !(
     costKinds.length === 0 &&
     analyzedTargetKinds.length === 0 &&
     legalityKinds.length === 0 &&
     targetCount === 0 &&
     legalityCount === 0
   );
+  const hasSplitProjectedTargetKinds = splitProjectedTargetKinds.length > 0;
+  const shouldEmitCostTargetLegalityMin =
+    shouldEmitBaseCostTargetLegalityMin || hasSplitProjectedTargetKinds;
+  const isSplitOnlyEmission = !shouldEmitBaseCostTargetLegalityMin && hasSplitProjectedTargetKinds;
   const targetKinds = sortedUnique(
     shouldEmitCostTargetLegalityMin
       ? [...analyzedTargetKinds, ...splitProjectedTargetKinds]
       : analyzedTargetKinds,
   );
+  const emittedTargetCount = isSplitOnlyEmission ? null : targetCount;
+  const emittedLegalityCount = isSplitOnlyEmission ? null : legalityCount;
   const modalSelectionModel = shouldEmitCostTargetLegalityMin
     ? buildModalSelectionModelMinV1(oracleText, targetKinds)
     : undefined;
@@ -703,8 +709,8 @@ export function buildCostTargetLegalityHints(
         cost_kinds: costKinds,
         target_kinds: targetKinds,
         legality_kinds: legalityKinds,
-        target_count: targetCount,
-        legality_count: legalityCount,
+        target_count: emittedTargetCount,
+        legality_count: emittedLegalityCount,
         ...(modalSelectionModel
           ? {
             modal_selection_model: modalSelectionModel,

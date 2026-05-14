@@ -1,0 +1,460 @@
+{
+  "version": "v1",
+  "phase": "A2.10_REAL_ORACLE_SPLIT_DIVIDED_DAMAGE_TARGET_COUNT_MODEL_ADDITIONAL_CORPUS_CONTRACT_V1",
+  "status": "contract-freeze",
+  "purpose": "Freeze additional real Oracle split/divided damage target_count_model corpus before productive extraction changes.",
+  "source_audit": {
+    "cards_index_path": "public/data/cards_index.json.gz",
+    "cards_index_shape": {
+      "top_level_type": "object",
+      "top_level_keys": [
+        "schema_version",
+        "by_name",
+        "by_name_norm"
+      ]
+    },
+    "discovered_record_count": 34079,
+    "candidate_count": 21,
+    "exact_count": 21,
+    "fuzzy_count": 0,
+    "missing_count": 0,
+    "missing": []
+  },
+  "no_runtime_change": true,
+  "policy": {
+    "target_count_projection_policy": "DO_NOT_PROJECT",
+    "costTargetLegalityMin_target_count_must_remain_null": true,
+    "modal_selection_model_must_remain_separate": true,
+    "legality_kinds_must_remain_empty_for_this_family": true,
+    "do_not_expand_ANY_TARGET_in_diagnostic_target_kinds": true,
+    "do_not_treat_each_of_up_to_N_as_divided_allocation": true,
+    "do_not_treat_ordered_fixed_multi_target_damage_as_divided_allocation": true,
+    "do_not_treat_even_division_extra_cost_fireball_like_wording_as_current_model": true
+  },
+  "classification_kinds": [
+    "BASELINE_ALREADY_COVERED",
+    "POSITIVE_NEXT_EXTRACTION_SAME_SHAPE",
+    "POSITIVE_NEXT_EXTRACTION_OPEN_FIXED",
+    "POSITIVE_GUARDED_SPLIT_CARD",
+    "DEFERRED_TARGET_PREDICATE_MODEL",
+    "DEFERRED_DAMAGE_EXPRESSION_MODEL",
+    "NEGATIVE_EQUAL_DAMAGE_UP_TO_N",
+    "NEGATIVE_ORDERED_FIXED_MULTI_TARGET_DAMAGE",
+    "NEGATIVE_MULTIKICKER_GENERATED_TARGET_SET",
+    "NEGATIVE_FIREBALL_LIKE_EVEN_DIVISION_EXTRA_COST"
+  ],
+  "guardrails": {
+    "forbidden_target_kind_values": [
+      "CAST_ONLY_IF",
+      "ACTIVATE_ONLY_AS_SORCERY",
+      "CONTROLS_X",
+      "ATTACKED_THIS_TURN",
+      "ONCE_EACH_TURN",
+      "OTHER_LEGALITY_TEXT"
+    ],
+    "diagnostic_target_kinds_for_ANY_TARGET_cases": [
+      "ANY_TARGET"
+    ],
+    "forbidden_diagnostic_ANY_TARGET_expansion": [
+      "CREATURE",
+      "PLAYER",
+      "PLANESWALKER",
+      "BATTLE"
+    ]
+  },
+  "cases": [
+    {
+      "card": "Electrolyze",
+      "classification": "BASELINE_ALREADY_COVERED",
+      "oracle_text": "Electrolyze deals 2 damage divided as you choose among one or two targets.\nDraw a card.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model": null,
+        "legality_kinds": [],
+        "target_count_model": {
+          "kind": "ONE_OR_TWO_TARGETS",
+          "min_targets": 1,
+          "max_targets": 2,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 2,
+          "raw_text": "2 damage divided as you choose among one or two targets"
+        }
+      }
+    },
+    {
+      "card": "Arc Lightning",
+      "classification": "BASELINE_ALREADY_COVERED",
+      "oracle_text": "Arc Lightning deals 3 damage divided as you choose among one, two, or three targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model": null,
+        "legality_kinds": [],
+        "target_count_model": {
+          "kind": "ONE_TWO_OR_THREE_TARGETS",
+          "min_targets": 1,
+          "max_targets": 3,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 3,
+          "raw_text": "3 damage divided as you choose among one, two, or three targets"
+        }
+      }
+    },
+    {
+      "card": "Flames of the Firebrand",
+      "classification": "BASELINE_ALREADY_COVERED",
+      "oracle_text": "Flames of the Firebrand deals 3 damage divided as you choose among one, two, or three targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model": null,
+        "legality_kinds": [],
+        "target_count_model": {
+          "kind": "ONE_TWO_OR_THREE_TARGETS",
+          "min_targets": 1,
+          "max_targets": 3,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 3,
+          "raw_text": "3 damage divided as you choose among one, two, or three targets"
+        }
+      }
+    },
+    {
+      "card": "Pyrotechnics",
+      "classification": "BASELINE_ALREADY_COVERED",
+      "oracle_text": "Pyrotechnics deals 4 damage divided as you choose among any number of targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model": null,
+        "legality_kinds": [],
+        "target_count_model": {
+          "kind": "ANY_NUMBER_OF_TARGETS",
+          "min_targets": 1,
+          "max_targets": null,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 4,
+          "raw_text": "4 damage divided as you choose among any number of targets"
+        }
+      }
+    },
+    {
+      "card": "Rolling Thunder",
+      "classification": "BASELINE_ALREADY_COVERED",
+      "oracle_text": "Rolling Thunder deals X damage divided as you choose among any number of targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model": null,
+        "legality_kinds": [],
+        "target_count_model": {
+          "kind": "ANY_NUMBER_OF_TARGETS",
+          "min_targets": 1,
+          "max_targets": null,
+          "is_variable": true,
+          "variable_symbol": "X",
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "VARIABLE",
+          "damage_amount": null,
+          "raw_text": "X damage divided as you choose among any number of targets"
+        }
+      }
+    },
+    {
+      "card": "Twin Bolt",
+      "classification": "POSITIVE_NEXT_EXTRACTION_SAME_SHAPE",
+      "oracle_text": "Twin Bolt deals 2 damage divided as you choose among one or two targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model": null,
+        "legality_kinds": [],
+        "target_count_model": {
+          "kind": "ONE_OR_TWO_TARGETS",
+          "min_targets": 1,
+          "max_targets": 2,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 2,
+          "raw_text": "2 damage divided as you choose among one or two targets"
+        }
+      }
+    },
+    {
+      "card": "Chandra's Pyrohelix",
+      "classification": "POSITIVE_NEXT_EXTRACTION_SAME_SHAPE",
+      "oracle_text": "Chandra's Pyrohelix deals 2 damage divided as you choose among one or two targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model": null,
+        "legality_kinds": [],
+        "target_count_model": {
+          "kind": "ONE_OR_TWO_TARGETS",
+          "min_targets": 1,
+          "max_targets": 2,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 2,
+          "raw_text": "2 damage divided as you choose among one or two targets"
+        }
+      }
+    },
+    {
+      "card": "Forked Bolt",
+      "classification": "POSITIVE_NEXT_EXTRACTION_SAME_SHAPE",
+      "oracle_text": "Forked Bolt deals 2 damage divided as you choose among one or two targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model": null,
+        "legality_kinds": [],
+        "target_count_model": {
+          "kind": "ONE_OR_TWO_TARGETS",
+          "min_targets": 1,
+          "max_targets": 2,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 2,
+          "raw_text": "2 damage divided as you choose among one or two targets"
+        }
+      }
+    },
+    {
+      "card": "Fire // Ice",
+      "classification": "POSITIVE_GUARDED_SPLIT_CARD",
+      "oracle_text": "Fire deals 2 damage divided as you choose among one or two targets.\n//\nTap target permanent.\nDraw a card.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model": null,
+        "legality_kinds": [],
+        "target_count_model": {
+          "kind": "ONE_OR_TWO_TARGETS",
+          "min_targets": 1,
+          "max_targets": 2,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 2,
+          "raw_text": "2 damage divided as you choose among one or two targets"
+        }
+      },
+      "guard_note": "Split-card Oracle text contains another half; future extraction must isolate the Fire half and avoid absorbing Ice targets."
+    },
+    {
+      "card": "Magma Opus",
+      "classification": "POSITIVE_NEXT_EXTRACTION_OPEN_FIXED",
+      "oracle_text": "Magma Opus deals 4 damage divided as you choose among any number of targets. Tap two target permanents. Create a 4/4 blue and red Elemental creature token. Draw two cards.\n{U/R}{U/R}, Discard this card: Create a Treasure token.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model": null,
+        "legality_kinds": [],
+        "target_count_model": {
+          "kind": "ANY_NUMBER_OF_TARGETS",
+          "min_targets": 1,
+          "max_targets": null,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 4,
+          "raw_text": "4 damage divided as you choose among any number of targets"
+        }
+      },
+      "guard_note": "Future extraction must isolate the split/divided damage sentence and not absorb Tap/Create/Draw or discard ability text."
+    },
+    {
+      "card": "Boulderfall",
+      "classification": "POSITIVE_NEXT_EXTRACTION_OPEN_FIXED",
+      "oracle_text": "Boulderfall deals 5 damage divided as you choose among any number of targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": true,
+        "allowed_target_kinds": [
+          "ANY_TARGET"
+        ],
+        "target_count_must_remain_null": true,
+        "modal_selection_model": null,
+        "legality_kinds": [],
+        "target_count_model": {
+          "kind": "ANY_NUMBER_OF_TARGETS",
+          "min_targets": 1,
+          "max_targets": null,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 5,
+          "raw_text": "5 damage divided as you choose among any number of targets"
+        }
+      }
+    },
+    {
+      "card": "Meteor Shower",
+      "classification": "DEFERRED_DAMAGE_EXPRESSION_MODEL",
+      "oracle_text": "Meteor Shower deals X plus 1 damage divided as you choose among any number of targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": false,
+        "target_count_must_remain_null": true,
+        "future_model_needed": "VARIABLE_PLUS_FIXED_DAMAGE_EXPRESSION",
+        "reason": "Uses X plus 1, not the current fixed amount or plain X amount model."
+      }
+    },
+    {
+      "card": "Pyrokinesis",
+      "classification": "DEFERRED_TARGET_PREDICATE_MODEL",
+      "oracle_text": "You may exile a red card from your hand rather than pay this spell's mana cost.\nPyrokinesis deals 4 damage divided as you choose among any number of target creatures.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": false,
+        "target_count_must_remain_null": true,
+        "future_model_needed": "TARGET_PREDICATE_MODEL",
+        "allowed_target_kinds_candidate": [
+          "CREATURE"
+        ],
+        "reason": "Narrower target object kind must not be flattened into current ANY_TARGET diagnostics without a target predicate contract."
+      }
+    },
+    {
+      "card": "Aerial Volley",
+      "classification": "DEFERRED_TARGET_PREDICATE_MODEL",
+      "oracle_text": "Aerial Volley deals 3 damage divided as you choose among one, two, or three target creatures with flying.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": false,
+        "target_count_must_remain_null": true,
+        "future_model_needed": "TARGET_PREDICATE_MODEL",
+        "allowed_target_kinds_candidate": [
+          "CREATURE"
+        ],
+        "target_predicate_candidate": "WITH_FLYING",
+        "reason": "Creature-with-flying target restriction requires predicate modeling beyond target_count_model."
+      }
+    },
+    {
+      "card": "Fire at Will",
+      "classification": "DEFERRED_TARGET_PREDICATE_MODEL",
+      "oracle_text": "Fire at Will deals 3 damage divided as you choose among one, two, or three target attacking or blocking creatures.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": false,
+        "target_count_must_remain_null": true,
+        "future_model_needed": "TARGET_PREDICATE_MODEL",
+        "allowed_target_kinds_candidate": [
+          "CREATURE"
+        ],
+        "target_predicate_candidate": "ATTACKING_OR_BLOCKING",
+        "reason": "Combat-status target restriction requires predicate modeling beyond target_count_model."
+      }
+    },
+    {
+      "card": "Fall of the Titans",
+      "classification": "NEGATIVE_EQUAL_DAMAGE_UP_TO_N",
+      "oracle_text": "Surge {X}{R} (You may cast this spell for its surge cost if you or a teammate has cast another spell this turn.)\nFall of the Titans deals X damage to each of up to two targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": false,
+        "reason": "Deals X damage to each of up to two targets; this is equal damage to selected targets, not divided allocation."
+      }
+    },
+    {
+      "card": "Fireball",
+      "classification": "NEGATIVE_FIREBALL_LIKE_EVEN_DIVISION_EXTRA_COST",
+      "oracle_text": "This spell costs {1} more to cast for each target beyond the first.\nFireball deals X damage divided evenly, rounded down, among any number of targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": false,
+        "reason": "Even division, rounding, and extra target cost require a separate Fireball-like model."
+      }
+    },
+    {
+      "card": "Arc Trail",
+      "classification": "NEGATIVE_ORDERED_FIXED_MULTI_TARGET_DAMAGE",
+      "oracle_text": "Arc Trail deals 2 damage to any target and 1 damage to any other target.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": false,
+        "reason": "Ordered fixed multi-target damage, not divided-as-you-choose allocation."
+      }
+    },
+    {
+      "card": "Cone of Flame",
+      "classification": "NEGATIVE_ORDERED_FIXED_MULTI_TARGET_DAMAGE",
+      "oracle_text": "Cone of Flame deals 1 damage to any target, 2 damage to another target, and 3 damage to a third target.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": false,
+        "reason": "Ordered fixed multi-target damage, not divided-as-you-choose allocation."
+      }
+    },
+    {
+      "card": "Comet Storm",
+      "classification": "NEGATIVE_MULTIKICKER_GENERATED_TARGET_SET",
+      "oracle_text": "Multikicker {1} (You may pay an additional {1} any number of times as you cast this spell.)\nChoose any target, then choose another target for each time this spell was kicked. Comet Storm deals X damage to each of them.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": false,
+        "reason": "Multikicker-generated target set with equal damage to each target; not divided allocation."
+      }
+    },
+    {
+      "card": "Jaya's Immolating Inferno",
+      "classification": "NEGATIVE_EQUAL_DAMAGE_UP_TO_N",
+      "oracle_text": "(You may cast a legendary sorcery only if you control a legendary creature or planeswalker.)\nJaya's Immolating Inferno deals X damage to each of up to three targets.",
+      "expected": {
+        "should_emit_split_divided_damage_target_model_after_future_extraction": false,
+        "reason": "Equal X damage to each of up to three targets; not divided allocation."
+      }
+    }
+  ],
+  "next_recommended_microphase": "A2.10_REAL_ORACLE_SPLIT_DIVIDED_DAMAGE_TARGET_COUNT_MODEL_ADDITIONAL_CORPUS_EXTRACTION_V1",
+  "alternative_recommended_microphase": "A2.10_REAL_ORACLE_COST_TARGET_LEGALITY_STABLE_RING_REVIEW_V1",
+  "final_markers": [
+    "A2_10_SPLIT_DIVIDED_DAMAGE_TARGET_COUNT_MODEL_ADDITIONAL_CORPUS_CONTRACT_V1_COMPLETE",
+    "A2_10_SPLIT_DIVIDED_DAMAGE_TARGET_COUNT_MODEL_ADDITIONAL_CORPUS_CONTRACT_V1_NO_RUNTIME_CHANGE",
+    "A2_10_SPLIT_DIVIDED_DAMAGE_TARGET_COUNT_MODEL_ADDITIONAL_CORPUS_CONTRACT_V1_READY_FOR_EXTRACTION"
+  ]
+}

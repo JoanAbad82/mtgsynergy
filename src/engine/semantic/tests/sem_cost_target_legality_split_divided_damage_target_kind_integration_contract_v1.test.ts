@@ -280,10 +280,22 @@ describe("cost target legality split divided damage target kind integration cont
       ).toBe(true);
       expect(
         row.future_target_kind_integration_expectation.explicit_target_kind_evidence_present,
-      ).toBe(false);
-      expect(row.future_target_kind_integration_expectation.derivation_allowed_now).toBe(false);
-      expect(row.future_target_kind_integration_expectation.candidate_target_kinds).toEqual([]);
-      expect(runtime?.current_target_kinds).toEqual([]);
+      ).toBe(
+        row.card_name === "Pyrokinesis" || row.card_name === "Aerial Volley",
+      );
+      expect(row.future_target_kind_integration_expectation.derivation_allowed_now).toBe(
+        row.card_name === "Pyrokinesis" || row.card_name === "Aerial Volley",
+      );
+      if (row.card_name === "Pyrokinesis" || row.card_name === "Aerial Volley") {
+        expect(row.future_target_kind_integration_expectation.candidate_target_kinds).toEqual([
+          "CREATURE",
+        ]);
+        expect(runtime?.split_divided_damage_target_model?.target_kinds_policy).toBe(
+          "NARROW_PREDICATE_BEARING_TARGET_KIND_MODELED",
+        );
+      } else {
+        expect(row.future_target_kind_integration_expectation.candidate_target_kinds).toEqual([]);
+      }
 
       for (const forbidden of contract.split_divided_damage_target_kind_integration_contract
         .forbidden_legality_inference_kinds_from_split_wording) {

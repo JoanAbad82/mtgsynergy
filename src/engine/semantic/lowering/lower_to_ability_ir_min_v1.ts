@@ -95,6 +95,8 @@ type SplitDividedDamageTargetModelMinV1 = {
   target_kinds_policy: string;
   allowed_target_kinds?: string[];
   target_count_model?: SplitDividedDamageTargetCountModelMinV1;
+  target_predicate_kind?: "CREATURE_ONLY" | "WITH_FLYING";
+  target_predicate_text?: string;
   notes: string;
   known_gap: string | null;
 };
@@ -488,6 +490,56 @@ function inferSplitDividedDamageTargetModelMinV1(
     };
   }
 
+  if (lower.includes("damage divided as you choose among any number of target creatures")) {
+    return {
+      kind: "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+      split_damage_model_kind: "ANY_NUMBER_OF_TARGETS",
+      conceptual_target_slots_min: 0,
+      conceptual_target_slots_max: null,
+      damage_allocation_is_divided: true,
+      productive_min_hint_currently_models_split_damage: true,
+      target_kinds_policy: "NARROW_PREDICATE_BEARING_TARGET_KIND_MODELED",
+      allowed_target_kinds: ["CREATURE"],
+      ...(targetCountModel
+        ? {
+          target_count_model: targetCountModel,
+        }
+        : {}),
+      target_predicate_kind: "CREATURE_ONLY",
+      target_predicate_text: "target creatures",
+      notes,
+      known_gap:
+        "PREDICATE_BEARING_SPLIT_DIVIDED_DAMAGE_IS_NARROW_V1;NO_FULL_TARGET_LEGALITY_OR_RESOLUTION_MODEL",
+    };
+  }
+
+  if (
+    lower.includes(
+      "damage divided as you choose among one, two, or three target creatures with flying",
+    )
+  ) {
+    return {
+      kind: "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+      split_damage_model_kind: "ONE_TWO_OR_THREE_TARGETS",
+      conceptual_target_slots_min: 1,
+      conceptual_target_slots_max: 3,
+      damage_allocation_is_divided: true,
+      productive_min_hint_currently_models_split_damage: true,
+      target_kinds_policy: "NARROW_PREDICATE_BEARING_TARGET_KIND_MODELED",
+      allowed_target_kinds: ["CREATURE"],
+      ...(targetCountModel
+        ? {
+          target_count_model: targetCountModel,
+        }
+        : {}),
+      target_predicate_kind: "WITH_FLYING",
+      target_predicate_text: "target creatures with flying",
+      notes,
+      known_gap:
+        "PREDICATE_BEARING_SPLIT_DIVIDED_DAMAGE_IS_NARROW_V1;NO_FULL_TARGET_LEGALITY_OR_RESOLUTION_MODEL",
+    };
+  }
+
   if (lower.includes("damage divided as you choose among")) {
     return {
       kind: "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
@@ -567,6 +619,40 @@ function buildSplitDividedDamageTargetCountModelMinV1(
       damage_amount_kind: "FIXED",
       damage_amount: Number.parseInt(fixedAnyNumberMatch[1], 10),
       raw_text: fixedAnyNumberMatch[0],
+    };
+  }
+
+  const fixedAnyNumberTargetCreaturesMatch = normalized.match(
+    /(\d+)\s+damage\s+divided\s+as\s+you\s+choose\s+among\s+any\s+number\s+of\s+target\s+creatures/i,
+  );
+  if (fixedAnyNumberTargetCreaturesMatch) {
+    return {
+      kind: "ANY_NUMBER_OF_TARGETS",
+      min_targets: 1,
+      max_targets: null,
+      is_variable: true,
+      variable_symbol: null,
+      requires_damage_allocation: true,
+      damage_amount_kind: "FIXED",
+      damage_amount: Number.parseInt(fixedAnyNumberTargetCreaturesMatch[1], 10),
+      raw_text: fixedAnyNumberTargetCreaturesMatch[0],
+    };
+  }
+
+  const oneTwoThreeTargetCreaturesWithFlyingMatch = normalized.match(
+    /(\d+)\s+damage\s+divided\s+as\s+you\s+choose\s+among\s+one,\s*two,\s*or\s+three\s+target\s+creatures\s+with\s+flying/i,
+  );
+  if (oneTwoThreeTargetCreaturesWithFlyingMatch) {
+    return {
+      kind: "ONE_TWO_OR_THREE_TARGETS",
+      min_targets: 1,
+      max_targets: 3,
+      is_variable: false,
+      variable_symbol: null,
+      requires_damage_allocation: true,
+      damage_amount_kind: "FIXED",
+      damage_amount: Number.parseInt(oneTwoThreeTargetCreaturesWithFlyingMatch[1], 10),
+      raw_text: oneTwoThreeTargetCreaturesWithFlyingMatch[0],
     };
   }
 

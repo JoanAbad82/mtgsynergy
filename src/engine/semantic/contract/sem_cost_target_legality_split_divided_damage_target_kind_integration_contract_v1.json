@@ -4,7 +4,7 @@
     "version": "v1",
     "status": "contract-freeze",
     "phase": "A2.10",
-    "scope": "Additive split/divided damage target-kind integration contract freeze, without runtime behavior changes."
+    "scope": "Additive split/divided damage target-kind integration contract freeze, with narrow predicate-bearing split/divided model v1 exception."
   },
   "scope_rules": {
     "contract_only_no_runtime_change": true,
@@ -55,7 +55,9 @@
       "split_divided_damage_target_model remains the source model for future split/divided target-kind integration.",
       "target_kinds derived from split/divided damage must stay diagnostic aggregation only in this contract phase.",
       "target_kinds must not replace split_divided_damage_target_model, target_count, or modal_selection_model.",
-      "legality gates are out of scope for split/divided target-kind integration."
+      "legality gates are out of scope for split/divided target-kind integration.",
+      "Predicate-bearing split/divided model v1 is a narrow explicit exception: CREATURE_ONLY and WITH_FLYING only.",
+      "Exception remains additive and diagnostic: no full target legality, no resolution model, no target_count replacement, no modal selection change."
     ]
   },
   "initial_corpus_policy": [
@@ -72,8 +74,10 @@
         "known_gap": "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS"
       },
       "current_runtime_baseline": {
-        "min_exists": false,
-        "target_kinds": [],
+        "min_exists": true,
+        "target_kinds": [
+          "ANY_TARGET"
+        ],
         "target_count": null,
         "modal_selection_model": null,
         "legality_kinds": []
@@ -99,8 +103,10 @@
         "known_gap": "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS"
       },
       "current_runtime_baseline": {
-        "min_exists": false,
-        "target_kinds": [],
+        "min_exists": true,
+        "target_kinds": [
+          "ANY_TARGET"
+        ],
         "target_count": null,
         "modal_selection_model": null,
         "legality_kinds": []
@@ -126,8 +132,10 @@
         "known_gap": "SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS"
       },
       "current_runtime_baseline": {
-        "min_exists": false,
-        "target_kinds": [],
+        "min_exists": true,
+        "target_kinds": [
+          "ANY_TARGET"
+        ],
         "target_count": null,
         "modal_selection_model": null,
         "legality_kinds": []
@@ -153,8 +161,10 @@
         "known_gap": "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS"
       },
       "current_runtime_baseline": {
-        "min_exists": false,
-        "target_kinds": [],
+        "min_exists": true,
+        "target_kinds": [
+          "ANY_TARGET"
+        ],
         "target_count": null,
         "modal_selection_model": null,
         "legality_kinds": []
@@ -180,8 +190,10 @@
         "known_gap": "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;SPLIT_DIVIDED_DAMAGE_UNMODELLED_IN_MIN_HINTS"
       },
       "current_runtime_baseline": {
-        "min_exists": false,
-        "target_kinds": [],
+        "min_exists": true,
+        "target_kinds": [
+          "ANY_TARGET"
+        ],
         "target_count": null,
         "modal_selection_model": null,
         "legality_kinds": []
@@ -193,14 +205,111 @@
         "derivation_allowed_now": false,
         "known_gap": "ANY_NUMBER_OF_TARGETS_MIN_SLOT_IS_CONSERVATIVE_0;INSUFFICIENT_EXPLICIT_TARGET_KIND_EVIDENCE_FOR_DERIVATION"
       }
+    },
+    {
+      "card_name": "Pyrokinesis",
+      "split_divided_damage_target_model_baseline": {
+        "kind": "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+        "split_damage_model_kind": "ANY_NUMBER_OF_TARGETS",
+        "conceptual_target_slots_min": 0,
+        "conceptual_target_slots_max": null,
+        "damage_allocation_is_divided": true,
+        "productive_min_hint_currently_models_split_damage": true,
+        "target_kinds_policy": "NARROW_PREDICATE_BEARING_TARGET_KIND_MODELED",
+        "allowed_target_kinds": [
+          "CREATURE"
+        ],
+        "target_count_model": {
+          "kind": "ANY_NUMBER_OF_TARGETS",
+          "min_targets": 1,
+          "max_targets": null,
+          "is_variable": true,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 4,
+          "raw_text": "4 damage divided as you choose among any number of target creatures"
+        },
+        "target_predicate_kind": "CREATURE_ONLY",
+        "target_predicate_text": "target creatures",
+        "known_gap": "PREDICATE_BEARING_SPLIT_DIVIDED_DAMAGE_IS_NARROW_V1;NO_FULL_TARGET_LEGALITY_OR_RESOLUTION_MODEL"
+      },
+      "current_runtime_baseline": {
+        "min_exists": true,
+        "target_kinds": [
+          "CREATURE",
+          "UNKNOWN_TARGET_KIND"
+        ],
+        "target_count": 1,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "future_target_kind_integration_expectation": {
+        "explicit_target_kind_evidence_required": true,
+        "explicit_target_kind_evidence_present": true,
+        "candidate_target_kinds": [
+          "CREATURE"
+        ],
+        "derivation_allowed_now": true,
+        "known_gap": "NARROW_PREDICATE_BEARING_V1_ONLY_NO_FULL_TARGET_LEGALITY_OR_RESOLUTION_MODEL"
+      }
+    },
+    {
+      "card_name": "Aerial Volley",
+      "split_divided_damage_target_model_baseline": {
+        "kind": "SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+        "split_damage_model_kind": "ONE_TWO_OR_THREE_TARGETS",
+        "conceptual_target_slots_min": 1,
+        "conceptual_target_slots_max": 3,
+        "damage_allocation_is_divided": true,
+        "productive_min_hint_currently_models_split_damage": true,
+        "target_kinds_policy": "NARROW_PREDICATE_BEARING_TARGET_KIND_MODELED",
+        "allowed_target_kinds": [
+          "CREATURE"
+        ],
+        "target_count_model": {
+          "kind": "ONE_TWO_OR_THREE_TARGETS",
+          "min_targets": 1,
+          "max_targets": 3,
+          "is_variable": false,
+          "variable_symbol": null,
+          "requires_damage_allocation": true,
+          "damage_amount_kind": "FIXED",
+          "damage_amount": 3,
+          "raw_text": "3 damage divided as you choose among one, two, or three target creatures with flying"
+        },
+        "target_predicate_kind": "WITH_FLYING",
+        "target_predicate_text": "target creatures with flying",
+        "known_gap": "PREDICATE_BEARING_SPLIT_DIVIDED_DAMAGE_IS_NARROW_V1;NO_FULL_TARGET_LEGALITY_OR_RESOLUTION_MODEL"
+      },
+      "current_runtime_baseline": {
+        "min_exists": true,
+        "target_kinds": [
+          "CREATURE",
+          "UNKNOWN_TARGET_KIND"
+        ],
+        "target_count": 1,
+        "modal_selection_model": null,
+        "legality_kinds": []
+      },
+      "future_target_kind_integration_expectation": {
+        "explicit_target_kind_evidence_required": true,
+        "explicit_target_kind_evidence_present": true,
+        "candidate_target_kinds": [
+          "CREATURE"
+        ],
+        "derivation_allowed_now": true,
+        "known_gap": "NARROW_PREDICATE_BEARING_V1_ONLY_NO_FULL_TARGET_LEGALITY_OR_RESOLUTION_MODEL"
+      }
     }
   ],
   "no_goals": [
     "no_productive_split_divided_target_kind_integration_implementation_in_this_phase",
     "no_parser_or_lowering_changes",
-    "no_runtime_behavior_changes",
     "no_modal_selection_model_changes",
     "no_ui_cse_scoring_overlay_changes",
-    "no_target_kinds_or_target_count_replacement"
+    "no_target_kinds_or_target_count_replacement",
+    "no_broad_runtime_widening_outside_narrow_predicate_bearing_split_divided_model_v1",
+    "no_full_target_legality_or_resolution_model"
   ]
 }

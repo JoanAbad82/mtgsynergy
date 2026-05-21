@@ -32,6 +32,8 @@ type SplitDividedDamageTargetModelSnapshot = {
     | "UNKNOWN_SPLIT_DIVIDED_DAMAGE_TARGET_MODEL";
   allowed_target_kinds?: string[];
   target_count_model?: TargetCountModel;
+  target_predicate_kind?: string;
+  target_predicate_text?: string;
 };
 
 type Snapshot = {
@@ -97,14 +99,40 @@ const POSITIVE_CASES = [
   },
 ] as const;
 
-const DEFERRED_CASES = [
+const PREDICATE_BEARING_CASES = [
   {
     cardName: "Pyrokinesis",
     oracleMustContain: "divided as you choose among any number of target creatures",
+    expectedModel: {
+      kind: "ANY_NUMBER_OF_TARGETS",
+      min_targets: 1,
+      max_targets: null,
+      is_variable: true,
+      variable_symbol: null,
+      requires_damage_allocation: true,
+      damage_amount_kind: "FIXED",
+      damage_amount: 4,
+      raw_text: "4 damage divided as you choose among any number of target creatures",
+    } as const,
+    expectedPredicateKind: "CREATURE_ONLY",
+    expectedPredicateText: "target creatures",
   },
   {
     cardName: "Aerial Volley",
     oracleMustContain: "divided as you choose among one, two, or three target creatures with flying",
+    expectedModel: {
+      kind: "ONE_TWO_OR_THREE_TARGETS",
+      min_targets: 1,
+      max_targets: 3,
+      is_variable: false,
+      variable_symbol: null,
+      requires_damage_allocation: true,
+      damage_amount_kind: "FIXED",
+      damage_amount: 3,
+      raw_text: "3 damage divided as you choose among one, two, or three target creatures with flying",
+    } as const,
+    expectedPredicateKind: "WITH_FLYING",
+    expectedPredicateText: "target creatures with flying",
   },
 ] as const;
 
@@ -193,7 +221,7 @@ describe("cost target legality split divided damage target count model additiona
       ...entry,
       snapshot: buildSnapshot(payload, entry.cardName),
     }));
-    const deferred = DEFERRED_CASES.map((entry) => ({
+    const predicateBearing = PREDICATE_BEARING_CASES.map((entry) => ({
       ...entry,
       snapshot: buildSnapshot(payload, entry.cardName),
     }));
@@ -227,14 +255,33 @@ describe("cost target legality split divided damage target count model additiona
       );
     }
 
-    for (const entry of deferred) {
+    for (const entry of predicateBearing) {
       expect(entry.snapshot.oracleText).toContain(entry.oracleMustContain);
       expect(entry.snapshot.split_divided_damage_target_model).toBeTruthy();
-      expect(entry.snapshot.split_divided_damage_target_model?.split_damage_model_kind).toBe(
-        "UNKNOWN_SPLIT_DIVIDED_DAMAGE_TARGET_MODEL",
+      expect(entry.snapshot.split_divided_damage_target_model?.target_count_model).toEqual(
+        entry.expectedModel,
       );
-      // Guardrail: no over-claim on predicate-bearing target semantics.
-      expect(entry.snapshot.split_divided_damage_target_model?.target_count_model).toBeUndefined();
+      expect(entry.snapshot.split_divided_damage_target_model?.allowed_target_kinds).toEqual([
+        "CREATURE",
+      ]);
+      expect(
+        (
+          entry.snapshot.split_divided_damage_target_model as
+            | { target_predicate_kind?: string; target_predicate_text?: string }
+            | null
+        )?.target_predicate_kind,
+      ).toBe(entry.expectedPredicateKind);
+      expect(
+        (
+          entry.snapshot.split_divided_damage_target_model as
+            | { target_predicate_kind?: string; target_predicate_text?: string }
+            | null
+        )?.target_predicate_text,
+      ).toBe(entry.expectedPredicateText);
+
+      // Guardrail: keep existing formal-target scalar behavior from base target detection;
+      // do not overwrite it from split/divided target_count_model projection.
+      expect(entry.snapshot.current_target_count).toBe(1);
       expect(entry.snapshot.current_modal_selection_model).toBeNull();
     }
 

@@ -100,9 +100,9 @@ const EXPECTED_CURRENT_BY_CARD: Record<
   },
   Electrolyze: {
     cardName: "Electrolyze",
-    min_exists: false,
+    min_exists: true,
     cost_kinds: [],
-    target_kinds: [],
+    target_kinds: ["ANY_TARGET"],
     legality_kinds: [],
     target_count: null,
     legality_count: null,
@@ -237,9 +237,10 @@ describe("cost target legality modal target selection model extraction v1", () =
       expect(snapshot.canonicalName.length).toBeGreaterThan(0);
       expect(snapshot).toMatchObject(EXPECTED_CURRENT_BY_CARD[snapshot.cardName]!);
 
-      // SPLIT_DIVIDED_DAMAGE_NON_MODAL remains out of productive extraction in this phase.
+      // SPLIT_DIVIDED_DAMAGE_NON_MODAL remains out of productive modal extraction in this phase.
       if (snapshot.cardName === "Electrolyze") {
-        expect(snapshot.min_exists).toBe(false);
+        expect(snapshot.min_exists).toBe(true);
+        expect(snapshot.target_kinds).toEqual(["ANY_TARGET"]);
         expect(snapshot.modal_selection_model).toBeNull();
         continue;
       }

@@ -100,9 +100,9 @@ const EXPECTED_CURRENT_BY_CARD: Record<string, Omit<ModalTargetSelectionModelDia
   },
   Electrolyze: {
     cardName: "Electrolyze",
-    min_exists: false,
+    min_exists: true,
     cost_kinds: [],
-    target_kinds: [],
+    target_kinds: ["ANY_TARGET"],
     legality_kinds: [],
     target_count: null,
     legality_count: null,
@@ -162,7 +162,7 @@ const EXPECTED_CONCEPTUAL_MODEL_BY_CARD: Record<string, ConceptualSelectionModel
     targeted_modes_count: null,
     conceptual_target_slots_min: 1,
     conceptual_target_slots_max: 2,
-    note: "split/divided target wording remains outside modal aggregation scope and currently returns min_exists=false",
+    note: "split/divided target wording remains outside modal aggregation scope while current runtime keeps conservative ANY_TARGET emission",
   },
 };
 

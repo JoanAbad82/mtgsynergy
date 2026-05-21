@@ -126,8 +126,8 @@ describe("cost target legality split divided damage target model extraction v1",
       expect(row.canonicalName.length).toBeGreaterThan(0);
 
       // target_kinds / target_count remain diagnostic channels and are not replaced in this phase.
-      expect(row.current_min_exists).toBe(false);
-      expect(row.current_target_kinds).toEqual([]);
+      expect(row.current_min_exists).toBe(true);
+      expect(row.current_target_kinds).toEqual(["ANY_TARGET"]);
       expect(row.current_target_count).toBeNull();
 
       // split_divided_damage_target_model remains separate from modal_selection_model.

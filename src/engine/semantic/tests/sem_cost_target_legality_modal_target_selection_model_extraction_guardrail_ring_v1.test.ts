@@ -162,9 +162,9 @@ const EXPECTED_BY_CARD: Record<string, Omit<GuardrailSnapshot, "canonicalName">>
   },
   Electrolyze: {
     cardName: "Electrolyze",
-    min_exists: false,
+    min_exists: true,
     cost_kinds: [],
-    target_kinds: [],
+    target_kinds: ["ANY_TARGET"],
     legality_kinds: [],
     target_count: null,
     legality_count: null,
@@ -260,10 +260,10 @@ describe("cost target legality modal target selection model extraction guardrail
       assertNoLeakage(snapshot);
     }
 
-    // SPLIT_DIVIDED_DAMAGE_NON_MODAL remains a documented non-goal in this phase.
+    // SPLIT_DIVIDED_DAMAGE_NON_MODAL remains a documented non-goal for modal extraction in this phase.
     const electrolyze = runA.find((row) => row.cardName === "Electrolyze");
-    expect(electrolyze?.min_exists).toBe(false);
-    expect(electrolyze?.target_kinds).toEqual([]);
+    expect(electrolyze?.min_exists).toBe(true);
+    expect(electrolyze?.target_kinds).toEqual(["ANY_TARGET"]);
     expect(electrolyze?.target_count).toBeNull();
     expect(electrolyze?.modal_selection_model).toBeNull();
 

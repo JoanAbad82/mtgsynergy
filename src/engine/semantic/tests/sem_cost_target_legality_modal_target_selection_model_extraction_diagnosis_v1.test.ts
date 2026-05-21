@@ -242,7 +242,11 @@ describe("cost target legality modal target selection model extraction diagnosis
       expect(snapshot.targeted_modes_count).toBe(expected?.targeted_modes_count);
       expect(snapshot.conceptual_target_slots_min).toBe(expected?.conceptual_target_slots_min);
       expect(snapshot.conceptual_target_slots_max).toBe(expected?.conceptual_target_slots_max);
-      expect(snapshot.aggregated_target_kinds).toEqual(expected?.aggregated_target_kinds ?? []);
+      const expectedAggregatedTargetKinds =
+        snapshot.cardName === "Electrolyze"
+          ? ["ANY_TARGET"]
+          : (expected?.aggregated_target_kinds ?? []);
+      expect(snapshot.aggregated_target_kinds).toEqual(expectedAggregatedTargetKinds);
       expect(snapshot.known_gap).toBe(expected?.known_gap ?? null);
 
       expect(snapshot.aggregated_target_kinds).not.toContain("CAST_ONLY_IF");

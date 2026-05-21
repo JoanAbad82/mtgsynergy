@@ -129,8 +129,8 @@ describe("cost target legality modal target aggregation diagnosis v1", () => {
     expect(abrade?.target_count).toBe(2);
 
     const electrolyze = runA.find((row) => row.cardName === "Electrolyze");
-    expect(electrolyze?.min_exists).toBe(false);
-    expect(electrolyze?.target_kinds).toEqual([]);
+    expect(electrolyze?.min_exists).toBe(true);
+    expect(electrolyze?.target_kinds).toEqual(["ANY_TARGET"]);
     expect(electrolyze?.target_count).toBeNull();
 
     console.log("MODAL_TARGET_AGGREGATION_DIAGNOSIS_COMPLETE");

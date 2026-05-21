@@ -102,9 +102,9 @@ const EXPECTED_CURRENT_BY_CARD: Record<
   },
   Electrolyze: {
     cardName: "Electrolyze",
-    min_exists: false,
+    min_exists: true,
     cost_kinds: [],
-    target_kinds: [],
+    target_kinds: ["ANY_TARGET"],
     legality_kinds: [],
     target_count: null,
     legality_count: null,
@@ -250,10 +250,10 @@ describe("cost target legality modal target selection model guardrail ring v1", 
     const abrade = runA.find((row) => row.cardName === "Abrade");
     expect(abrade?.target_count).toBe(2);
 
-    // Split-target/divided damage remains a non-goal in this guardrail ring.
+    // Split-target/divided damage remains a non-goal for modal modeling in this guardrail ring.
     const electrolyze = runA.find((row) => row.cardName === "Electrolyze");
-    expect(electrolyze?.min_exists).toBe(false);
-    expect(electrolyze?.target_kinds).toEqual([]);
+    expect(electrolyze?.min_exists).toBe(true);
+    expect(electrolyze?.target_kinds).toEqual(["ANY_TARGET"]);
     expect(electrolyze?.target_count).toBeNull();
   });
 });

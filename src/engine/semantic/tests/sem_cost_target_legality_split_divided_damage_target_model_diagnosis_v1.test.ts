@@ -183,7 +183,7 @@ function buildDiagnosisSnapshot(
 }
 
 describe("cost target legality split divided damage target model diagnosis v1", () => {
-  it("diagnoses split/divided damage target model patterns from real Oracle without productive repair", () => {
+  it("diagnoses split/divided damage target model patterns from real Oracle with productive conservative hints", () => {
     const payload = loadCardsIndex();
     const runA = SPLIT_DIVIDED_DAMAGE_CORPUS.map((cardName) =>
       buildDiagnosisSnapshot(payload, cardName),
@@ -222,8 +222,8 @@ describe("cost target legality split divided damage target model diagnosis v1", 
 
     const electrolyze = runA.find((row) => row.cardName === "Electrolyze");
     expect(electrolyze).toBeTruthy();
-    expect(electrolyze?.min_exists).toBe(false);
-    expect(electrolyze?.target_kinds).toEqual([]);
+    expect(electrolyze?.min_exists).toBe(true);
+    expect(electrolyze?.target_kinds).toEqual(["ANY_TARGET"]);
     expect(electrolyze?.target_count).toBeNull();
     expect(electrolyze?.modal_selection_model).toBeNull();
     expect(electrolyze?.split_divided_damage_diagnosis.split_damage_model_kind).toBe(

@@ -141,9 +141,9 @@ describe("cost target legality target kind canonicalization guardrail ring v1", 
     expect(abrade.target_count).toBe(2);
     assertNoLeakage(abrade, ["ARTIFACT", "CREATURE"]);
 
-    // Split-target/divided damage is intentionally not repaired in this microphase.
-    expect(electrolyze.min_exists).toBe(false);
-    expect(electrolyze.target_kinds).toEqual([]);
+    // Split-target/divided damage now emits conservative ANY_TARGET in productive runtime.
+    expect(electrolyze.min_exists).toBe(true);
+    expect(electrolyze.target_kinds).toEqual(["ANY_TARGET"]);
     expect(electrolyze.target_count).toBeNull();
     expect(electrolyze.target_kinds).not.toContain("CAST_ONLY_IF");
     expect(electrolyze.target_kinds).not.toContain("ACTIVATE_ONLY_AS_SORCERY");

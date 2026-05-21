@@ -248,6 +248,8 @@ describe("cost target legality target kind canonicalization v1", () => {
     expect(abrade.min_exists).toBe(true);
     expect(abrade.target_kinds).toEqual(expect.arrayContaining(["ARTIFACT", "CREATURE"]));
     expect(abrade.target_count).toBeGreaterThanOrEqual(1);
-    expect(electrolyze.min_exists).toBe(false);
+    expect(electrolyze.min_exists).toBe(true);
+    expect(electrolyze.target_kinds).toEqual(["ANY_TARGET"]);
+    expect(electrolyze.target_count).toBeNull();
   });
 });

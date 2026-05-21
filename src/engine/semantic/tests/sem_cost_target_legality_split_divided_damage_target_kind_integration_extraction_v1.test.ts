@@ -204,15 +204,14 @@ describe("cost target legality split divided damage target kind integration extr
       expect(projectedKinds).toEqual(["ANY_TARGET"]);
 
       // target_kinds channel remains conservative/independent in the current min emission path.
-      expect(row.current_min_exists).toBe(false);
-      expect(row.current_target_kinds).toEqual([]);
+      expect(row.current_min_exists).toBe(true);
+      expect(row.current_target_kinds).toEqual(["ANY_TARGET"]);
       expect(row.current_target_count).toBeNull();
 
       // split_divided damage must not create modal or legality channels.
       expect(row.current_modal_selection_model).toBeNull();
       expect(row.current_legality_kinds).toEqual([]);
 
-      expect(row.current_target_kinds).not.toContain("ANY_TARGET");
       expect(row.current_target_kinds).not.toContain("CAST_ONLY_IF");
       expect(row.current_target_kinds).not.toContain("ACTIVATE_ONLY_AS_SORCERY");
       expect(row.current_legality_kinds).not.toContain("CAST_ONLY_IF");

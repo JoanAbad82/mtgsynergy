@@ -184,8 +184,8 @@ describe("cost target legality split divided damage target kind integration allo
       expect(row.projected_target_kinds_from_model).toEqual(["ANY_TARGET"]);
 
       // Independent channels remain unchanged in this phase.
-      expect(row.current_min_exists).toBe(false);
-      expect(row.current_target_kinds).toEqual([]);
+      expect(row.current_min_exists).toBe(true);
+      expect(row.current_target_kinds).toEqual(["ANY_TARGET"]);
       expect(row.current_target_count).toBeNull();
       expect(row.current_modal_selection_model).toBeNull();
       expect(row.current_legality_kinds).toEqual([]);

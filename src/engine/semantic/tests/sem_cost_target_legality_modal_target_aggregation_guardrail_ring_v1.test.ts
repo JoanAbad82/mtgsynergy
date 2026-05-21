@@ -84,9 +84,9 @@ const EXPECTED_BY_CARD: Record<string, Omit<ModalTargetAggregationSnapshot, "can
   },
   Electrolyze: {
     cardName: "Electrolyze",
-    min_exists: false,
+    min_exists: true,
     cost_kinds: [],
-    target_kinds: [],
+    target_kinds: ["ANY_TARGET"],
     legality_kinds: [],
     target_count: null,
     legality_count: null,
@@ -179,10 +179,10 @@ describe("cost target legality modal target aggregation guardrail ring v1", () =
     expect(abrade?.target_kinds).toEqual(["ARTIFACT", "CREATURE"]);
     expect(abrade?.target_count).toBe(2);
 
-    // Split-target/divided damage is intentionally not repaired in this microphase.
+    // Split-target/divided damage now emits conservative ANY_TARGET in productive runtime.
     const electrolyze = runA.find((row) => row.cardName === "Electrolyze");
-    expect(electrolyze?.min_exists).toBe(false);
-    expect(electrolyze?.target_kinds).toEqual([]);
+    expect(electrolyze?.min_exists).toBe(true);
+    expect(electrolyze?.target_kinds).toEqual(["ANY_TARGET"]);
     expect(electrolyze?.target_count).toBeNull();
     expect(electrolyze?.cost_kinds).toEqual([]);
     expect(electrolyze?.legality_kinds).toEqual([]);

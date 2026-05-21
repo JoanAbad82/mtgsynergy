@@ -151,7 +151,7 @@ describe("semantic overlay rakdos signal diagnose", () => {
     expect(result.metrics.excess_producers).toBeTruthy();
   });
 
-  it("explains why enters_battlefield outranks sacrifice family in current overlay state", async () => {
+  it("keeps top-edge signal coherence with ETB plus sacrifice/dies/payoff bridge presence", async () => {
     const payload = loadCardsIndex();
     const lookup = createLocalLookup(payload);
     const entries = buildDeckEntries();
@@ -172,9 +172,9 @@ describe("semantic overlay rakdos signal diagnose", () => {
     });
 
     expect(etbInTop).toBe(true);
-    expect(sacrificeInTop).toBe(false);
+    expect(sacrificeInTop).toBe(true);
     expect(diesInTop).toBe(true);
-    expect(drawInTop).toBe(false);
+    expect(drawInTop).toBe(true);
     expect(lifeGainInTop).toBe(true);
   });
 });

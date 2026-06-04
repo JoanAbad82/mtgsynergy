@@ -24,7 +24,16 @@ export type SemanticCoverageReason = {
   examples: string[];
 };
 
+export type SemanticInputResolutionDiagnosticsMinV1 = {
+  input_unique_count: number;
+  resolved_unique_count: number;
+  missing_unique_count: number;
+  unresolved_names: string[];
+  missing_oracle_names: string[];
+};
+
 export type SemanticCoverageReport = {
+  inputResolution: SemanticInputResolutionDiagnosticsMinV1;
   totalCardsWithOracle: number;
   coveredCards: number;
   coveragePct: number;
@@ -61,6 +70,8 @@ export async function buildSemanticCoverageReport(
   );
 
   const reasons = new Map<SemanticCoverageReasonId, { count: number; examples: Set<string> }>();
+  const unresolvedNames = new Set<string>();
+  const missingOracleNames = new Set<string>();
   const addReason = (reasonId: SemanticCoverageReasonId, example: string) => {
     const entry = reasons.get(reasonId);
     if (entry) {
@@ -101,6 +112,11 @@ export async function buildSemanticCoverageReport(
   for (const name of uniqueNames) {
     const card = await input.lookup(name);
     if (!card || card.oracle_text == null) {
+      if (!card) {
+        unresolvedNames.add(name);
+      } else {
+        missingOracleNames.add(name);
+      }
       addReason("NO_ORACLE", name);
       recordUncoveredNonLand("NO_ORACLE", name, card?.type_line ?? null);
       continue;
@@ -164,6 +180,8 @@ export async function buildSemanticCoverageReport(
     tag,
     count: tagCounts[tag],
   })).filter((entry) => entry.count > 0);
+  const unresolved_names = Array.from(unresolvedNames).sort((a, b) => a.localeCompare(b));
+  const missing_oracle_names = Array.from(missingOracleNames).sort((a, b) => a.localeCompare(b));
 
   const uncoveredNonLand = Array.from(
     new Map(uncoveredNonLandRaw.map((entry) => [entry.name, entry])).values(),
@@ -176,6 +194,13 @@ export async function buildSemanticCoverageReport(
     .slice(0, 10);
 
   return {
+    inputResolution: {
+      input_unique_count: uniqueNames.length,
+      resolved_unique_count: uniqueNames.length - unresolved_names.length,
+      missing_unique_count: unresolved_names.length + missing_oracle_names.length,
+      unresolved_names,
+      missing_oracle_names,
+    },
     totalCardsWithOracle,
     coveredCards,
     coveragePct,
@@ -184,3 +209,4 @@ export async function buildSemanticCoverageReport(
     textTags,
   };
 }
+

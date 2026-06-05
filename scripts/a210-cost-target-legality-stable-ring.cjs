@@ -28,7 +28,7 @@ const diagnosticAnchorTests = [
 const allTests = [...stableRingTests, ...diagnosticAnchorTests];
 
 console.log("=====================================================================");
-console.log("A2.10 COST/TARGET/LEGALITY STABLE RING — SCRIPTED GATE V1");
+console.log("A2.10 COST/TARGET/LEGALITY STABLE RING - SCRIPTED GATE V1");
 console.log("=====================================================================");
 console.log("");
 console.log("Scope:");

@@ -11,7 +11,8 @@
     "preview": "astro preview",
     "cards:index:build": "node scripts/build_cards_index.mjs",
     "cards:index:verify": "node scripts/verify_cards_index.mjs",
-    "build:cards-index": "node scripts/build_cards_index.mjs && node scripts/fetch_scryfall_art_crops.mjs && node scripts/verify_cards_index.mjs"
+    "build:cards-index": "node scripts/build_cards_index.mjs && node scripts/fetch_scryfall_art_crops.mjs && node scripts/verify_cards_index.mjs",
+    "test:a210:stable-ring": "node scripts/a210-cost-target-legality-stable-ring.cjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.13",

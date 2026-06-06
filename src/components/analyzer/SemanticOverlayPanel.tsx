@@ -26,7 +26,7 @@ export const SEMANTIC_OVERLAY_COPY = {
     "Estas conexiones muestran relaciones que el motor puede explicar con el texto de reglas.",
   weakEdgesTitle: "Señales locales de una sola carta",
   weakEdgesHint:
-    "Estas señales se detectan dentro de una misma carta. Pueden verse como carta → misma carta, tienen puntuación 0, no cuentan como conexión principal, no aumentan SOS y no aumentan SPS; sirven como evidencia local.",
+    "Estas señales se detectan dentro de una misma carta. Pueden verse como carta → misma carta, tienen puntuación 0, no cuentan como conexión principal, no aumentan SOS y no aumentan SPS; sirven como evidencia local, no como una mejora directa del mazo.",
   noEdges: "No hay conexiones semánticas.",
   edgeScoreLabel: "puntuación",
   orphanTitle: "Efectos sin pareja",
@@ -46,7 +46,7 @@ export const SEMANTIC_OVERLAY_COPY = {
   glossaryTitle: "Glosario rápido",
   glossaryItems: [
     "Porcentaje de cartas con alguna señal semántica.",
-    "Fuerza semántica: magnitud logarítmica del total de conexiones detectadas.",
+    "Fuerza semántica: volumen experimental de conexiones semánticas detectadas. No es una nota absoluta de calidad del mazo.",
     "Eventos consumidos sin productores en el mazo.",
     "Señales producidas sin consumidores en el mazo.",
     "Grupos con señales iguales.",

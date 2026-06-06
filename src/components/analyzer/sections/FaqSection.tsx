@@ -12,7 +12,7 @@ export const FAQ_SECTION_COPY = {
     {
       question: "¿Qué mide el SPS?",
       answer:
-        "El SPS resume la fuerza estructural del mazo según las relaciones detectadas entre cartas y roles.",
+        "El SPS resume la señal estructural detectada entre cartas y roles. Úsalo como orientación comparativa: no mide poder competitivo real ni sustituye el testeo del mazo.",
     },
     {
       question: "¿Por qué puede aparecer una advertencia?",

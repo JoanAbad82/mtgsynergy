@@ -396,3 +396,9 @@ describe("SemanticOverlayPanel semantic summary helpers", () => {
     expect(cards).toEqual(snapshot);
   });
 });
+
+it("copy patch frames semantic overlay force as non-absolute", () => {
+  const copy = JSON.stringify(SEMANTIC_OVERLAY_COPY);
+  expect(copy).toContain("No es una nota absoluta");
+  expect(copy).toContain("no como una mejora directa del mazo");
+});

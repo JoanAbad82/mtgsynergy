@@ -1,4 +1,4 @@
-import type { DeckState, StructuralSummary } from "../domain/types";
+import type { Deck, DeckState, StructuralSummary } from "../domain/types";
 import type { ParseIssue } from "../parser/types";
 import type { Issue } from "./enrich";
 import type { ActionableInsight } from "../recommendations/types";
@@ -6,11 +6,13 @@ import { parseMtgaExport } from "../parser";
 import { computeStructuralSummary } from "../structural";
 import { enrichEntriesWithCardIndex } from "./enrich";
 import { generateEdges } from "../edges";
+import type { Edge } from "../edges/types";
+import { projectCardEdgesToRoleEdges } from "../structural/project_card_edges_to_role_edges";
 import { computeStructuralPowerScore } from "../structural/sps";
 import { buildActionableInsightsFromAnalyzerPipeline } from "../recommendations/analyzer_pipeline_wiring";
 
 export type AnalyzeResult = {
-  deckState: DeckState;
+  deckState: { deck: Deck; edges: Edge[] };
   summary: StructuralSummary;
   issues: Array<ParseIssue | Issue>;
   actionableInsights?: ActionableInsight[];
@@ -32,10 +34,12 @@ export async function analyzeMtgaExportAsync(
     : parsed.issues;
 
   const deck = { entries: enriched.entries };
-  const edges = generateEdges(enriched.entries as any);
-  const deckState: DeckState = { deck, edges };
-  const summary = computeStructuralSummary(deckState);
-  const spsResult = computeStructuralPowerScore(summary, deckState.edges ?? []);
+  const cardEdges = generateEdges(enriched.entries as any);
+  const roleEdges = projectCardEdgesToRoleEdges(enriched.entries, cardEdges);
+  const deckState = { deck, edges: cardEdges };
+  const structuralDeckState: DeckState = { deck, edges: roleEdges };
+  const summary = computeStructuralSummary(structuralDeckState);
+  const spsResult = computeStructuralPowerScore(summary, cardEdges);
   summary.structuralPowerScore = spsResult.sps;
   summary.structuralPowerBreakdown = spsResult.breakdown;
   const issues = [...baseIssues, ...enriched.issues_added];

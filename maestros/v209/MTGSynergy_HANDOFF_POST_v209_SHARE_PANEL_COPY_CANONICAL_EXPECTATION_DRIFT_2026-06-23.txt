@@ -1,0 +1,189 @@
+MTGSYNERGY — HANDOFF POST v209
+SHARE PANEL COPY CANONICAL EXPECTATION DRIFT
+Fecha: 2026-06-23
+Proyecto: MTGSynergy / PÁGINA WEB MAGIC
+Estado: HANDOFF DOCUMENTAL GENERADO LOCALMENTE; PENDIENTE DE REVISIÓN POST-GENERACIÓN
+
+=====================================================================
+1. PUNTO EXACTO DE CONTINUACIÓN
+=====================================================================
+
+Main canónico:
+- 8d69191ed9eeea88ad9a91986d2d3fefeb2a704a
+
+Rama:
+- main
+
+Relación local/remota validada antes de crear v209:
+- HEAD = origin/main = authoritative remote main
+- ahead = 0
+- behind = 0
+
+Último cambio técnico integrado:
+- test: align SharePanel title expectation with canonical copy
+
+Único archivo técnico modificado:
+- src/components/analyzer/tests/share_panel.test.tsx
+
+Componente runtime preservado:
+- src/components/analyzer/panels/SharePanel.tsx
+
+=====================================================================
+2. QUÉ QUEDA CERRADO
+=====================================================================
+
+Queda cerrada únicamente la reparación:
+- MTGSYNERGY_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_MINIMAL_TEST_ONLY_REPAIR_V1
+
+Resultado:
+- expectativa de SharePanel alineada con el copy canónico
+- runtime sin cambios
+- componente sin cambios
+- motor semántico sin cambios
+- global Vitest 216/216 archivos y 684/684 tests PASS
+- A2.10 stable ring 17/17 archivos y 30/30 tests PASS
+- Astro build PASS con 4 páginas
+- commit y push validados en 8d69191ed9eeea88ad9a91986d2d3fefeb2a704a
+
+=====================================================================
+3. ESTADO LOCAL TRAS ESTA FASE
+=====================================================================
+
+La única mutación autorizada por esta fase es la aparición de dos archivos no trackeados:
+- maestros/v209/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v209_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_MINIMAL_TEST_ONLY_REPAIR_2026-06-23.txt
+- maestros/v209/MTGSynergy_HANDOFF_POST_v209_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_2026-06-23.txt
+
+Estado esperado de git status --short:
+- ?? maestros/v209/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v209_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_MINIMAL_TEST_ONLY_REPAIR_2026-06-23.txt
+- ?? maestros/v209/MTGSynergy_HANDOFF_POST_v209_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_2026-06-23.txt
+
+No debe existir:
+- modificación de archivos trackeados
+- contenido staged
+- commit nuevo
+- push nuevo
+- cambio de HEAD
+- cambio en origin/main
+
+=====================================================================
+4. SIGUIENTE FASE OBLIGATORIA
+=====================================================================
+
+Antes de integrar v209 debe ejecutarse:
+- MTGSYNERGY_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_DOCUMENTARY_CLOSURE_AND_SCOPE_HANDOFF_POST_GENERATION_REVIEW_V1
+
+Objetivo de esa revisión:
+- leer ambos documentos completos
+- comprobar que los datos Git, hashes, tests y guardrails coinciden con las evidencias
+- verificar que solo existen los dos archivos no trackeados de v209
+- detectar cualquier overclaim o deuda indebidamente absorbida
+- decidir si procede una fase separada de commit documental
+
+La revisión post-generación debe ser read-only.
+
+No autoriza:
+- git add
+- commit
+- push
+- edición de runtime
+- edición de tests
+- edición de componentes
+- reparación de v72
+- reanudación funcional
+
+=====================================================================
+5. DEUDA INDEPENDIENTE RETENIDA
+=====================================================================
+
+Permanece una deuda separada de Node-native family qualification por la ausencia de:
+- maestros/v72/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v72_2026-04-03.txt
+
+Tratamiento correcto:
+- no mezclarla con el cierre SharePanel
+- no repararla durante la revisión de v209
+- abrir precheck independiente solo si se prioriza expresamente
+
+=====================================================================
+6. FRENTE FUNCIONAL INTERRUMPIDO
+=====================================================================
+
+Fase interrumpida:
+- PRODUCT_SURFACE_METRIC_EXPLANATION_COPY_PATCH_V1
+
+Rama conocida:
+- ux/product-surface-metric-explanation-copy-patch-v1
+
+Último HEAD conocido de esa rama:
+- ccd50b2
+
+La rama no se reanuda automáticamente.
+
+Siguiente precheck funcional recomendado tras integrar documentalmente v209:
+- MTGSYNERGY_PRODUCT_SURFACE_METRIC_EXPLANATION_COPY_PATCH_V1_BRANCH_RECONCILIATION_PRECHECK_V1
+
+Contrato de ese precheck:
+- read-only
+- comparar la rama interrumpida con main en 8d69191ed9eeea88ad9a91986d2d3fefeb2a704a
+- identificar qué cambios copy-only siguen siendo válidos
+- clasificar si los fallos de test observados anteriormente quedaron obsoletos tras la reparación global de Vitest
+- no checkout mutante
+- no merge
+- no rebase
+- no cherry-pick
+- no edición
+- no staging
+- no commit
+- no push
+
+=====================================================================
+7. GUARDRAILS DE CONTINUIDAD
+=====================================================================
+
+Preservar:
+- trabajo por microfases estrechas
+- precheck antes de mutación
+- parche mínimo
+- validación focal + stable ring
+- build cuando aplique
+- scope/diff explícito
+- commit y push en fases separadas
+- cierres documentales versionados
+
+No asumir que una suite global verde elimina automáticamente:
+- deudas de fixtures Node-native
+- divergencias de ramas interrumpidas
+- necesidad de reconciliación de copy
+- controles de alcance documental
+
+=====================================================================
+8. ORDEN RECOMENDADO
+=====================================================================
+
+1. Ejecutar MTGSYNERGY_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_DOCUMENTARY_CLOSURE_AND_SCOPE_HANDOFF_POST_GENERATION_REVIEW_V1.
+2. Si la revisión pasa, abrir una fase separada de commit y validación post-commit de los dos documentos v209.
+3. Ejecutar una fase separada de push y validación remota de v209.
+4. Solo después abrir MTGSYNERGY_PRODUCT_SURFACE_METRIC_EXPLANATION_COPY_PATCH_V1_BRANCH_RECONCILIATION_PRECHECK_V1.
+5. Mantener la deuda v72 fuera de estos cortes salvo autorización expresa.
+
+=====================================================================
+9. RESUMEN DE HANDOFF
+=====================================================================
+
+Estado técnico:
+- reparación SharePanel cerrada e integrada
+
+Estado documental:
+- v209 generado localmente
+- todavía no staged
+- todavía no committed
+- todavía no pushed
+
+Próximo corte:
+- revisión post-generación read-only de v209
+
+Próximo frente funcional posterior:
+- reconciliación read-only de la rama PRODUCT_SURFACE_METRIC_EXPLANATION_COPY_PATCH_V1
+
+=====================================================================
+FIN DEL HANDOFF POST v209
+=====================================================================

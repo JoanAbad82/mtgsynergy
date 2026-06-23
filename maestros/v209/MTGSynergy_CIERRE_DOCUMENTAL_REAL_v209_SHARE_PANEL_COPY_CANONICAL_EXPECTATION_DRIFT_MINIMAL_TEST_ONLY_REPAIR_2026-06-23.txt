@@ -1,0 +1,286 @@
+MTGSYNERGY — CIERRE DOCUMENTAL REAL v209
+SHARE PANEL COPY CANONICAL EXPECTATION DRIFT — MINIMAL TEST-ONLY REPAIR
+Fecha: 2026-06-23
+Proyecto: MTGSynergy / PÁGINA WEB MAGIC
+Estado: REPARACIÓN TÉCNICA INTEGRADA Y CERRADA; BUNDLE DOCUMENTAL v209 GENERADO LOCALMENTE
+
+=====================================================================
+1. OBJETO DEL CIERRE
+=====================================================================
+
+Este documento cierra formalmente la microfase:
+- MTGSYNERGY_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_MINIMAL_TEST_ONLY_REPAIR_V1
+
+El corte resolvió una deriva estrictamente localizada entre la expectativa del test de SharePanel y el copy canónico que ya servía el componente en runtime.
+
+No se modificó el comportamiento de producto. No se modificó el componente. No se modificó el motor semántico. La única mutación técnica integrada en main y validada en el remoto fue una actualización de expectativa en un único archivo de test.
+
+=====================================================================
+2. DECISIÓN EJECUTIVA
+=====================================================================
+
+Resultado final:
+- PASS
+- reparación mínima integrada en main
+- push remoto validado
+- repositorio sincronizado
+- suite global Vitest completamente verde
+- ring estable A2.10 verde
+- build Astro verde
+- sin mutación de runtime, componente ni motor semántico
+
+La reparación queda cerrada como test-only porque el título canónico del componente ya era:
+- "Comparte este análisis"
+
+La expectativa obsoleta era:
+- "URL para compartir"
+
+La corrección exacta fue:
+- "URL para compartir" -> "Comparte este análisis"
+
+Número de sustituciones:
+- 1
+
+=====================================================================
+3. CADENA DE FASES VALIDADA
+=====================================================================
+
+Precheck corregido y validado:
+- MTGSYNERGY_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_PRECHECK_ERR_TRAP_EXPECTED_EXIT_CAPTURE_REPAIR_OR_REVIEW_V1
+
+Implementación mínima:
+- MTGSYNERGY_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_MINIMAL_TEST_ONLY_REPAIR_V1
+
+Revisión post-implementación:
+- MTGSYNERGY_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_MINIMAL_TEST_ONLY_REPAIR_POST_IMPLEMENTATION_REVIEW_PATCH_APPLICABILITY_BASELINE_REPAIR_OR_REVIEW_V1
+
+Commit y validación post-commit:
+- MTGSYNERGY_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_MINIMAL_TEST_ONLY_REPAIR_COMMIT_AND_POST_COMMIT_VALIDATION_V1
+
+Push y validación remota:
+- MTGSYNERGY_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_MINIMAL_TEST_ONLY_REPAIR_PUSH_AND_REMOTE_POST_PUSH_VALIDATION_V1
+
+Precheck documental que autorizó este bundle:
+- MTGSYNERGY_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_DOCUMENTARY_CLOSURE_AND_SCOPE_HANDOFF_PRECHECK_V1
+- evidencia: 20260623T152821Z
+
+Toda la cadena previa fue clasificada como válida antes de crear v209.
+
+=====================================================================
+4. BASELINE GIT CANÓNICO
+=====================================================================
+
+Rama:
+- main
+
+Commit integrado:
+- 8d69191ed9eeea88ad9a91986d2d3fefeb2a704a
+
+Commit padre:
+- 13ef8f5a44abc8dab4ba92945954788a89077c36
+
+Árbol Git:
+- 377bb117598caaa3339df5e27a601f6e8dcb754a
+
+Asunto del commit:
+- test: align SharePanel title expectation with canonical copy
+
+Relación final validada:
+- HEAD = 8d69191ed9eeea88ad9a91986d2d3fefeb2a704a
+- origin/main = 8d69191ed9eeea88ad9a91986d2d3fefeb2a704a
+- authoritative remote main = 8d69191ed9eeea88ad9a91986d2d3fefeb2a704a
+- ahead = 0
+- behind = 0
+
+Estado del repositorio antes de generar v209:
+- worktree limpio
+- index limpio
+
+=====================================================================
+5. ALCANCE REAL INTEGRADO
+=====================================================================
+
+Único archivo modificado por el commit técnico:
+- src/components/analyzer/tests/share_panel.test.tsx
+
+Alcance exacto:
+- una línea eliminada
+- una línea añadida
+- actualización de la expectativa del título de SharePanel
+
+SHA-256 del archivo de test integrado:
+- 843da772fb5e5e8553b73a0d2eeab151f4f14b6a88057a6525e416c544f10945
+
+Archivo runtime preservado sin cambios:
+- src/components/analyzer/panels/SharePanel.tsx
+
+SHA-256 del componente preservado:
+- 5f0ace0083c95e06c62436800e3ef1967e261c50b3d6de2124df3b9d30510dbd
+
+Archivos y capas no modificados:
+- componente SharePanel
+- runtime del analizador
+- parser
+- lowering
+- overlay semántico
+- scoring
+- SPS
+- MC-SSL
+- contratos A2.10
+- package.json
+- lockfiles
+- configuración de build
+
+=====================================================================
+6. DIAGNÓSTICO Y CAUSA RAÍZ
+=====================================================================
+
+La superficie de fallo global quedó reducida a SharePanel. El componente ya renderizaba el copy canónico "Comparte este análisis", mientras que el test seguía esperando "URL para compartir".
+
+Por tanto:
+- el runtime era correcto
+- la expectativa del test estaba obsoleta
+- cambiar el componente habría introducido una regresión de producto
+- la solución correcta era alinear únicamente el test con el contrato visible ya vigente
+
+La clasificación final fue:
+- canonical expectation drift
+- test-only repair
+- cero cambio funcional
+
+=====================================================================
+7. VALIDACIONES CERRADAS
+=====================================================================
+
+Validación focal SharePanel:
+- 1/1 archivo PASS
+- 2/2 tests PASS
+
+Validación global Vitest:
+- 216/216 archivos PASS
+- 684/684 tests PASS
+
+Ring estable A2.10:
+- 17/17 archivos PASS
+- 30/30 tests PASS
+
+Build Astro:
+- PASS
+- 4 páginas generadas
+
+Revisión de commit:
+- un único archivo
+- una única sustitución de copy
+- componente preservado
+- runtime preservado
+- motor semántico preservado
+
+Validación remota:
+- main local, origin/main y remote main sincronizados en 8d69191ed9eeea88ad9a91986d2d3fefeb2a704a
+
+=====================================================================
+8. PREVENCIÓN DE FALLOS Y LECCIONES OPERATIVAS
+=====================================================================
+
+A. ERR trap y comandos con salida no cero esperada
+Cuando existe un trap ERR global, una salida no cero esperada no debe ejecutarse como comando desnudo. Debe capturarse mediante una estructura if/else para impedir que el trap convierta una comprobación válida en fallo de fase.
+
+Regla preservada:
+- expected nonzero exit -> capturar en if/else
+- no confiar solo en set +e alrededor de una comprobación cuando el trap ERR sigue activo
+
+B. Comprobación de aplicabilidad de un patch ya materializado
+Cuando el patch ya está aplicado en el worktree, git apply --check contra el worktree modificado puede fallar correctamente porque la línea antigua ya no existe.
+
+Regla preservada:
+- para comprobar el patch contra la baseline limpia del index, usar git apply --check --cached
+- interpretar el fallo de git apply --check sobre el worktree modificado como esperado, no como evidencia automática de patch inválido
+
+C. Separación entre copy runtime y expectativa de test
+Antes de editar un componente visible, comparar:
+- copy servido por runtime
+- copy esperado por el test
+- contrato UI vigente
+
+Si runtime y contrato coinciden, la reparación debe limitarse a la expectativa obsoleta.
+
+D. Disciplina de alcance
+Una deriva de copy localizada no autoriza:
+- refactor del componente
+- cambios semánticos
+- reapertura de scoring
+- limpieza lateral
+- reparación de deudas independientes
+
+=====================================================================
+9. DEUDA INDEPENDIENTE NO REPARADA
+=====================================================================
+
+Permanece fuera de este cierre una deuda Node-native de family qualification asociada a la ruta ausente:
+- maestros/v72/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v72_2026-04-03.txt
+
+Esta deuda:
+- no fue causada por SharePanel
+- no impide el cierre de esta reparación
+- no está autorizada dentro de v209
+- requiere una microfase independiente si se decide abordarla
+
+=====================================================================
+10. LÍMITES DEL CIERRE
+=====================================================================
+
+Este cierre no autoriza:
+- nuevos cambios de copy
+- cambios en SharePanel.tsx
+- cambios en share_panel.test.tsx
+- repair del fixture v72
+- mutaciones en parser, lowering, overlay o motor estructural
+- reanudación automática de PRODUCT_SURFACE_METRIC_EXPLANATION_COPY_PATCH_V1
+- merge, rebase o cherry-pick de la rama interrumpida
+
+=====================================================================
+11. ESTADO DOCUMENTAL v209
+=====================================================================
+
+Bundle anterior:
+- v208
+
+Bundle nuevo:
+- v209
+
+Archivos del bundle v209:
+- maestros/v209/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v209_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_MINIMAL_TEST_ONLY_REPAIR_2026-06-23.txt
+- maestros/v209/MTGSynergy_HANDOFF_POST_v209_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_2026-06-23.txt
+
+Durante esta fase:
+- se crean localmente solo esos dos archivos
+- no se ejecuta git add
+- no se crea commit
+- no se ejecuta push
+
+La integración documental de v209 requerirá primero una revisión post-generación independiente.
+
+=====================================================================
+12. CIERRE FORMAL
+=====================================================================
+
+La reparación SharePanel copy canonical-expectation drift queda formalmente cerrada en su dimensión técnica.
+
+El resultado preserva la solución mínima correcta:
+- runtime canónico intacto
+- test alineado
+- suite global verde
+- ring estable verde
+- build verde
+- main sincronizado
+- alcance auditable de un archivo y una línea
+
+Siguiente fase documental recomendada:
+- MTGSYNERGY_SHARE_PANEL_COPY_CANONICAL_EXPECTATION_DRIFT_DOCUMENTARY_CLOSURE_AND_SCOPE_HANDOFF_POST_GENERATION_REVIEW_V1
+
+Siguiente frente funcional recomendado, todavía no abierto:
+- MTGSYNERGY_PRODUCT_SURFACE_METRIC_EXPLANATION_COPY_PATCH_V1_BRANCH_RECONCILIATION_PRECHECK_V1
+
+=====================================================================
+FIN DEL CIERRE DOCUMENTAL REAL v209
+=====================================================================

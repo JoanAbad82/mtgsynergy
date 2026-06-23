@@ -1,0 +1,144 @@
+MTGSYNERGY
+CIERRE DOCUMENTAL REAL v208
+VITEST NODE TEST COLLECTION BOUNDARY MINIMAL IMPLEMENTATION V1
+Fecha documental: 2026-06-23
+Estado: CIERRE TÉCNICO Y DOCUMENTAL VALIDADO
+
+=====================================================================
+1. IDENTIFICACIÓN Y ALCANCE
+=====================================================================
+
+Fase fuente:
+MTGSYNERGY_VITEST_NODE_TEST_COLLECTION_BOUNDARY_MINIMAL_IMPLEMENTATION_V1
+
+Objetivo cerrado:
+Separar de forma explícita la colección de pruebas de Vitest de las pruebas
+Node-native ubicadas en tools/family_qualification/**/*.test.mjs, preservando
+su ejecución explícita mediante node --test.
+
+Este cierre documenta exclusivamente la reparación del límite de colección.
+No introduce cambios en el motor semántico, la UI, el comportamiento runtime,
+el contenido de las pruebas ni los contratos funcionales del producto.
+
+=====================================================================
+2. IMPLEMENTACIÓN INTEGRADA
+=====================================================================
+
+Commit integrado:
+6d17f8a0c874ccc88f2ce6ed596f0e08d7ecc5a4
+
+Commit padre:
+bcaa48ed875785619a0c275e87d45088915c9dd1
+
+Asunto del commit:
+test: isolate node-native family qualification tests from Vitest
+
+Alcance exacto del commit:
+vitest.config.ts únicamente
+
+SHA-256 de vitest.config.ts comprometido:
+ca179168d92f21f902387539ed3e746c7cfb518a9090a8ead08e74f22c0275f3
+
+Contrato implementado:
+- Vitest excluye tools/family_qualification/**/*.test.mjs.
+- Las pruebas Node-native continúan visibles y ejecutables mediante node --test.
+- No se modificaron package.json, lockfiles, runtime, src/, tools/, scripts/ ni
+  el contenido de ninguna prueba.
+
+=====================================================================
+3. CADENA DE VALIDACIÓN
+=====================================================================
+
+3.1 Revisión post-implementación y precheck de commit
+- Resultado: PASS.
+- Candidato de commit autorizado con alcance vitest.config.ts únicamente.
+- Parent esperado: bcaa48e.
+- SHA-256 esperado: ca179168d92f21f902387539ed3e746c7cfb518a9090a8ead08e74f22c0275f3.
+
+3.2 Commit y revisión post-commit
+- Commit creado: 6d17f8a.
+- El NO_PASS inicial de la validación post-commit fue un falso negativo del
+  runner: el trap ERR interceptó un exit 1 esperado antes de su clasificación.
+- La reparación del capturador de salidas esperadas superó una autoprueba con
+  exit 7 y reprodujo correctamente el exit 1 esperado de Vitest.
+- Resultado post-commit reparado: PASS.
+
+3.3 Push y validación remota
+- Push fast-forward ordinario, sin force.
+- main, origin/main y la referencia remota autoritativa quedaron sincronizados
+  en 6d17f8a0c874ccc88f2ce6ed596f0e08d7ecc5a4.
+- Estado final previo a este cierre: ahead 0, behind 0, árbol e índice limpios.
+
+=====================================================================
+4. RESULTADOS DE LOS GATES
+=====================================================================
+
+4.1 Límite de colección Vitest
+- Invocación explícita sobre los archivos Node-native excluidos.
+- Resultado esperado: exit 1 con "No test files found".
+- Clasificación: PASS; la exclusión está activa y es efectiva.
+
+4.2 Vitest global
+- Archivos: 215/216 pasan.
+- Pruebas: 683/684 pasan.
+- Único fallo: deriva conocida e independiente del copy de SharePanel.
+- Clasificación ANSI-safe de fallo conocido: PASS.
+
+4.3 Ejecución Node-native
+- 4 archivos pasan.
+- 1 archivo falla.
+- Exactamente 2 subtests fallan únicamente por la ausencia de:
+  maestros/v72/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v72_2026-04-03.txt
+- La visibilidad y ejecución explícita de las pruebas Node-native queda validada.
+
+4.4 Ring estable A2.10
+- 17/17 archivos pasan.
+- 30/30 pruebas pasan.
+
+4.5 Build Astro
+- Resultado: PASS.
+- 4 páginas generadas.
+
+=====================================================================
+5. DEUDAS INDEPENDIENTES PRESERVADAS
+=====================================================================
+
+Deuda A:
+Deriva de expectativa de copy en src/components/analyzer/tests/share_panel.test.tsx:
+se esperaba "URL para compartir" y el runtime expone "Comparte este análisis".
+
+Deuda B:
+Ruta documental v72 ausente requerida por dos subtests de
+run_family_qualification_v1.test.mjs.
+
+Ninguna de estas deudas fue reparada, modificada ni autorizada por esta fase.
+No bloquean el cierre del límite de colección porque son fallos preexistentes,
+independientes y clasificados de manera determinista.
+
+=====================================================================
+6. INVARIANTES DE CIERRE
+=====================================================================
+
+- Semántica del motor: sin cambios.
+- Runtime del analizador: sin cambios.
+- Contenido de pruebas: sin cambios.
+- Configuración: solo se añadió vitest.config.ts en el commit fuente.
+- Ejecución Node-native: explícita mediante node --test.
+- Wallet, trading, predicciones y otras superficies ajenas: fuera de alcance.
+- No se abre automáticamente una nueva fase de producto o semántica.
+
+=====================================================================
+7. DECISIÓN DE CIERRE
+=====================================================================
+
+RESULTADO=PASS
+FASE_CERRADA=MTGSYNERGY_VITEST_NODE_TEST_COLLECTION_BOUNDARY_MINIMAL_IMPLEMENTATION_V1
+COMMIT_INTEGRADO=6d17f8a0c874ccc88f2ce6ed596f0e08d7ecc5a4
+ALCANCE_INTEGRADO=vitest.config.ts_ONLY
+INTEGRACIÓN_REMOTA=PASS
+REPOSITORIO_PRE_DOCUMENTACIÓN=SINCRONIZADO_Y_LIMPIO
+DEUDAS_INDEPENDIENTES=CONSERVADAS_SIN_AUTORIZACIÓN_IMPLÍCITA
+
+El límite entre Vitest y las pruebas Node-native queda técnica y documentalmente
+cerrado. Cualquier trabajo posterior debe comenzar con un precheck independiente
+y un alcance separado y explícitamente congelado.

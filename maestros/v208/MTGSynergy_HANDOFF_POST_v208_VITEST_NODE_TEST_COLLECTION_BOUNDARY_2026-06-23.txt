@@ -1,0 +1,71 @@
+MTGSYNERGY
+HANDOFF POST v208
+VITEST NODE TEST COLLECTION BOUNDARY
+Fecha documental: 2026-06-23
+Estado: HANDOFF DE ALCANCE
+
+=====================================================================
+1. BASELINE CANÓNICA
+=====================================================================
+
+Rama: main
+HEAD / origin/main / remoto autoritativo:
+6d17f8a0c874ccc88f2ce6ed596f0e08d7ecc5a4
+
+Commit padre:
+bcaa48ed875785619a0c275e87d45088915c9dd1
+
+Commit integrado:
+test: isolate node-native family qualification tests from Vitest
+
+Archivo integrado:
+vitest.config.ts
+
+SHA-256:
+ca179168d92f21f902387539ed3e746c7cfb518a9090a8ead08e74f22c0275f3
+
+=====================================================================
+2. ALCANCE QUE QUEDA CERRADO
+=====================================================================
+
+Queda cerrada únicamente la reparación del límite de colección entre Vitest y
+las pruebas Node-native de tools/family_qualification/**/*.test.mjs.
+
+Contrato operativo resultante:
+- Vitest no recolecta esas pruebas Node-native.
+- Las pruebas Node-native se ejecutan explícitamente mediante node --test.
+- El comportamiento semántico y runtime no cambia.
+- El contenido de las pruebas no cambia.
+
+=====================================================================
+3. DEUDAS INDEPENDIENTES NO AUTORIZADAS
+=====================================================================
+
+A. SharePanel copy expectation drift.
+B. Ausencia de maestros/v72/MTGSynergy_CIERRE_DOCUMENTAL_REAL_v72_2026-04-03.txt.
+
+Este handoff no autoriza reparar, mezclar ni absorber ninguna de esas deudas.
+Cada una requiere un precheck independiente y un scope propio.
+
+=====================================================================
+4. LÍMITES PARA EL TRABAJO FUTURO
+=====================================================================
+
+- No se abre automáticamente una nueva fase de producto o semántica.
+- No debe alterarse vitest.config.ts dentro de otro scope sin diagnóstico previo.
+- No deben mezclarse cambios de UI, runtime, fixtures o tests con este cierre.
+- Cualquier siguiente implementación debe comenzar con baseline limpio,
+  comprobación de main/origin/main y alcance congelado.
+
+=====================================================================
+5. SIGUIENTE PASO OPERATIVO INMEDIATO
+=====================================================================
+
+Revisar únicamente los dos documentos nuevos de maestros/v208, confirmar que
+son el único delta del repositorio y decidir en una fase separada si se autoriza
+su commit documental. El commit y el push no están autorizados por la fase de
+creación local de estos documentos.
+
+HANDOFF_RESULT=READY_FOR_POST_CREATION_REVIEW_AND_COMMIT_PRECHECK
+NEW_PRODUCT_OR_SEMANTIC_PHASE_OPENED=NO
+INDEPENDENT_DEBT_AUTOMATICALLY_AUTHORIZED=NO

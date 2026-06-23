@@ -3,7 +3,7 @@ import { SHARE_PANEL_COPY } from "../panels/SharePanel";
 
 describe("SharePanel copy", () => {
   it("usa copy friendly para compartir", () => {
-    expect(SHARE_PANEL_COPY.title).toBe("URL para compartir");
+    expect(SHARE_PANEL_COPY.title).toBe("Comparte este análisis");
     expect(SHARE_PANEL_COPY.copyLinkButton).toBe("Copiar enlace");
     expect(SHARE_PANEL_COPY.emptyState.toLowerCase()).toContain("enlace");
   });

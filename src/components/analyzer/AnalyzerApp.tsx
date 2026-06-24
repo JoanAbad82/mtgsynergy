@@ -43,6 +43,8 @@ import { computeSemanticOverlayFromDeckEntries } from "../../engine/semantic/ove
 import { buildSemanticCoverageReport } from "../../engine/semantic/overlay/sem_coverage_report";
 import type { SemanticCoverageReport } from "../../engine/semantic/overlay/sem_coverage_report";
 
+import { compareSemanticAnalysisResultsV1 } from "../../engine/semantic/comparison/compare_semantic_analysis_results_v1";
+
 type Props = {
   buildSha?: string;
 };
@@ -61,6 +63,10 @@ type MonteCarloActivationCopy = {
 };
 
 export default function AnalyzerApp({ buildSha }: Props) {
+  const [comparisonInputB, setComparisonInputB] = useState("");
+  const [comparisonResult, setComparisonResult] =
+    useState<ReturnType<typeof compareSemanticAnalysisResultsV1> | null>(null);
+
   const [inputText, setInputText] = useState("");
   const [deckState, setDeckState] = useState<ShareDeckState | null>(null);
   const [summary, setSummary] = useState<StructuralSummary | null>(null);
@@ -332,6 +338,17 @@ export default function AnalyzerApp({ buildSha }: Props) {
         Array.isArray(res.actionableInsights) ? res.actionableInsights : [],
       );
 
+      if (comparisonInputB.trim()) {
+        const comparisonRes = await analyzeMtgaExportAsync(comparisonInputB, {
+          enableCardIndex: true,
+          baseUrl: cardsIndexBaseUrl,
+        });
+        setComparisonResult(compareSemanticAnalysisResultsV1(res, comparisonRes));
+      } else {
+        setComparisonResult(null);
+      }
+
+
       const shareJson = exportShareJson(res.deckState);
       setJsonFallback(shareJson);
 
@@ -403,6 +420,34 @@ export default function AnalyzerApp({ buildSha }: Props) {
 
   return (
     <div className="analyzer">
+
+      <section aria-label="Semantic deck comparison">
+        <h2>Comparación semántica</h2>
+        <label>
+          Versión B (opcional)
+          <textarea
+            value={comparisonInputB}
+            onInput={(event) =>
+              setComparisonInputB((event.currentTarget as HTMLTextAreaElement).value)
+            }
+            placeholder="Pega aquí una segunda versión del mazo"
+          />
+        </label>
+        <p>Los cambios detectados describen diferencias semánticas; no son un veredicto de fuerza competitiva.</p>
+        {comparisonResult ? (
+          <div data-testid="semantic-comparison-result">
+            <p>Cartas añadidas: {comparisonResult.cardsAdded.length}</p>
+            <p>Cartas eliminadas: {comparisonResult.cardsRemoved.length}</p>
+            <p>Cambios de cantidad: {comparisonResult.quantityChanges.length}</p>
+            <p>Conexiones ganadas: {comparisonResult.connectionsGained.length}</p>
+            <p>Conexiones perdidas: {comparisonResult.connectionsLost.length}</p>
+            <p>Eventos ganados: {comparisonResult.eventsGained.length}</p>
+            <p>Eventos perdidos: {comparisonResult.eventsLost.length}</p>
+            <p>Cobertura A/B/Δ: {String(comparisonResult.coverageA)} / {String(comparisonResult.coverageB)} / {String(comparisonResult.coverageDelta)}</p>
+          </div>
+        ) : null}
+      </section>
+
       <div className="panel analyzer-input-panel">
         <span className="badge">{MONTE_CARLO_PANEL_COPY.entryBadgeTitle}</span>
         <p className="muted" style={{ marginTop: "10px" }}>

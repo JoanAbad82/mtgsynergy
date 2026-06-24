@@ -1,4 +1,6 @@
 import { expect, test } from "vitest";
+import { readFileSync } from "node:fs";
+
 import { decodeShareState, encodeShareState } from "../../../engine";
 import { exportJson, importJson } from "../state/jsonFallback";
 import {
@@ -80,4 +82,15 @@ test("copy helper does not throw without clipboard", async () => {
       Object.defineProperty(nav, "clipboard", clipboardDesc);
     }
   }
+});
+
+test("semantic comparison visible surface keeps Version B optional and avoids strength claims", () => {
+  const source = readFileSync(
+    new URL("../AnalyzerApp.tsx", import.meta.url),
+    "utf8",
+  );
+  expect(source).toContain("Comparación semántica");
+  expect(source).toContain("Versión B (opcional)");
+  expect(source).toContain("veredicto de fuerza competitiva");
+  expect(source).toContain('data-testid="semantic-comparison-result"');
 });

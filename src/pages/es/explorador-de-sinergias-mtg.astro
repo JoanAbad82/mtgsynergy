@@ -3,7 +3,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 ---
 <BaseLayout
   title="Explorador de Sinergias MTG (Beta) — MTGSynergy"
-  description="Vista previa técnica para explorar candidatos no rankeados a partir de una o dos cartas MTG. Sin ranking, score ni explicación causal todavía."
+  description="Explora cartas conectadas mediante ranking semántico, score visible y razones explicables."
   lang="es"
 >
   <section class="beta-shell">
@@ -11,10 +11,9 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     <h1>Explorador de Sinergias MTG (Beta)</h1>
     <p class="lead">
       Esta beta pública muestra el flujo de interfaz actual del explorador. Hoy trabaja con
-      <strong> candidatos no rankeados</strong> a nivel de vista previa y todavía no presenta una
-      lista ordenada por sinergia.
+      <strong>cartas conectadas y ordenadas por sinergia explicable</strong> a partir del índice local.
     </p>
-    <p class="notice">No calcula ranking, score ni explicación causal de sinergia todavía.</p>
+    <p class="notice">Calcula un ranking semántico explicable sin usar SPS ni centralidad.</p>
 
     <div class="beta-card">
       <h2>Entrada beta</h2>
@@ -72,8 +71,8 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       </div>
       <p class="input-footnote">
         Esta entrada beta no ejecuta el motor: solo sincroniza estado local con la vista previa de
-        salida. Puede mostrar un pool inicial filtrado de candidatos reales no rankeados desde el
-        índice local. No calcula ranking, no calcula score ni explicación causal de sinergia. La
+        salida. Muestra un pool inicial de cartas reales ordenadas por sinergia explicable desde el
+        índice local. Calcula ranking, score visible y razones de conexión sin usar SPS ni centralidad. La
         versión pública seguirá siendo 100% client-side.
       </p>
     </div>
@@ -82,10 +81,10 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       <h2>Vista previa de salida</h2>
       <p>
         Esta vista previa se sincroniza con las seeds introducidas localmente y mantiene formato de
-        salida pública para <strong>candidatos no rankeados</strong>.
+        salida pública para <strong>cartas ordenadas por sinergia</strong>.
       </p>
       <div id="cse-beta-output-preview" class="beta-output-empty" data-cse-beta-output data-state="empty" aria-live="polite">
-        <p class="beta-output-empty-title">Salida no rankeada pendiente de activación.</p>
+        <p class="beta-output-empty-title">Salida ordenada por sinergia explicable.</p>
         <p id="cse-beta-output-status" class="beta-output-status">Todavía no hay candidatos generados.</p>
         <p id="cse-beta-output-note" class="beta-output-note">Todavía no se generan candidatos reales.</p>
         <ul id="cse-beta-output-seeds" class="beta-output-seeds" hidden>
@@ -120,24 +119,24 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         </dl>
       </div>
       <ul class="beta-output-guardrails">
-        <li>No calcula ranking.</li>
-        <li>No calcula score.</li>
-        <li>No genera explicación causal.</li>
+        <li>Calcula ranking semántico determinista.</li>
+        <li>Muestra un score explicable por candidato.</li>
+        <li>Muestra razones concretas de conexión.</li>
       </ul>
       <div id="cse-beta-real-pool" class="beta-real-pool" data-state="idle" aria-live="polite">
-        <p class="beta-real-pool-title">Candidatos reales no rankeados</p>
-        <p class="beta-real-pool-subtitle">Pool inicial desde índice local</p>
-        <p class="beta-real-pool-subcopy">Pool inicial filtrado. Filtrado mínimo desde índice local.</p>
+        <p class="beta-real-pool-title">Cartas conectadas por sinergia explicable</p>
+        <p class="beta-real-pool-subtitle">Resultados ordenados desde el índice local</p>
+        <p class="beta-real-pool-subcopy">Ranking determinista basado en señales semánticas directas.</p>
         <p id="cse-beta-real-pool-status" class="beta-real-pool-status">
           No hay candidatos reales disponibles todavía para esta entrada.
         </p>
         <ul id="cse-beta-real-pool-list" class="beta-real-pool-list" hidden></ul>
         <ul class="beta-real-pool-guardrails">
           <li>No son recomendaciones finales</li>
-          <li>Sin ranking</li>
-          <li>Sin score</li>
-          <li>Sin explicación causal</li>
-          <li>El orden no representa ranking</li>
+          <li>Ranking semántico directo</li>
+          <li>Score explicable</li>
+          <li>Razones visibles de conexión</li>
+          <li>El orden representa fuerza de conexión semántica</li>
         </ul>
       </div>
     </div>
@@ -167,8 +166,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
       <h2>Próximo paso</h2>
       <p>
         Siguiente paso controlado: mejorar el filtrado y conectar señales semánticas más precisas
-        manteniendo salida no rankeada y no definitiva, sin introducir ranking, score ni
-        explicación causal.
+        manteniendo una salida ordenada, explicable y todavía iterativa, con ranking, score visible y razones explicables.
       </p>
       <p>100% client-side en la evolución pública de esta beta.</p>
       <p>
@@ -819,17 +817,58 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
           continue;
         }
 
-        candidateRows.push({ name, match });
+        candidateRows.push({ name, record: candidateRecord, match });
       }
 
       candidateRows.sort(compareCandidateRows);
-      const candidates = [];
-      for (const row of candidateRows) {
-        candidates.push(row.name);
-        if (candidates.length >= CANDIDATE_LIMIT) {
-          break;
+      const buildVisibleReasons = (match) => {
+        const reasons = [];
+        if (match.directDamageTarget > 0) {
+          reasons.push("Conexión directa mediante daño a objetivo.");
         }
-      }
+        if (match.sharedSignalTags > 0) {
+          reasons.push(`Comparte ${match.sharedSignalTags} señal(es) semántica(s) con la carta origen.`);
+        }
+        if (match.thematicHits > 0) {
+          reasons.push(`Presenta ${match.thematicHits} coincidencia(s) temática(s) activa(s).`);
+        }
+        if (match.lexicalHits > 0) {
+          reasons.push(`Comparte ${match.lexicalHits} concepto(s) relevantes del texto Oracle.`);
+        }
+        if (match.colorOverlap > 0) {
+          reasons.push("Comparte identidad de color con la carta origen.");
+        }
+        if (match.sharedType > 0) {
+          reasons.push("Comparte un tipo principal de carta.");
+        }
+        return reasons;
+      };
+
+      const scoreVisibleMatch = (match) => {
+        const rawScore =
+          match.directDamageTarget * 30 +
+          match.sharedSignalTags * 18 +
+          match.thematicHits * 14 +
+          Math.min(match.lexicalHits, 4) * 6 +
+          match.colorOverlap * 5 +
+          match.sharedType * 3 -
+          match.counterModePenalty * 10;
+        return Math.max(1, Math.min(100, rawScore));
+      };
+
+      const candidates = candidateRows
+        .map((row) => ({
+          name: row.name,
+          score: scoreVisibleMatch(row.match),
+          reasons: buildVisibleReasons(row.match),
+        }))
+        .sort(
+          (left, right) =>
+            right.score - left.score ||
+            right.reasons.length - left.reasons.length ||
+            left.name.localeCompare(right.name),
+        )
+        .slice(0, CANDIDATE_LIMIT);
 
       return {
         foundSeed1: true,
@@ -848,14 +887,36 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     const renderRealPoolCandidates = (candidates) => {
       realPool.dataset.state = "ready";
       realPoolStatus.textContent =
-        "La entrada se ha preparado localmente y se muestra un pool inicial filtrado.";
+        "Cartas ordenadas por fuerza de conexión semántica explicable.";
       realPoolList.hidden = false;
       realPoolList.innerHTML = "";
       outputContract.hidden = true;
 
-      for (const candidateName of candidates) {
+      for (const candidate of candidates) {
         const item = document.createElement("li");
-        item.textContent = candidateName;
+        item.className = "beta-real-pool-ranked-item";
+
+        const header = document.createElement("div");
+        header.className = "beta-real-pool-ranked-header";
+
+        const name = document.createElement("strong");
+        name.textContent = candidate.name;
+
+        const score = document.createElement("span");
+        score.className = "beta-real-pool-score";
+        score.textContent = `Sinergia ${candidate.score}/100`;
+
+        header.append(name, score);
+        item.appendChild(header);
+
+        const reasons = document.createElement("ul");
+        reasons.className = "beta-real-pool-reasons";
+        for (const reason of candidate.reasons) {
+          const reasonItem = document.createElement("li");
+          reasonItem.textContent = reason;
+          reasons.appendChild(reasonItem);
+        }
+        item.appendChild(reasons);
         realPoolList.appendChild(item);
       }
     };
@@ -877,7 +938,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
     const setState = (message, seed1, seed2) => {
       stateMessage.textContent = message;
       stateNote.textContent =
-        "Esta beta pública mantiene guardrails: sin ranking, sin score y sin explicación causal.";
+        "Esta beta pública mantiene guardrails de transparencia y muestra ranking, score y razones explicables.";
 
       if (!seed1) {
         statePanel.dataset.state = "warning";
@@ -917,7 +978,7 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
         outputPreview.dataset.state = "prepared";
         outputStatus.textContent = "Entrada preparada localmente.";
         outputNote.textContent =
-          "Vista previa sincronizada con seeds locales. Sin ranking, sin score y sin explicación causal.";
+          "Vista previa sincronizada con seeds locales. Ranking semántico directo con score y razones visibles.";
         outputSeeds.hidden = false;
         outputSeed1.textContent = seed1;
 

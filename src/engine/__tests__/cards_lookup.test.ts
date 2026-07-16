@@ -2,6 +2,7 @@ import pako from "pako";
 import { describe, expect, test, vi } from "vitest";
 import { normalizeCardName } from "../cards/normalize";
 import {
+  getCardsIndexRecordsSourceSnapshot,
   getCardsIndexCount,
   listCardsIndexRecords,
   lookupCard,
@@ -278,6 +279,182 @@ describe("cards helpers", () => {
       await listCardsIndexRecords({ baseUrl: "http://x.test" });
       await listCardsIndexRecords({ baseUrl: "http://x.test" });
       expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("cards-index cache key treats equivalent same-origin baseUrl forms as one material load", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(listPayload));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+    }));
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+    vi.stubGlobal("location", { origin: "http://local.test" });
+
+    try {
+      __testing.clearCache();
+      await listCardsIndexRecords();
+      await listCardsIndexRecords({ baseUrl: "http://local.test" });
+      await listCardsIndexRecords({ baseUrl: "http://local.test/" });
+
+      expect(__testing.getCardsIndexCacheKey()).toBe("http://local.test");
+      expect(__testing.getCardsIndexCacheKey("http://local.test/")).toBe("http://local.test");
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(__testing.getMaterialLoadCounters()).toEqual({
+        fetch: 1,
+        decompression: 1,
+        jsonParse: 1,
+      });
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+      vi.unstubAllGlobals();
+    }
+  });
+
+  test("cards-index cache key keeps different origins isolated and failed loads retry", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(listPayload));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+      });
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+
+    try {
+      __testing.clearCache();
+      await listCardsIndexRecords({ baseUrl: "http://one.test" });
+      await listCardsIndexRecords({ baseUrl: "http://two.test" });
+      await expect(listCardsIndexRecords({ baseUrl: "http://retry.test" })).rejects.toThrow(
+        "Failed to load cards_index.json.gz: 503",
+      );
+      await listCardsIndexRecords({ baseUrl: "http://retry.test" });
+
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(fetchMock.mock.calls.map((call) => call[0])).toEqual([
+        "http://one.test/data/cards_index.json.gz",
+        "http://two.test/data/cards_index.json.gz",
+        "http://retry.test/data/cards_index.json.gz",
+        "http://retry.test/data/cards_index.json.gz",
+      ]);
+      expect(__testing.getCardsIndexCacheKey("http://one.test")).not.toBe(
+        __testing.getCardsIndexCacheKey("http://two.test"),
+      );
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("cards-index source identity is stable for the same loaded payload and atomic with listed records", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(listPayload));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+    }));
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+    vi.stubGlobal("location", { origin: "http://local.test" });
+
+    try {
+      __testing.clearCache();
+      const first = await getCardsIndexRecordsSourceSnapshot({
+        limit: 10,
+        includeEmptyOracleText: false,
+      });
+      const second = await getCardsIndexRecordsSourceSnapshot({
+        baseUrl: "http://local.test/",
+        limit: 10,
+        includeEmptyOracleText: false,
+      });
+
+      expect(first.sourceIdentity).toBe(second.sourceIdentity);
+      expect(first.records.map((record) => record.name)).toEqual(["Alpha", "Beta"]);
+      expect(second.records.map((record) => record.name)).toEqual(["Alpha", "Beta"]);
+      expect(__testing.getCardsIndexSourceIdentityDiagnostic(first.sourceIdentity)).toMatchObject({
+        cacheKey: "http://local.test",
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+      vi.unstubAllGlobals();
+    }
+  });
+
+  test("cards-index source identity differs by source and changes after cache clear reload", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(listPayload));
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+    }));
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+
+    try {
+      __testing.clearCache();
+      const one = await __testing.getCardsIndexSourceIdentity("http://one.test");
+      const two = await __testing.getCardsIndexSourceIdentity("http://two.test");
+      expect(one).not.toBe(two);
+
+      __testing.clearCache();
+      const reloadedOne = await __testing.getCardsIndexSourceIdentity("http://one.test");
+      expect(reloadedOne).not.toBe(one);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+    } finally {
+      // @ts-expect-error restore
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  test("cards-index failed load does not create a durable source identity", async () => {
+    const originalFetch = globalThis.fetch;
+    const gz = pako.gzip(JSON.stringify(listPayload));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.byteLength),
+      });
+    // @ts-expect-error test mock
+    globalThis.fetch = fetchMock;
+
+    try {
+      __testing.clearCache();
+      await expect(__testing.getCardsIndexSourceIdentity("http://retry.test")).rejects.toThrow(
+        "Failed to load cards_index.json.gz: 500",
+      );
+      const identity = await __testing.getCardsIndexSourceIdentity("http://retry.test");
+      expect(__testing.getCardsIndexSourceIdentityDiagnostic(identity)).toMatchObject({
+        cacheKey: "http://retry.test",
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(2);
     } finally {
       // @ts-expect-error restore
       globalThis.fetch = originalFetch;

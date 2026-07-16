@@ -6,3 +6,5 @@ export * from "./structural";
 export * from "./parser";
 export * from "./share";
 export * from "./analyzer";
+
+export * from "./deck_context";

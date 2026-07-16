@@ -45,6 +45,8 @@ import type { SemanticCoverageReport } from "../../engine/semantic/overlay/sem_c
 
 import { compareSemanticAnalysisResultsV1 } from "../../engine/semantic/comparison/compare_semantic_analysis_results_v1";
 
+import { DeckContextVisibleMvp } from "./panels/DeckContextVisibleMvp";
+
 type Props = {
   buildSha?: string;
 };
@@ -688,7 +690,8 @@ export default function AnalyzerApp({ buildSha }: Props) {
           {semanticOverlayStatus === "ready" &&
             semanticOverlay &&
             semanticOverlay.metrics.card_count > 0 && (
-              <SemanticOverlayPanel
+              <>
+                <SemanticOverlayPanel
                 metrics={semanticOverlay.metrics}
                 edges={semanticOverlay.edgesTop}
                 explainKey={explainKey}
@@ -700,6 +703,10 @@ export default function AnalyzerApp({ buildSha }: Props) {
                 coverageReport={semanticOverlay.coverageReport}
                 viewMode={viewMode}
               />
+                {deckState ? (
+                  <DeckContextVisibleMvp deckState={deckState} />
+                ) : null}
+              </>
           )}
           {mcParams.enabled && (
             <div className="panel monte-carlo-results-panel">

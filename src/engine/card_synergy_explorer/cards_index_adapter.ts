@@ -74,6 +74,77 @@ function resolvePositiveInteger(value: unknown, fallback: number): number {
   return integerValue;
 }
 
+const SEED_FILTER_STOP_WORDS = new Set([
+  "a", "an", "and", "as", "at", "card", "cards", "each", "for", "from",
+  "has", "have", "if", "in", "into", "is", "it", "of", "on", "or",
+  "other", "put", "that", "the", "then", "this", "to", "up", "with",
+  "you", "your",
+]);
+
+function normalizeFilterToken(value: string): string {
+  return value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function collectFilterTokens(value: unknown, target: Set<string>): void {
+  if (typeof value === "string") {
+    for (const token of normalizeFilterToken(value).split(/\s+/)) {
+      if (
+        token.length >= 3 &&
+        !SEED_FILTER_STOP_WORDS.has(token) &&
+        !/^\d+$/.test(token)
+      ) {
+        target.add(token);
+      }
+    }
+    return;
+  }
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectFilterTokens(item, target);
+    }
+  }
+}
+
+function buildSeedRecordFilter(
+  input: Parameters<CardSynergyDataAdapter["findCandidatePool"]>[0],
+): ((record: CardRecordMin) => boolean) | undefined {
+  const seedCards = Array.isArray(input.seedCards) ? input.seedCards : [];
+  const cards = Array.isArray(input.cards) ? input.cards : [];
+  const seeds = seedCards.length > 0 ? seedCards : cards;
+  const seedTokens = new Set<string>();
+
+  for (const seed of seeds) {
+    collectFilterTokens(seed.name, seedTokens);
+    collectFilterTokens(seed.typeLine, seedTokens);
+    collectFilterTokens(seed.oracleText, seedTokens);
+  }
+
+  if (seedTokens.size === 0) {
+    return undefined;
+  }
+
+  return (record) => {
+    const recordTokens = new Set<string>();
+    collectFilterTokens(record.name, recordTokens);
+    collectFilterTokens(record.type_line, recordTokens);
+    collectFilterTokens(record.oracle_text, recordTokens);
+    collectFilterTokens(record.keywords, recordTokens);
+
+    for (const token of recordTokens) {
+      if (seedTokens.has(token)) {
+        return true;
+      }
+    }
+    return false;
+  };
+}
+
 function mapCardRecordToCandidateCard(record: CardRecordMin): {
   name: string;
   oracleId?: string;
@@ -159,11 +230,13 @@ export function createCardSynergyCardsIndexAdapter(
         typeof maxCandidates === "number" && Number.isFinite(maxCandidates) && maxCandidates > 0
           ? Math.floor(maxCandidates) + candidatePoolOverscan
           : candidatePoolLimit;
+      const recordFilter = buildSeedRecordFilter(input);
 
       const records = await listRecords({
         baseUrl,
         limit,
         includeEmptyOracleText: false,
+        recordFilter,
       });
 
       return records.map(mapCardRecordToCandidateCard);

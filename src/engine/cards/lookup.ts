@@ -11,13 +11,59 @@ type CardsIndexPayload = {
   schema_version?: string;
 };
 
-type CardsIndexCache = CardsIndexPayload & { count: number };
+const cardsIndexSourceIdentityBrand: unique symbol = Symbol("CardsIndexSourceIdentity");
+
+export type CardsIndexSourceIdentity = Readonly<{
+  readonly [cardsIndexSourceIdentityBrand]: true;
+  readonly generation: number;
+  readonly cacheKey: string;
+}>;
+
+type CardsIndexCache = CardsIndexPayload & {
+  count: number;
+  sourceIdentity: CardsIndexSourceIdentity;
+};
 const DEFAULT_LIST_CARDS_INDEX_LIMIT = 200;
+const DEFAULT_CARDS_INDEX_CACHE_KEY = "__default__";
 
 const indexCache = new Map<string, CardsIndexCache>();
 const indexPromiseCache = new Map<string, Promise<CardsIndexCache>>();
 let _cardsIndexPromise: Promise<CardsIndexCache> | null = null;
 let _cardsIndex: CardsIndexCache | null = null;
+const materialLoadCounters = {
+  fetch: 0,
+  decompression: 0,
+  jsonParse: 0,
+};
+let sourceIdentityGeneration = 0;
+
+function currentRuntimeOrigin(): string | null {
+  const locationLike = (globalThis as { location?: { origin?: unknown } }).location;
+  return typeof locationLike?.origin === "string" && locationLike.origin.length > 0
+    ? locationLike.origin
+    : null;
+}
+
+function normalizeBaseUrlForCardsIndexCache(baseUrl?: string): string {
+  const trimmed = typeof baseUrl === "string" ? baseUrl.trim() : "";
+  const runtimeOrigin = currentRuntimeOrigin();
+  if (trimmed.length === 0) {
+    return runtimeOrigin ?? DEFAULT_CARDS_INDEX_CACHE_KEY;
+  }
+
+  try {
+    const parsed = runtimeOrigin ? new URL(trimmed, runtimeOrigin) : new URL(trimmed);
+    const pathname = parsed.pathname.replace(/\/+$/, "");
+    return `${parsed.origin}${pathname}`;
+  } catch {
+    return trimmed.replace(/\/+$/, "") || runtimeOrigin || DEFAULT_CARDS_INDEX_CACHE_KEY;
+  }
+}
+
+function resolveCardsIndexFetchUrl(baseUrl?: string): string {
+  const base = typeof baseUrl === "string" ? baseUrl.trim().replace(/\/+$/, "") : "";
+  return base ? `${base}/data/cards_index.json.gz` : "/data/cards_index.json.gz";
+}
 
 async function gunzipToString(data: Uint8Array): Promise<string> {
   if (typeof (globalThis as any).DecompressionStream !== "undefined") {
@@ -40,22 +86,26 @@ async function decodeCardsIndexPayload(data: Uint8Array): Promise<string> {
 }
 
 async function loadCardsIndex(baseUrl?: string): Promise<CardsIndexCache> {
-  const base = baseUrl ? baseUrl.replace(/\/+$/, "") : "";
-  const cacheKey = base || "__default__";
-  if (cacheKey === "__default__" && _cardsIndex) return _cardsIndex;
+  const cacheKey = normalizeBaseUrlForCardsIndexCache(baseUrl);
+  if (cacheKey === DEFAULT_CARDS_INDEX_CACHE_KEY && _cardsIndex) return _cardsIndex;
   const cached = indexCache.get(cacheKey);
   if (cached) return cached;
   const inflight = indexPromiseCache.get(cacheKey);
   if (inflight) return inflight;
 
-  const url = base ? `${base}/data/cards_index.json.gz` : "/data/cards_index.json.gz";
+  const url = resolveCardsIndexFetchUrl(baseUrl);
   const promise = (async () => {
+    materialLoadCounters.fetch += 1;
     const res = await fetch(url);
     if (!res.ok) {
       throw new Error(`Failed to load cards_index.json.gz: ${res.status}`);
     }
     const bytes = new Uint8Array(await res.arrayBuffer());
+    if (isGzipBytes(bytes)) {
+      materialLoadCounters.decompression += 1;
+    }
     const json = await decodeCardsIndexPayload(bytes);
+    materialLoadCounters.jsonParse += 1;
     const payload = JSON.parse(json) as CardsIndexPayload;
     const byName = payload.by_name ?? {};
     const count = Object.keys(byName).length;
@@ -75,21 +125,33 @@ async function loadCardsIndex(baseUrl?: string): Promise<CardsIndexCache> {
       }
     }
 
+    const sourceIdentity = Object.freeze({
+      [cardsIndexSourceIdentityBrand]: true as const,
+      generation: ++sourceIdentityGeneration,
+      cacheKey,
+    });
     const loaded: CardsIndexCache = {
       by_name: byName,
       by_name_norm: normalized,
       schema_version: payload.schema_version,
       count,
+      sourceIdentity,
     };
     indexCache.set(cacheKey, loaded);
-    if (cacheKey === "__default__") {
+    if (cacheKey === DEFAULT_CARDS_INDEX_CACHE_KEY) {
       _cardsIndex = loaded;
     }
     return loaded;
-  })();
+  })().catch((error) => {
+    indexPromiseCache.delete(cacheKey);
+    if (cacheKey === DEFAULT_CARDS_INDEX_CACHE_KEY && _cardsIndexPromise === promise) {
+      _cardsIndexPromise = null;
+    }
+    throw error;
+  });
 
   indexPromiseCache.set(cacheKey, promise);
-  if (cacheKey === "__default__") {
+  if (cacheKey === DEFAULT_CARDS_INDEX_CACHE_KEY) {
     _cardsIndexPromise = promise;
   }
 
@@ -174,17 +236,18 @@ export interface ListCardsIndexRecordsOptions {
   baseUrl?: string;
   limit?: number;
   includeEmptyOracleText?: boolean;
+  recordFilter?: (record: CardRecordMin) => boolean;
 }
 
-export async function listCardsIndexRecords(
-  options: ListCardsIndexRecordsOptions = {},
-): Promise<readonly CardRecordMin[]> {
+function listCardsIndexRecordsFromPayload(
+  payload: CardsIndexCache,
+  options: Omit<ListCardsIndexRecordsOptions, "baseUrl"> = {},
+): readonly CardRecordMin[] {
   const limit = resolveListLimit(options.limit);
   if (limit <= 0) {
     return [];
   }
 
-  const payload = await loadCardsIndex(options.baseUrl);
   const includeEmptyOracleText = options.includeEmptyOracleText === true;
   const names = Object.keys(payload.by_name).sort((left, right) =>
     left < right ? -1 : left > right ? 1 : 0,
@@ -199,7 +262,11 @@ export async function listCardsIndexRecords(
     if (!includeEmptyOracleText && !hasUsableOracleText(record)) {
       continue;
     }
-    records.push(toCardRecordMin(name, record));
+    const cardRecord = toCardRecordMin(name, record);
+    if (options.recordFilter && !options.recordFilter(cardRecord)) {
+      continue;
+    }
+    records.push(cardRecord);
     if (records.length >= limit) {
       break;
     }
@@ -208,11 +275,59 @@ export async function listCardsIndexRecords(
   return records;
 }
 
+export async function listCardsIndexRecords(
+  options: ListCardsIndexRecordsOptions = {},
+): Promise<readonly CardRecordMin[]> {
+  const payload = await loadCardsIndex(options.baseUrl);
+  return listCardsIndexRecordsFromPayload(payload, options);
+}
+
+export interface CardsIndexRecordsSourceSnapshot {
+  readonly sourceIdentity: CardsIndexSourceIdentity;
+  readonly records: readonly CardRecordMin[];
+}
+
+export async function getCardsIndexRecordsSourceSnapshot(
+  options: ListCardsIndexRecordsOptions = {},
+): Promise<CardsIndexRecordsSourceSnapshot> {
+  const payload = await loadCardsIndex(options.baseUrl);
+  return {
+    sourceIdentity: payload.sourceIdentity,
+    records: listCardsIndexRecordsFromPayload(payload, options),
+  };
+}
+
 function clearCache() {
   indexCache.clear();
   indexPromiseCache.clear();
   _cardsIndexPromise = null;
   _cardsIndex = null;
+  materialLoadCounters.fetch = 0;
+  materialLoadCounters.decompression = 0;
+  materialLoadCounters.jsonParse = 0;
 }
 
-export const __testing = { clearCache, gunzipToString, findCardRecord };
+function getMaterialLoadCounters() {
+  return { ...materialLoadCounters };
+}
+
+async function getCardsIndexSourceIdentity(baseUrl?: string): Promise<CardsIndexSourceIdentity> {
+  return (await loadCardsIndex(baseUrl)).sourceIdentity;
+}
+
+function getCardsIndexSourceIdentityDiagnostic(identity: CardsIndexSourceIdentity) {
+  return {
+    generation: identity.generation,
+    cacheKey: identity.cacheKey,
+  };
+}
+
+export const __testing = {
+  clearCache,
+  gunzipToString,
+  findCardRecord,
+  getCardsIndexCacheKey: normalizeBaseUrlForCardsIndexCache,
+  getCardsIndexSourceIdentity,
+  getCardsIndexSourceIdentityDiagnostic,
+  getMaterialLoadCounters,
+};

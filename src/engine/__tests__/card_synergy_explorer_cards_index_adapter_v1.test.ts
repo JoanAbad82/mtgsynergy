@@ -137,7 +137,8 @@ describe("card synergy explorer cards index adapter v1", () => {
       baseUrl: "http://cards.test",
       limit: 18,
       includeEmptyOracleText: false,
-    });
+    
+      recordFilter: expect.any(Function),});
     expect(result).toEqual([
       {
         name: "Candidate A",
@@ -196,7 +197,8 @@ describe("card synergy explorer cards index adapter v1", () => {
       baseUrl: undefined,
       limit: 7,
       includeEmptyOracleText: false,
-    });
+    
+      recordFilter: expect.any(Function),});
   });
 
   test("findCandidatePool does not mutate input or list records", async () => {

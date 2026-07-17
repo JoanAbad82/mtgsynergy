@@ -1,7 +1,7 @@
 param(
   [string]$BaseUrl = "https://mtgsynergy.com",
-  [string]$PostPath = "/es/combo-trelasarra-val/",
-  [string]$MustContain = "Por qué este combo importa",
+  [string]$PostPath = "/es/analizador-de-mazos-mtg/",
+  [string]$MustContain = "Analizador de mazos MTG — Structural",
   [int]$TimeoutSec = 20
 )
 

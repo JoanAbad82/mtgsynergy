@@ -16,6 +16,13 @@ const cardNames = [
   "Rhino Warrior Token",
 ];
 
+const ATTRIBUTION_PATH = path.join(
+  process.cwd(),
+  "src",
+  "generated",
+  "cardArtAttributions.json",
+);
+
 const OUTPUT_DIR = path.join(
   process.cwd(),
   "public",
@@ -66,6 +73,8 @@ async function downloadImage(url) {
 
 async function main() {
   await mkdir(OUTPUT_DIR, { recursive: true });
+  await mkdir(path.dirname(ATTRIBUTION_PATH), { recursive: true });
+  const attributions = {};
 
   for (const name of cardNames) {
     const slug = slugify(name);
@@ -104,11 +113,29 @@ async function main() {
       const outputPath = path.join(OUTPUT_DIR, `${slug}.jpg`);
       await writeFile(outputPath, imageBuffer);
 
+      const faceArtists = Array.isArray(cardJson?.card_faces)
+        ? cardJson.card_faces.map((face) => face?.artist).filter(Boolean)
+        : [];
+      const artist = cardJson?.artist ?? (faceArtists.join(" / ") || null);
+
+      attributions[name] = {
+        artist,
+        scryfall_uri: String(cardJson?.scryfall_uri ?? "").replace(/\?utm_source=api.*$/, ""),
+        set: cardJson?.set ?? null,
+        collector_number: cardJson?.collector_number ?? null,
+      };
+
       console.log(`Saved ${name} -> ${outputPath}`);
     } catch (error) {
       console.error(`Failed to fetch "${name}":`, error.message);
     }
   }
+
+  await writeFile(
+    ATTRIBUTION_PATH,
+    JSON.stringify(attributions, null, 2) + "\n",
+    "utf8",
+  );
 }
 
 main().catch((error) => {

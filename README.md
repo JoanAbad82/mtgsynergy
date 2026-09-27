@@ -280,6 +280,10 @@ That emphasis on **inspectable reasoning** is the core of MTGSynergy.
 
 ## License
 
-This repository currently does **not** publish a software license file.
+Original MTGSynergy software source code is licensed under the
+[Apache License 2.0](LICENSE), unless otherwise indicated.
 
-Public source visibility does not by itself grant permission to copy, modify, redistribute, or reuse the code beyond rights provided by applicable law. Licensing can be defined separately if the project is opened for reuse in the future.
+Magic: The Gathering card text, images, artwork, trademarks, Scryfall-derived
+card data, and other third-party materials are **not** relicensed under
+Apache-2.0. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for scope and
+attribution details.

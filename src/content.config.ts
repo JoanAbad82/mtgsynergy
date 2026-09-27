@@ -1,7 +1,11 @@
 import { defineCollection, z } from "astro:content";
+import { glob } from "astro/loaders";
 
 const posts = defineCollection({
-  type: "content",
+  loader: glob({
+    pattern: "**/*.{md,mdx}",
+    base: "./src/content/posts",
+  }),
   schema: z.object({
     title: z.string(),
     date: z.string(),
@@ -16,7 +20,7 @@ const posts = defineCollection({
         scryfallName: z.string().optional(),
         image: z.string(),
         caption: z.string().optional(),
-      })
+      }),
     ),
     related_cards: z.array(z.string()).optional(),
   }),

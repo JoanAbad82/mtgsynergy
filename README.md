@@ -1,5 +1,8 @@
 # MTGSynergy
 
+[![CI](https://github.com/JoanAbad82/mtgsynergy/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JoanAbad82/mtgsynergy/actions/workflows/ci.yml)
+
+
 Explainable **Magic: The Gathering** deck and card-synergy analysis built around deterministic rules, Oracle-text interpretation, structural signals, and local-first execution.
 
 **Live site:** https://mtgsynergy.com/

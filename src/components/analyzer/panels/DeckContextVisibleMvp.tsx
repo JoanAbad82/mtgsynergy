@@ -79,11 +79,14 @@ export function DeckContextVisibleMvp({
           if (row.evidenceLevel !== "inconclusive") scored.push(row);
         }
 
+        const retrievalRank = new Map(retrieval.candidates.map((item, index) => [item.identityKey, index]));
         scored.sort(
           (a, b) =>
             b.contextualScore - a.contextualScore ||
             b.connectedDeckCardCount - a.connectedDeckCardCount ||
             b.reasons.length - a.reasons.length ||
+            (retrievalRank.get(a.candidate.identityKey) ?? Infinity) -
+              (retrievalRank.get(b.candidate.identityKey) ?? Infinity) ||
             a.candidate.card.name.localeCompare(b.candidate.card.name),
         );
 

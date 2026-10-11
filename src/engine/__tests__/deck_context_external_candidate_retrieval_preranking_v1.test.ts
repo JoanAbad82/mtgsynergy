@@ -141,7 +141,7 @@ describe("deck-context external candidate retrieval pre-ranking", () => {
     expect(relevantNames.filter((name) => first20.includes(name)).length).toBeGreaterThanOrEqual(5);
 
     const broadWindowCall = mocks.getCardsIndexRecordsSourceSnapshot.mock.calls.find(
-      ([options]) => options?.limit === 24576,
+      ([options]) => options?.limit === Number.MAX_SAFE_INTEGER,
     );
     expect(broadWindowCall).toBeTruthy();
     const oldPrefix = corpus.slice(0, 48);
@@ -165,7 +165,7 @@ describe("deck-context external candidate retrieval pre-ranking", () => {
     expect(profile(pyromancerNames)).not.toEqual(profile(guttersnipeNames));
     expect(profile(companyNames)).not.toEqual(profile(guttersnipeNames));
     expect(profile(soulWardenNames)).not.toEqual(profile(guttersnipeNames));
-    expect(mocks.getCardsIndexRecordsSourceSnapshot.mock.calls.every(([options]) => options?.limit === 24576)).toBe(true);
+    expect(mocks.getCardsIndexRecordsSourceSnapshot.mock.calls.every(([options]) => options?.limit === Number.MAX_SAFE_INTEGER)).toBe(true);
   });
 
   test("reuses one prepared candidate corpus across multiple anchors in one retrieval", async () => {
@@ -189,7 +189,7 @@ describe("deck-context external candidate retrieval pre-ranking", () => {
     expect(mocks.getCardsIndexRecordsSourceSnapshot).toHaveBeenCalledTimes(1);
     expect(mocks.getCardsIndexRecordsSourceSnapshot.mock.calls[0]?.[0]).toMatchObject({
       baseUrl: "http://cards.test",
-      limit: 24576,
+      limit: Number.MAX_SAFE_INTEGER,
       includeEmptyOracleText: false,
     });
     expect(rankingTesting.getFeaturePreparationCounters().candidate).toBe(corpus.length);

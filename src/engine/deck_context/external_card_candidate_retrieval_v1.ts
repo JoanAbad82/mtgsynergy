@@ -22,8 +22,6 @@ import {
   POOL_PER_ANCHOR,
 } from "./types";
 import {
-  doesPreparedDeckContextLexicalFilterMatch,
-  prepareDeckContextAnchorLexicalFilterTokens,
   prepareDeckContextCandidateFeatureCorpus,
   rankPreparedDeckContextCandidateRecordsForSeedsTopK,
   type DeckContextCandidateRankingSeed,
@@ -31,7 +29,8 @@ import {
   type PreparedDeckContextCandidateRecord,
 } from "./external_card_candidate_ranking_v1";
 
-const PRE_RANKING_ELIGIBLE_WINDOW = 24576;
+// Evaluate the entire verified local index; top-K remains bounded downstream.
+const PRE_RANKING_ELIGIBLE_WINDOW = Number.MAX_SAFE_INTEGER;
 const CANDIDATE_POOL_OVERSCAN = 16;
 const RANKED_RECORDS_PER_ANCHOR = POOL_PER_ANCHOR + CANDIDATE_POOL_OVERSCAN;
 
@@ -175,6 +174,7 @@ export async function retrieveBoundedDeckContextCandidates(input: {
   let activeRankingKey: string | null = null;
   let sharedPreparedCorpusPromise: Promise<PreparedDeckContextCandidateCorpus> | null = null;
   let sharedTopKPromise: Promise<ReadonlyMap<string, readonly CardRecordMin[]>> | null = null;
+  const preRankingScoreByName = new Map<string, number>();
 
   const getSharedPreparedCorpus = async (): Promise<PreparedDeckContextCandidateCorpus> => {
     if (!sharedPreparedCorpusPromise) {
@@ -203,38 +203,27 @@ export async function retrieveBoundedDeckContextCandidates(input: {
     });
   }
 
-  const anchorFilterEntries = anchorEntries.map((entry) => ({
-    key: entry.key,
-    filterTokens: prepareDeckContextAnchorLexicalFilterTokens(entry.seed),
-  }));
-  const anchorFilterTokensByKey = new Map(
-    anchorFilterEntries.map((entry) => [entry.key, entry.filterTokens]),
-  );
-
   const getSharedTopKRecords = async (): Promise<ReadonlyMap<string, readonly CardRecordMin[]>> => {
     if (!sharedTopKPromise) {
       sharedTopKPromise = getSharedPreparedCorpus().then((corpus) => {
         const ranked = rankPreparedDeckContextCandidateRecordsForSeedsTopK(
-          anchorEntries.map((entry) => {
-            const filterTokens = anchorFilterTokensByKey.get(entry.key);
-            return {
-              key: entry.key,
-              seed: entry.seed,
-              limit: RANKED_RECORDS_PER_ANCHOR,
-              preparedRecordFilter: filterTokens
-                ? (prepared: PreparedDeckContextCandidateRecord) =>
-                    doesPreparedDeckContextLexicalFilterMatch(
-                      prepared.lexicalFilterTokens,
-                      filterTokens,
-                    )
-                : undefined,
-            };
-          }),
+          anchorEntries.map((entry) => ({
+            key: entry.key,
+            seed: entry.seed,
+            limit: RANKED_RECORDS_PER_ANCHOR,
+          })),
           corpus,
         );
         const records = new Map<string, readonly CardRecordMin[]>();
         for (const [key, items] of ranked) {
           records.set(key, items.map((item) => item.record));
+          for (const item of items) {
+            const nameKey = norm(item.record.name);
+            preRankingScoreByName.set(nameKey, Math.max(
+              preRankingScoreByName.get(nameKey) ?? -Infinity,
+              item.score,
+            ));
+          }
         }
         return records;
       });
@@ -264,19 +253,11 @@ export async function retrieveBoundedDeckContextCandidates(input: {
       const acceptsAdapterFilter = (prepared: PreparedDeckContextCandidateRecord): boolean =>
         adapterFilter ? adapterFilter(prepared.record) : true;
       const preparedRecords = corpus.records.filter(acceptsAdapterFilter);
-      const filterTokens = anchorFilterTokensByKey.get(activeRankingKey);
       return rankPreparedDeckContextCandidateRecordsForSeedsTopK(
         [{
           key: activeRankingKey,
           seed: rankingSeed,
           limit: requestedLimit,
-          preparedRecordFilter: filterTokens
-            ? (prepared: PreparedDeckContextCandidateRecord) =>
-                doesPreparedDeckContextLexicalFilterMatch(
-                  prepared.lexicalFilterTokens,
-                  filterTokens,
-                )
-            : undefined,
         }],
         preparedRecords,
       )
@@ -340,6 +321,7 @@ export async function retrieveBoundedDeckContextCandidates(input: {
           identityKey: key,
           card,
           retrievedByAnchors: [anchor.key],
+          retrievalRelevanceScore: preRankingScoreByName.get(cardNameNorm),
         });
       }
     }

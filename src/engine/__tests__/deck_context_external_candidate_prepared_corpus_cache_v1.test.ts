@@ -84,9 +84,9 @@ describe("prepared corpus single-entry promise cache", () => {
     const first = await retrieveGuttersnipe();
     const firstNames = first.candidates.map((candidate) => candidate.card.name);
     expect(firstNames).toEqual([
-      "Thermo-Alchemist",
       "Firebrand Archer",
       "Kessig Flamebreather",
+      "Thermo-Alchemist",
       "Storm-Kiln Artist",
       "Talrand, Sky Summoner",
       "Young Pyromancer",

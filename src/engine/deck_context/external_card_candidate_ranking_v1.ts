@@ -79,9 +79,18 @@ const INSTANT_SORCERY_PATTERNS = [
 ] as const;
 
 const TOKEN_PATTERNS = [
-  /\bcreate[s]? .* token\b/,
-  /\btoken\b/,
+  /\bcreates?\b[^.]{0,160}\btokens?\b/,
+  /\btokens?\b/,
 ] as const;
+
+// Coarse retrieval hints only; a semantic cross-edge is still required for display.
+const CREATURE_TOKEN_CREATION = /\bcreates?\b[^.]{0,160}\b(?:creature )?tokens?\b/;
+// Oracle's current wording often shortens 'enters the battlefield' to 'enters'.
+const ETB_TRIGGER = /\b(?:when|whenever)\b[^.]{0,130}\benters(?: the battlefield)?\b/;
+const LIFE_GAIN_EFFECT = /\bgain(?:s)? (?:\d+|x|that much) life\b/;
+const LIFE_GAIN_TRIGGER = /\bwhenever you gain life\b/;
+const CREATURE_ETB_TRIGGER = /\b(?:when|whenever) (?:a|another|one or more) creatures? (?:you control )?enters?\b/;
+const DIRECT_CAST_DAMAGE_TRIGGER = /\bwhenever you cast (?:an instant or sorcery|a noncreature) spell\b[^.]{0,120}\bdeals? \d+ damage to each opponent\b/;
 
 const DAMAGE_PATTERNS = [
   /\bdeals? \d+ damage\b/,
@@ -151,6 +160,12 @@ type SemanticFeatures = {
   prowess: boolean;
   magecraft: boolean;
   castTrigger: boolean;
+  creatureTokenProducer: boolean;
+  entersBattlefieldListener: boolean;
+  lifeGainEffect: boolean;
+  lifeGainListener: boolean;
+  creatureEtbListener: boolean;
+  directCastDamageTrigger: boolean;
   weakOnly: boolean;
   contentTokens: Set<string>;
 };
@@ -300,6 +315,12 @@ function extractFeaturesFromSemanticText(parts: PreparedDeckContextSemanticText)
   const prowess = /\bprowess\b/.test(main);
   const magecraft = /\bmagecraft\b/.test(main);
   const castTrigger = /\bwhenever you cast\b/.test(main) || /\bwhen you cast\b/.test(main);
+  const creatureTokenProducer = CREATURE_TOKEN_CREATION.test(main);
+  const entersBattlefieldListener = ETB_TRIGGER.test(main);
+  const lifeGainEffect = LIFE_GAIN_EFFECT.test(main);
+  const lifeGainListener = LIFE_GAIN_TRIGGER.test(main);
+  const creatureEtbListener = CREATURE_ETB_TRIGGER.test(main);
+  const directCastDamageTrigger = DIRECT_CAST_DAMAGE_TRIGGER.test(main);
   const reminderHasOnlySignal =
     !realPayoff &&
     (includesAny(parts.reminder, REAL_PAYOFF_PATTERNS) ||
@@ -319,6 +340,12 @@ function extractFeaturesFromSemanticText(parts: PreparedDeckContextSemanticText)
     prowess,
     magecraft,
     castTrigger,
+    creatureTokenProducer,
+    entersBattlefieldListener,
+    lifeGainEffect,
+    lifeGainListener,
+    creatureEtbListener,
+    directCastDamageTrigger,
     weakOnly: reminderHasOnlySignal || (!realPayoff && weakHits >= 3),
     contentTokens: collectContentTokens(main),
   };
@@ -421,6 +448,45 @@ function scorePreparedRecord(
   if (seedFeatures.copyPayoff && features.copyPayoff) {
     score += 12;
     reasons.push("copy-overlap");
+  }
+  // Recall candidates with complementary triggers/effects, not only shared words.
+  // Actual pair semantics are verified later by buildCandidateAnchorSemanticConnections.
+  if (seedFeatures.creatureTokenProducer && features.entersBattlefieldListener && features.damagePayoff) {
+    score += 105;
+    reasons.push("token-production-to-etb-damage-candidate");
+  }
+  if (seedFeatures.entersBattlefieldListener && seedFeatures.lifeGainEffect &&
+      features.entersBattlefieldListener && features.lifeGainEffect) {
+    score += 90;
+    reasons.push("etb-life-gain-redundancy-candidate");
+  }
+  if (seedFeatures.lifeGainListener && features.entersBattlefieldListener && features.lifeGainEffect) {
+    score += 80;
+    reasons.push("etb-gain-life-enables-payoff-candidate");
+  }
+  if (seedFeatures.castTrigger && seedFeatures.eachOpponentDamage &&
+      features.castTrigger && features.eachOpponentDamage) {
+    score += 75;
+    reasons.push("cast-to-opponent-damage-redundancy-candidate");
+  }
+  // Precise, positively evidenced retrieval hooks avoid rewarding incidental text.
+  if (seedFeatures.creatureTokenProducer && features.creatureEtbListener && features.eachOpponentDamage) {
+    score += 180;
+    reasons.push("creature-tokens-to-opponent-damage-candidate");
+  }
+  if (seedFeatures.creatureEtbListener && seedFeatures.lifeGainEffect &&
+      features.creatureEtbListener && features.lifeGainEffect) {
+    score += 155;
+    reasons.push("creature-etb-life-gain-redundancy-candidate");
+  }
+  if (seedFeatures.lifeGainListener && features.creatureEtbListener && features.lifeGainEffect) {
+    score += 155;
+    reasons.push("creature-etb-life-gain-payoff-candidate");
+  }
+  if (seedFeatures.castTrigger && seedFeatures.eachOpponentDamage &&
+      features.directCastDamageTrigger) {
+    score += 135;
+    reasons.push("direct-cast-opponent-damage-candidate");
   }
   if (seedFeatures.drawPayoff && features.drawPayoff) {
     score += 10;

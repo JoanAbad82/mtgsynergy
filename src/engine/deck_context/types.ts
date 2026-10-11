@@ -30,6 +30,8 @@ export interface RetrievedDeckContextCandidate {
   identityKey: string;
   card: CardSynergyCandidateCard;
   retrievedByAnchors: readonly string[];
+  /** Coarse Oracle-text retrieval score; never treated as verified semantic evidence. */
+  retrievalRelevanceScore?: number;
 }
 
 export interface DeckContextRetrievalResult {

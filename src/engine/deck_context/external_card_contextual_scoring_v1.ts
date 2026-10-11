@@ -35,6 +35,13 @@ export function scoreDeckContextCandidate(input: {
 
   if (connected.length === 1 && strength < 20) contextualScore -= 20;
   if (input.hasIncompleteEvidence) contextualScore -= 15;
+  // Retrieval relevance is a bounded, non-normative recall prior. We mix it
+  // only AFTER an actual cross-card semantic connection has been established.
+  const retrievalPrior = input.candidate.retrievalRelevanceScore;
+  if (input.connections.length > 0 && typeof retrievalPrior === "number" && Number.isFinite(retrievalPrior)) {
+    const boundedPrior = Math.max(0, Math.min(100, retrievalPrior / 3.5));
+    contextualScore = 0.6 * contextualScore + 0.4 * boundedPrior;
+  }
   contextualScore = Math.max(0, Math.min(100, Math.round(contextualScore)));
 
   const evidenceLevel =

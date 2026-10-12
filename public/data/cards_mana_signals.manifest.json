@@ -1,0 +1,11 @@
+{
+  "schema_version": "cards-mana-signals-v1",
+  "source": "Scryfall Oracle Cards",
+  "source_updated_at": "2026-10-12T09:02:38.125+00:00",
+  "oracle_bulk_uri": "https://data.scryfall.io/oracle-cards/oracle-cards-20261012090238.jsonl.gz",
+  "sha256_source_compressed": "4d8fe75e9b025ab9a73e4ed132837e9ae57790d790e96abc861e14ab8299112b",
+  "sha256_gz": "30e1e51cde70c2c64bdbf9f841a48da858edc4b19721eceb51c8d13934bb234d",
+  "records": 36045,
+  "unresolved": 4,
+  "source_rows": 38721
+}

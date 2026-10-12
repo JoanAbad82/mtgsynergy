@@ -1,5 +1,6 @@
 import type { DeckContextCandidateScore } from "../../../engine/deck_context";
 import type { DeckLegalFormat, LegalityCheckResult } from "../../../engine/deck_context/format_legality_v1";
+import type { ManaFitResult } from "../../../engine/deck_context/mana_feasibility_v1";
 
 export function ExternalCardDiscoveryPanel({
   candidates,
@@ -7,12 +8,14 @@ export function ExternalCardDiscoveryPanel({
   error,
   selectedFormat,
   legality,
+  mana,
 }: {
   candidates: readonly DeckContextCandidateScore[];
   loading: boolean;
   error: string | null;
   selectedFormat?: DeckLegalFormat | "";
   legality?: LegalityCheckResult | null;
+  mana?: ManaFitResult | null;
 }) {
   return (
     <section className="analyzer-panel deck-context-panel" data-testid="external-card-discovery">
@@ -35,12 +38,27 @@ export function ExternalCardDiscoveryPanel({
         </p>
       )}
       {legality?.warning && <p role="status">{legality.warning}</p>}
-      {!loading && !error && candidates.length === 0 && selectedFormat !== "" && (
+      {selectedFormat && mana && (
+        <div data-testid="mana-compatibility-summary">
+          <p>
+            Compatibilidad orientativa del maná: {mana.direct.length} candidatas
+            con colores de coste producidos directamente por tierras del mazo;
+            {" "}{mana.needsReview.length} requieren revisar fuentes de maná y
+            {" "}{mana.unknown.length} no pueden clasificarse con estos datos.
+          </p>
+          {mana.sourceUpdatedAt && (
+            <p>Datos de maná: Scryfall, {mana.sourceUpdatedAt.slice(0, 10)}.</p>
+          )}
+          <p>No verifica curva, cantidad de fuentes, tierras buscadas ni costes alternativos.</p>
+          {mana.warning && <p role="status">{mana.warning}</p>}
+        </div>
+      )}
+      {!loading && !error && candidates.length === 0 && selectedFormat !== "" && (!mana || mana.evaluatedCount === 0) && (
         <p>No se ha encontrado evidencia semántica suficiente para ordenar candidatas externas.</p>
       )}
       {candidates.length > 0 && (
         <>
-          {selectedFormat && <p>Recomendaciones con legalidad de formato verificada:</p>}
+          {selectedFormat && <p>Recomendaciones con legalidad de formato verificada y colores de coste cubiertos por fuentes directas:</p>}
         <ol>
           {candidates.map((row) => (
             <li key={row.candidate.identityKey}>
@@ -62,6 +80,38 @@ export function ExternalCardDiscoveryPanel({
           ))}
         </ol>
         </>
+      )}
+      {selectedFormat && mana && (mana.needsReview.length > 0 || mana.unknown.length > 0) && (
+        <details data-testid="mana-review-candidates">
+          <summary>Otras cartas legales: revisar maná ({mana.needsReview.length + mana.unknown.length})</summary>
+          <p>Son cartas legales en el formato, no prohibidas. No se certifica que puedan lanzarse con la base de maná actual.</p>
+          {mana.needsReview.length > 0 && (
+            <>
+              <h3>Costes con colores sin fuente directa registrada</h3>
+              <ol>
+                {mana.needsReview.slice(0, 12).map((item) => (
+                  <li key={item.row.candidate.identityKey}>
+                    <strong>{item.row.candidate.card.name}</strong> ({item.row.contextualScore}/100):
+                    {" "}{item.note}
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+          {mana.unknown.length > 0 && (
+            <>
+              <h3>Maná no determinado</h3>
+              <ol>
+                {mana.unknown.slice(0, 12).map((item) => (
+                  <li key={item.row.candidate.identityKey}>
+                    <strong>{item.row.candidate.card.name}</strong> ({item.row.contextualScore}/100):
+                    {" "}{item.note}
+                  </li>
+                ))}
+              </ol>
+            </>
+          )}
+        </details>
       )}
       {selectedFormat && legality && legality.unknown.length > 0 && (
         <div data-testid="unverified-legality-candidates">

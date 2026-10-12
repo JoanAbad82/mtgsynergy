@@ -1,5 +1,6 @@
 // @ts-ignore - pako is a runtime dependency; the baseline project omits its typings.
 import pako from "pako";
+import { resolveUniqueSnapshotNameKey } from "../cards/canonical_identity_v1";
 import type { DeckContextCandidateScore } from "./types";
 import { MAX_LEGALITY_SNAPSHOT_AGE_DAYS } from "./format_legality_v1";
 
@@ -44,9 +45,6 @@ export type ManaDeckEntry = {name: string; name_norm?: string; count?: number};
 
 let manaPromise: Promise<ManaSnapshot> | null = null;
 export function clearManaCacheForTests(): void { manaPromise = null; }
-function normalizeName(name: string): string {
-  return name.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
-}
 function isColor(value: string): value is ManaColor {
   return COLORS.some(color => color === value);
 }
@@ -74,8 +72,8 @@ async function loadManaIndex(): Promise<ManaSnapshot> {
   return manaPromise;
 }
 function getCard(map: ManaSnapshot["by_name_norm"], name: string): ManaSignal | null {
-  const key = normalizeName(name);
-  return Object.prototype.hasOwnProperty.call(map, key) ? map[key] ?? null : null;
+  const key = resolveUniqueSnapshotNameKey(map, name);
+  return key === null ? null : map[key] ?? null;
 }
 
 /** Only unambiguous colored pips are modelled. Hybrid, phyrexian, split and

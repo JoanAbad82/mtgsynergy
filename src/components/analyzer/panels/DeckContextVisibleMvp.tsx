@@ -15,6 +15,7 @@ import {
 import { DeckSemanticCompatibilityPanel } from "./DeckSemanticCompatibilityPanel";
 import { ExternalCardDiscoveryPanel } from "./ExternalCardDiscoveryPanel";
 import { lookupCard } from "../../../engine/cards/lookup";
+import { prioritizeLegalDeckCandidatesByMana, type ManaFitResult } from "../../../engine/deck_context/mana_feasibility_v1";
 import {
   selectFormatLegalCandidates, SUPPORTED_DECK_FORMATS,
   type DeckLegalFormat, type LegalityCheckResult,
@@ -30,6 +31,7 @@ export function DeckContextVisibleMvp({
   const [loading, setLoading] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<DeckLegalFormat | "">("");
   const [legality, setLegality] = useState<LegalityCheckResult | null>(null);
+  const [mana, setMana] = useState<ManaFitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export function DeckContextVisibleMvp({
       setContext(null);
       setCandidates([]);
       setLegality(null);
+      setMana(null);
       setError(null);
       return;
     }
@@ -46,6 +49,7 @@ export function DeckContextVisibleMvp({
       setLoading(true);
       setCandidates([]);
       setLegality(null);
+      setMana(null);
       setError(null);
       try {
         const entries = deckState.deck.entries;
@@ -67,6 +71,7 @@ export function DeckContextVisibleMvp({
           if (!cancelled) {
             setContext(internal);
             setLegality(null);
+            setMana(null);
             setCandidates([]);
           }
           return; // do not rank unused recommendations until a format is chosen
@@ -110,13 +115,13 @@ export function DeckContextVisibleMvp({
 
         // Never label semantic matches as playable suggestions without a
         // deliberately selected format and a bounded Scryfall snapshot.
-        const checked = selectedFormat
-          ? await selectFormatLegalCandidates(scored, selectedFormat)
-          : null;
+        const checked = await selectFormatLegalCandidates(scored, selectedFormat);
+        const manaResult = await prioritizeLegalDeckCandidatesByMana(checked.legal, entries);
         if (!cancelled) {
           setContext(internal);
           setLegality(checked);
-          setCandidates(checked ? checked.legal.slice(0, MAX_VISIBLE_RESULTS) : []);
+          setMana(manaResult);
+          setCandidates(manaResult.direct.slice(0, MAX_VISIBLE_RESULTS).map(item => item.row));
         }
       } catch (caught) {
         if (!cancelled) {
@@ -165,6 +170,7 @@ export function DeckContextVisibleMvp({
         error={error}
         selectedFormat={selectedFormat}
         legality={legality}
+        mana={mana}
       />
     </>
   );

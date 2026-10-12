@@ -14,6 +14,9 @@ import {
   clearLegalityIndexCacheForTests,
   selectFormatLegalCandidates, type DeckLegalFormat,
 } from "../deck_context/format_legality_v1";
+import {
+  clearManaCacheForTests, prioritizeLegalDeckCandidatesByMana,
+} from "../deck_context/mana_feasibility_v1";
 
 const decks: Array<{id: string; format: DeckLegalFormat; expectedExcludedBefore: number; deck: string}> = [
   {
@@ -105,9 +108,11 @@ const decks: Array<{id: string; format: DeckLegalFormat; expectedExcludedBefore:
 const fetched: string[] = [];
 const cardsBytes = readFileSync("public/data/cards_index.json.gz");
 const legalBytes = readFileSync("public/data/cards_format_legalities.json.gz");
+const manaBytes = readFileSync("public/data/cards_mana_signals.json.gz");
 beforeAll(() => {
   indexTesting.clearCache();
   clearLegalityIndexCacheForTests();
+  clearManaCacheForTests();
   vi.stubGlobal("fetch", async (input: unknown) => {
     const url = String(input);
     fetched.push(url);
@@ -117,6 +122,9 @@ beforeAll(() => {
     if (url === "/data/cards_format_legalities.json.gz") {
       return new Response(new Uint8Array(legalBytes), { status: 200 });
     }
+    if (url === "/data/cards_mana_signals.json.gz") {
+      return new Response(new Uint8Array(manaBytes), { status: 200 });
+    }
     throw Error("Unplanned network request: " + url);
   });
 });
@@ -124,6 +132,7 @@ afterAll(() => {
   vi.unstubAllGlobals();
   indexTesting.clearCache();
   clearLegalityIndexCacheForTests();
+  clearManaCacheForTests();
 });
 
 describe("published decks: before/after format legality on actual deck-context pipeline", () => {
@@ -167,6 +176,25 @@ describe("published decks: before/after format legality on actual deck-context p
       expect(baseline.legal.every(r => visibleNames.has(r.candidate.card.name))).toBe(true);
       expect(visible.every(r => !after.unknown.includes(r))).toBe(true);
       expect(visible.length).toBeGreaterThan(0);
+      const manaBefore = await prioritizeLegalDeckCandidatesByMana(visible, entries, { now });
+      const manaAfter = await prioritizeLegalDeckCandidatesByMana(after.legal, entries, { now });
+      const primary = manaAfter.direct.slice(0, MAX_VISIBLE_RESULTS);
+      expect(primary.every(value => value.withoutDirectSource.length === 0)).toBe(true);
+      const pool = [...manaAfter.direct, ...manaAfter.needsReview, ...manaAfter.unknown];
+      expect(pool).toHaveLength(after.legal.length);
+      expect(baseline.legal.every(row =>
+        pool.some(item => item.row.candidate.identityKey === row.candidate.identityKey)
+      )).toBe(true);
+      console.log("DECK_MANA_AUDIT " + JSON.stringify({
+        id: item.id, priorVisible: visible.length,
+        priorManaReview: manaBefore.needsReview.length,
+        priorManaUnknown: manaBefore.unknown.length,
+        afterPrimary: primary.length, afterPrimaryMissing: 0,
+        legalNeedingManaReview: manaAfter.needsReview.length,
+        legalUnknownMana: manaAfter.unknown.length,
+        directColors: manaAfter.directColors,
+        primaryNames: primary.map(item => item.row.candidate.card.name),
+      }));
       console.log("DECK_FORMAT_LEGALITY_AUDIT " + JSON.stringify({
         id: item.id, format: item.format,
         beforeVisible: before.length, beforeIllegal: baseline.excluded,
@@ -179,7 +207,8 @@ describe("published decks: before/after format legality on actual deck-context p
   }
   it("uses only the local static assets, never calls Scryfall", () => {
     expect(new Set(fetched)).toEqual(new Set([
-      "/data/cards_index.json.gz", "/data/cards_format_legalities.json.gz"
+      "/data/cards_index.json.gz", "/data/cards_format_legalities.json.gz",
+      "/data/cards_mana_signals.json.gz"
     ]));
   });
 });

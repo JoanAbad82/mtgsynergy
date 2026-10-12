@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "prebuild": "node scripts/verify_cards_index.mjs",
+    "prebuild": "node scripts/verify_cards_index.mjs && node scripts/verify_cards_format_legalities.mjs",
     "build": "astro build",
     "test": "vitest",
     "preview": "astro preview",

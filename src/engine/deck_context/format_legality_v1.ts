@@ -1,5 +1,6 @@
 // @ts-ignore - Pako is already a runtime dependency; the baseline repository lacks its type package.
 import pako from "pako";
+import { resolveUniqueSnapshotNameKey } from "../cards/canonical_identity_v1";
 import type { DeckContextCandidateScore } from "./types";
 
 export const SUPPORTED_DECK_FORMATS = [
@@ -30,9 +31,6 @@ export const MAX_LEGALITY_SNAPSHOT_AGE_DAYS = 30;
 export const LEGALITY_SNAPSHOT_PATH = "/data/cards_format_legalities.json.gz";
 let sourcePromise: Promise<LegalitySnapshot> | null = null;
 
-function normalizeCard(name: string): string {
-  return name.normalize("NFKC").replace(/\s+/g, " ").trim().toLowerCase();
-}
 
 async function loadSnapshot(): Promise<LegalitySnapshot> {
   if (!sourcePromise) {
@@ -99,7 +97,8 @@ export async function selectFormatLegalCandidates(
   let excluded = 0;
   let restricted = 0;
   for (const row of ranked) {
-    const value = snapshot.by_name_norm[normalizeCard(row.candidate.card.name)];
+    const aliasKey = resolveUniqueSnapshotNameKey(snapshot.by_name_norm, row.candidate.card.name);
+    const value = aliasKey === null ? undefined : snapshot.by_name_norm[aliasKey];
     const status = value?.[format];
     if (status === "legal") legal.push(row);
     else if (status === "not_legal" || status === "banned") excluded++;

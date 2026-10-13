@@ -1,0 +1,22 @@
+{
+  "schema_version": "cards-format-legalities-v1",
+  "source": "scryfall",
+  "source_type": "oracle_cards",
+  "source_updated_at": "2026-10-12T09:02:38.125+00:00",
+  "bulk_download_uri": "https://data.scryfall.io/oracle-cards/oracle-cards-20261012090238.jsonl.gz",
+  "source_sha256_compressed": "4d8fe75e9b025ab9a73e4ed132837e9ae57790d790e96abc861e14ab8299112b",
+  "canonical_cards_index_schema": "cardrecordmin-v1",
+  "canonical_cards_index_records": 36267,
+  "read_oracle_records": 38721,
+  "matched_names": 36046,
+  "formats": [
+    "standard",
+    "pioneer",
+    "modern",
+    "legacy",
+    "vintage",
+    "pauper",
+    "commander"
+  ],
+  "sha256_gz": "de48a0c0daaf6cdb03c6772914348454d71a84601f63cf92278665b5965bfb21"
+}

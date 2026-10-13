@@ -1,6 +1,7 @@
 import pako from "pako";
 import type { CardRecordMin } from "./types";
 import { normalizeCardName } from "./normalize";
+import { buildOracleFirstFaceAliases } from "./canonical_identity_v1";
 
 type CardIndexRecord = Pick<CardRecordMin, "type_line" | "oracle_text" | "cmc">;
 type CardIndexRecordWithKeywords = CardIndexRecord &
@@ -115,15 +116,9 @@ async function loadCardsIndex(baseUrl?: string): Promise<CardsIndexCache> {
         normalized[normalizeCardName(name)] = name;
       }
     }
-    for (const canonicalName of Object.keys(byName)) {
-      const separatorIndex = canonicalName.indexOf(" // ");
-      if (separatorIndex === -1) continue;
-      const left = canonicalName.slice(0, separatorIndex);
-      const leftNorm = normalizeCardName(left);
-      if (!normalized[leftNorm]) {
-        normalized[leftNorm] = canonicalName;
-      }
-    }
+    // A short face is an alias only when the Oracle identity can be resolved
+    // deterministically; never select an empty or competing face by order.
+    const oracleAliases = buildOracleFirstFaceAliases(byName, normalized);
 
     const sourceIdentity = Object.freeze({
       [cardsIndexSourceIdentityBrand]: true as const,
@@ -132,7 +127,7 @@ async function loadCardsIndex(baseUrl?: string): Promise<CardsIndexCache> {
     });
     const loaded: CardsIndexCache = {
       by_name: byName,
-      by_name_norm: normalized,
+      by_name_norm: oracleAliases,
       schema_version: payload.schema_version,
       count,
       sourceIdentity,

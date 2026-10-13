@@ -146,7 +146,7 @@ describe("deck-context multi-anchor retrieval single pass", () => {
     expect(mocks.getCardsIndexRecordsSourceSnapshot).toHaveBeenCalledTimes(1);
     expect(mocks.getCardsIndexRecordsSourceSnapshot.mock.calls[0]?.[0]).toMatchObject({
       baseUrl: "http://cards.test",
-      limit: 24576,
+      limit: Number.MAX_SAFE_INTEGER,
       includeEmptyOracleText: false,
     });
     expect(rankingTesting.getFeaturePreparationCounters()).toMatchObject({

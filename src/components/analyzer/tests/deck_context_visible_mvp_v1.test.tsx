@@ -116,7 +116,81 @@ describe("deck-context conditional anchor lookup", () => {
   });
 });
 
+describe("deck-context mana visibility", () => {
+  it("shows other legal cards with mana warnings without mislabeling them illegal", async () => {
+    const { ExternalCardDiscoveryPanel } = await import("../panels/ExternalCardDiscoveryPanel");
+    const row = {
+      candidate: {
+        identityKey: "name:impact tremors",
+        card: {name: "Impact Tremors"}, retrievedByAnchors: []
+      },
+      contextualScore: 82,
+      connectedDeckCardCount: 1, relatedDeckCards: [],
+      reasons: [{key: 111,weight: 1}], warnings: [], evidenceLevel: "high" as const,
+    };
+    const mana = {
+      direct: [],
+      needsReview: [{
+        row, fit: "needs_review" as const,
+        required: ["R"], withoutDirectSource: ["R"],
+        note: "No se ha acreditado una fuente directa para R."
+      }],
+      unknown: [], evaluatedCount: 1, directColors: ["B","G"],
+      landSourcesNotModelled: 1, sourceUpdatedAt: "2026-10-12T09:02:38Z",
+      degraded: true, warning: "Hay fuentes condicionadas no modeladas."
+    };
+    const html = renderToString(h(ExternalCardDiscoveryPanel, {
+      candidates: [], loading:false, error:null, selectedFormat:"modern",
+      legality: {legal:[row], unknown:[], excluded:2, restricted:0,
+        sourceUpdatedAt:"2026-10-12T09:02:38Z", degraded:false, warning:null},
+      mana: mana as any,
+    }));
+    expect(html).toContain("Otras cartas legales: revisar maná (1)");
+    expect(html).toContain("Impact Tremors");
+    expect(html).toContain("fuente directa para R");
+    expect(html).toContain("Scryfall");
+    expect(html).not.toContain("No se ha encontrado evidencia");
+  });
+});
+
 describe("deck-context visible MVP", () => {
+  it("requires explicit format selection before presenting certified recommendations", async () => {
+    const { DeckContextVisibleMvp } = await import("../panels/DeckContextVisibleMvp");
+    const html = renderToString(h(DeckContextVisibleMvp, {
+      deckState: { deck: { entries: [] } } as any,
+    }));
+    expect(html).toContain("Selecciona un formato (obligatorio)");
+    expect(html).toContain("No se envían cartas");
+    expect(html).toContain("Selecciona un formato para mostrar recomendaciones");
+  });
+
+  it("separates unverified cards from confirmed legal results", async () => {
+    const { ExternalCardDiscoveryPanel } = await import("../panels/ExternalCardDiscoveryPanel");
+    const unknown = {
+      candidate: {
+        identityKey: "name:unverified", card: {name: "Unverified Card"},
+        retrievedByAnchors: [],
+      },
+      contextualScore: 80, connectedDeckCardCount: 1,
+      relatedDeckCards: [], reasons: [{key: 101, weight: 1}],
+      evidenceLevel: "limited" as const, warnings: [],
+    };
+    const html = renderToString(h(ExternalCardDiscoveryPanel, {
+      candidates: [], loading: false, error: null,
+      selectedFormat: "modern",
+      legality: {
+        legal: [], unknown: [unknown], excluded: 2,
+        restricted: 0, sourceUpdatedAt: "2026-10-12T09:02:38Z",
+        degraded: true, warning: "Legalidad pendiente de verificar.",
+      }
+    }));
+    expect(html).toContain("Se han excluido 2 candidatas");
+    expect(html).toContain("Scryfall");
+    expect(html).toContain("Sin legalidad confirmada (no recomendadas)");
+    expect(html).toContain("Unverified Card");
+    expect(html).not.toContain("Recomendaciones con legalidad de formato verificada");
+  });
+
   it("renders candidate evidence and cautious warnings", async () => {
     const { ExternalCardDiscoveryPanel } = await import(
       "../panels/ExternalCardDiscoveryPanel"

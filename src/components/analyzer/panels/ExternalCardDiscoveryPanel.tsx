@@ -73,7 +73,7 @@ export function ExternalCardDiscoveryPanel({
                 Evidencia: {row.evidenceLevel} · razones:{" "}
                 {row.reasons.map((reason) => reason.key).join(", ") || "limitadas"}
               </p>
-              {row.warnings.map((warning) => (
+              {row.warnings.filter((warning) => !(selectedFormat && legality?.legal.some((legalRow) => legalRow.candidate.identityKey === row.candidate.identityKey) && warning === "Compatibilidad semántica; legalidad de formato no verificada.")).map((warning) => (
                 <small key={warning}>{warning}</small>
               ))}
             </li>

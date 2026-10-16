@@ -23,7 +23,7 @@
     "astro": "7.3.5",
     "lz-string": "^1.5.0",
     "pako": "2.2.0",
-    "preact": "10.29.8"
+    "preact": "11.0.0"
   },
   "devDependencies": {
     "typescript": "5.9.3",

@@ -7,6 +7,8 @@ Explainable **Magic: The Gathering** deck and card-synergy analysis built around
 
 **Live site:** https://mtgsynergy.com/
 
+**Contributing:** [Contributor guide](CONTRIBUTING.md) · [Open issues](https://github.com/JoanAbad82/mtgsynergy/issues)
+
 MTGSynergy is designed to make deck relationships easier to inspect rather than hiding them behind a single opaque score. The project combines a production structural analyzer with an evolving semantic engine and a public synergy-explorer beta.
 
 ## What you can use today
@@ -132,7 +134,7 @@ The public site is generated as a static Astro application.
 
 ## Technology
 
-- **Astro 5**
+- **Astro 7**
 - **TypeScript**
 - **Preact**
 - **Vitest**
@@ -147,7 +149,7 @@ No application database is required for the public analyzer.
 
 Requirements:
 
-- Node.js 20 or compatible current LTS
+- Node.js 22.22.0 (pinned in [`.node-version`](.node-version) for reproducible builds)
 - npm
 
 Install and start the development server:
@@ -183,6 +185,7 @@ GitHub Actions validates pushes and pull requests by running:
 
 ```bash
 npm ci
+npm audit --audit-level=high
 npm test -- --run
 npm run build
 ```

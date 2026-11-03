@@ -18,9 +18,9 @@
     "test:a210:stable-ring": "node scripts/a210-cost-target-legality-stable-ring.cjs"
   },
   "dependencies": {
-    "@astrojs/mdx": "8.1.0",
-    "@astrojs/preact": "6.1.0",
-    "astro": "7.4.0",
+    "@astrojs/mdx": "8.1.2",
+    "@astrojs/preact": "6.1.1",
+    "astro": "7.4.4",
     "lz-string": "^1.5.0",
     "pako": "2.2.0",
     "preact": "10.29.8"

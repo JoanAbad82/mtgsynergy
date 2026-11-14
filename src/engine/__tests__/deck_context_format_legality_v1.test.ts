@@ -1,5 +1,6 @@
 // @ts-ignore - Node fixture typings are absent from the existing project tsconfig; Vitest runs in Node.
 import { readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DeckContextCandidateScore } from "../deck_context/types";
 import {
@@ -73,6 +74,7 @@ describe("deck-context explicit format legality — fail closed", () => {
 
   it("reads the frozen local Scryfall bulk, preserves legal cards and excludes illegal ones", async () => {
     const bytes = readFileSync("public/data/cards_format_legalities.json.gz");
+    const snapshotNow = new Date(Date.parse(JSON.parse(gunzipSync(bytes).toString("utf8")).source_updated_at) + 2 * 60 * 60 * 1000);
     const fetchMock = vi.fn(async (url: unknown) => {
       expect(url).toBe("/data/cards_format_legalities.json.gz");
       return new Response(new Uint8Array(bytes), {status: 200});
@@ -80,16 +82,30 @@ describe("deck-context explicit format legality — fail closed", () => {
     vi.stubGlobal("fetch", fetchMock);
     const pauper = await selectFormatLegalCandidates(
       [row("Firebrand Archer"), row("Circle of Power"), row("Guttersnipe")], "pauper",
-      {now: new Date("2026-10-12T12:00:00Z")}
+      {now: snapshotNow}
     );
     expect(pauper.legal.map(r => r.candidate.card.name)).toEqual(["Firebrand Archer", "Guttersnipe"]);
     expect(pauper.excluded).toBe(1);
     expect(pauper.unknown).toHaveLength(0);
     const modern = await selectFormatLegalCandidates(
       [row("Invasion of Karsus // Refraction Elemental")], "modern",
-      {now: new Date("2026-10-12T12:00:00Z")}
+      {now: snapshotNow}
     );
     expect(modern.legal).toHaveLength(1);
     expect(fetchMock).toHaveBeenCalledTimes(1); // shared immutable source cache
+  });
+  it("fails closed on corrupt same-origin snapshot bytes", async () => {
+    const corrupt = vi.fn(async (url: unknown) => {
+      expect(url).toBe("/data/cards_format_legalities.json.gz");
+      return new Response(new Uint8Array([0x1f, 0x8b, 0x00]), {status: 200});
+    });
+    vi.stubGlobal("fetch", corrupt);
+    const result = await selectFormatLegalCandidates([row("Firebrand Archer")], "pauper", {
+      now: new Date("2026-11-09T12:00:00Z"),
+    });
+    expect(result.legal).toHaveLength(0);
+    expect(result.unknown.map(item => item.candidate.card.name)).toEqual(["Firebrand Archer"]);
+    expect(result.degraded).toBe(true);
+    expect(corrupt).toHaveBeenCalledTimes(1);
   });
 });

@@ -127,15 +127,17 @@ describe("canonical card identity / three local indexes V1", () => {
   it("frozen auxiliary indexes resolve Emeritus uniquely but keep its split cost uncertain", async () => {
     const legalBytes = readFileSync("public/data/cards_format_legalities.json.gz");
     const legalIndex = JSON.parse(pako.ungzip(legalBytes, { to: "string" }));
+    const snapshotNow = new Date(Date.parse(legalIndex.source_updated_at) + 2 * 60 * 60 * 1000);
     const eligible = await selectFormatLegalCandidates([asRow("Emeritus of Ideation")], "modern", {
-      fetchSnapshot: async () => legalIndex, now,
+      fetchSnapshot: async () => legalIndex, now: snapshotNow,
     });
     expect(eligible.legal).toHaveLength(1);
     const manaBytes = readFileSync("public/data/cards_mana_signals.json.gz");
     const manaIndex = JSON.parse(pako.ungzip(manaBytes, { to: "string" })) as ManaSnapshot;
+    expect(manaIndex.source_updated_at).toBe(legalIndex.source_updated_at);
     const assessed = assessManaAgainstSnapshot(eligible.legal,
       [{ name: "Island", count: 20 }, { name: "Emeritus of Ideation", count: 1 }],
-      manaIndex, now);
+      manaIndex, snapshotNow);
     expect(assessed.landSourcesNotModelled).toBe(0);
     expect(assessed.direct).toHaveLength(0);
     expect(assessed.unknown).toHaveLength(1); // split cost remains unmodelled, not "free".

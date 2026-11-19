@@ -1,5 +1,6 @@
 // @ts-ignore - existing project tsconfig omits Node fixture declarations.
 import { readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DeckContextCandidateScore } from "../deck_context";
 import {
@@ -93,18 +94,42 @@ describe("mana feasibility: soft classification never overrides format legality"
 
   it("reads snapshot from same-origin static file without sending deck data to third parties", async () => {
     const bytes = readFileSync("public/data/cards_mana_signals.json.gz");
+    const snapshotNow = new Date(Date.parse(JSON.parse(gunzipSync(bytes).toString("utf8")).source_updated_at) + 2 * 60 * 60 * 1000);
     const fake = vi.fn(async (input: unknown) => {
       expect(input).toBe("/data/cards_mana_signals.json.gz");
       return new Response(new Uint8Array(bytes),{status:200});
     });
     vi.stubGlobal("fetch",fake);
     const cards = [card("Impact Tremors"),card("Warleader's Call"),card("Phyrexian Metamorph")];
-    const first = await prioritizeLegalDeckCandidatesByMana(cards,[{name:"Mountain"}],{now});
-    const second = await prioritizeLegalDeckCandidatesByMana(cards,[{name:"Mountain"}],{now});
+    const first = await prioritizeLegalDeckCandidatesByMana(cards,[{name:"Mountain"}],{now: snapshotNow});
+    const second = await prioritizeLegalDeckCandidatesByMana(cards,[{name:"Mountain"}],{now: snapshotNow});
     expect(first.direct.map(x=>x.row.candidate.card.name)).toEqual(["Impact Tremors"]);
     expect(first.needsReview.map(x=>x.row.candidate.card.name)).toEqual(["Warleader's Call"]);
     expect(first.unknown.map(x=>x.row.candidate.card.name)).toEqual(["Phyrexian Metamorph"]);
     expect(second.evaluatedCount).toBe(3);
     expect(fake).toHaveBeenCalledTimes(1);
+  });
+  it("fails closed on corrupt same-origin snapshot bytes and future-dated mana data", async () => {
+    const corrupt = vi.fn(async (url: unknown) => {
+      expect(url).toBe("/data/cards_mana_signals.json.gz");
+      return new Response(new Uint8Array([0x1f, 0x8b, 0x00]), {status: 200});
+    });
+    vi.stubGlobal("fetch", corrupt);
+    const input = [card("Impact Tremors")];
+    const nowAfterSource = new Date("2026-11-09T12:00:00Z");
+    const result = await prioritizeLegalDeckCandidatesByMana(input, [{name: "Mountain"}], {
+      now: nowAfterSource,
+    });
+    expect(result.direct).toHaveLength(0);
+    expect(result.unknown.map(item => item.row.candidate.card.name)).toEqual(["Impact Tremors"]);
+    expect(result.degraded).toBe(true);
+    expect(corrupt).toHaveBeenCalledTimes(1);
+    const future = assessManaAgainstSnapshot(input, [{name: "Mountain"}],
+      snapshot({"mountain": signal("land", null, ["R"]),
+        "impact tremors": signal("nonland", "{1}{R}")}, "2026-11-15T09:00:00Z"),
+      nowAfterSource);
+    expect(future.direct).toHaveLength(0);
+    expect(future.unknown).toHaveLength(1);
+    expect(future.degraded).toBe(true);
   });
 });

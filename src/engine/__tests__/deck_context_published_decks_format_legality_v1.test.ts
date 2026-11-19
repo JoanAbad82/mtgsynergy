@@ -1,5 +1,6 @@
 // @ts-ignore - Node fixture typings are absent from the existing project tsconfig; Vitest runs in Node.
 import { readFileSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { analyzeMtgaExportAsync } from "../analyzer";
 import { lookupCard, __testing as indexTesting } from "../cards/lookup";
@@ -166,7 +167,9 @@ describe("published decks: before/after format legality on actual deck-context p
         (retrievalRank.get(a.candidate.identityKey) ?? Infinity)-(retrievalRank.get(b.candidate.identityKey) ?? Infinity) ||
         a.candidate.card.name.localeCompare(b.candidate.card.name));
       const before = scored.slice(0, MAX_VISIBLE_RESULTS);
-      const now = new Date("2026-10-12T12:00:00Z");
+      const sourceStamp = JSON.parse(gunzipSync(legalBytes).toString("utf8")).source_updated_at as string;
+      expect(JSON.parse(gunzipSync(manaBytes).toString("utf8")).source_updated_at).toBe(sourceStamp);
+      const now = new Date(Date.parse(sourceStamp) + 2 * 60 * 60 * 1000);
       const baseline = await selectFormatLegalCandidates(before, item.format, { now });
       const after = await selectFormatLegalCandidates(scored, item.format, { now });
       const visible = after.legal.slice(0, MAX_VISIBLE_RESULTS);

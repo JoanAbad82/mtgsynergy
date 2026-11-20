@@ -2,6 +2,8 @@ import { Fragment, h } from "preact";
 import renderToString from "preact-render-to-string";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { buildCandidateAnchorSemanticConnections } from "../../../engine/deck_context";
+import { ActionId, EventId } from "../../../engine/semantic/contract";
+import { KeyKind, keyOf } from "../../../engine/semantic/overlay/sem_profile";
 
 type GlobalWithReactShim = typeof globalThis & {
   React?: {
@@ -212,8 +214,8 @@ describe("deck-context visible MVP", () => {
             { key: "name:young pyromancer", name: "Young Pyromancer", score: 61 },
           ],
           reasons: [
-            { key: 101, weight: 1 },
-            { key: 202, weight: 0.8 },
+            { key: keyOf(KeyKind.EVENT, EventId.ENTERS_BATTLEFIELD), weight: 1 },
+            { key: keyOf(KeyKind.ACTION, ActionId.CREATE_TOKEN), weight: 0.8 },
           ],
           evidenceLevel: "medium",
           warnings: [
@@ -227,9 +229,22 @@ describe("deck-context visible MVP", () => {
     expect(html).toContain("84/100");
     expect(html).toContain("Conecta con 2 carta(s)");
     expect(html).toContain("Krenko, Mob Boss");
-    expect(html).toContain("razones:");
-    expect(html).toContain("101");
+    expect(html).toContain("Evidencia: media");
+    expect(html).toContain("Señales asociadas:");
+    expect(html).toContain("Evento: entra al campo de batalla");
+    expect(html).toContain("Acción: crear fichas");
+    expect(html).not.toContain(String(keyOf(KeyKind.EVENT, EventId.ENTERS_BATTLEFIELD)));
+    expect(html).toContain("orientativa");
     expect(html).toContain("legalidad de formato no verificada");
+  });
+
+  it("labels cast spells generically and degrades unknown semantic keys", async () => {
+    const { formatDeckContextReason } = await import("../panels/ExternalCardDiscoveryPanel");
+    expect(formatDeckContextReason(keyOf(KeyKind.EVENT, EventId.CAST_SPELL)))
+      .toBe("Evento: lanzar hechizo");
+    expect(formatDeckContextReason(keyOf(KeyKind.EVENT, EventId.UNKNOWN_EVENT)))
+      .toBe("Señal no identificada");
+    expect(formatDeckContextReason(999999)).toBe("Señal no identificada");
   });
 
   it("renders the prudent no-evidence state", async () => {

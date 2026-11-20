@@ -1,6 +1,22 @@
 import type { DeckContextCandidateScore } from "../../../engine/deck_context";
 import type { DeckLegalFormat, LegalityCheckResult } from "../../../engine/deck_context/format_legality_v1";
 import type { ManaFitResult } from "../../../engine/deck_context/mana_feasibility_v1";
+import { explainKey } from "../../../engine/semantic/overlay/sem_profile";
+import { formatSemanticKeyLabelForUi } from "../SemanticOverlayPanel";
+
+const EVIDENCE_LABELS: Record<DeckContextCandidateScore["evidenceLevel"], string> = {
+  high: "alta",
+  medium: "media",
+  limited: "limitada",
+  inconclusive: "inconcluyente",
+};
+
+export function formatDeckContextReason(key: number): string {
+  const match = /^(EVENT|ACTION|RESOURCE):([A-Z0-9_]+)$/.exec(explainKey(key));
+  if (!match || match[2].startsWith("UNKNOWN")) return "Señal no identificada";
+  const category = match[1] === "EVENT" ? "Event" : match[1] === "ACTION" ? "Action" : "Resource";
+  return formatSemanticKeyLabelForUi(`${category} · ${match[2]}`);
+}
 
 export function ExternalCardDiscoveryPanel({
   candidates,
@@ -20,6 +36,7 @@ export function ExternalCardDiscoveryPanel({
   return (
     <section className="analyzer-panel deck-context-panel" data-testid="external-card-discovery">
       <h2>Compatibilidad semántica externa</h2>
+      <p className="muted">Puntuación contextual orientativa: refleja conexiones detectadas, no potencia competitiva.</p>
       {loading && <p>Analizando relaciones semánticas y buscando candidatas compatibles…</p>}
       {error && <p role="alert">{error}</p>}
       {selectedFormat === "" && !loading && (
@@ -70,8 +87,8 @@ export function ExternalCardDiscoveryPanel({
                 {row.relatedDeckCards.map((card) => card.name).join(", ")}
               </p>
               <p>
-                Evidencia: {row.evidenceLevel} · razones:{" "}
-                {row.reasons.map((reason) => reason.key).join(", ") || "limitadas"}
+                Evidencia: {EVIDENCE_LABELS[row.evidenceLevel]} · Señales asociadas:{" "}
+                {row.reasons.map((reason) => formatDeckContextReason(reason.key)).join(", ") || "no identificadas"}
               </p>
               {row.warnings.filter((warning) => !(selectedFormat && legality?.legal.some((legalRow) => legalRow.candidate.identityKey === row.candidate.identityKey) && warning === "Compatibilidad semántica; legalidad de formato no verificada.")).map((warning) => (
                 <small key={warning}>{warning}</small>
